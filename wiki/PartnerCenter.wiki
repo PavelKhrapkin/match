@@ -1,0 +1,21 @@
+#summary PartnerCenter.Autodesc.com is a source of s/w Serial Numpers info
+
+= How we receive and update information from PartnerCenter =
+
+*PartnerCenter* _(PC)_ is used by variety of _Reports_ sent us in Excel.xls files by Distributors and directly from the Portal as a weekly mail with the URL to updated report on _PC_. These files containes data:
+
+* Contract/Agreement Number, Subscription Start and End Dates, Status
+* End-Customer Number, Name, Address
+* Contract Manager _(CM)_ or Software Coordinator: Name, Telephone, Mail
+* Subscription or Asset Number _(SN)_, Status, SKU/Description 
+
+From Distributor we also regularely (typecally - Monthly) receive reports
+* *New Releases* - new SN for Autodesk goods uner Subscriptions genereted by Autodesk
+* *Renewal Reports* - reminders about necessity of end-customer Subsctiption prolongation
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
