@@ -19,4 +19,4 @@ From Distributor we also regularely (typically - Monthly) receive reports
 All reports comes from _PC_ we put into file ADSK.xlsx.
 Than we're doind *_Mapping_*, i.e. re-arrange the Column seequence and somtimes the content in according with the list of required fields listed above. This information is inserted as a line in *_Table-of-Content (TOC)_* list together with the Range, which pointed to the new handled Report.
 
-Later on the particular report in selected and loaded into *match* application for further work on it.  
+Later on the particular report is selected and loaded into *match* application for further work on it.  
