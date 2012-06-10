@@ -1,4 +1,4 @@
-#summary PartnerCenter.Autodesc.com is a source of s/w Serial Numpers info
+#summary PartnerCenter.Autodesk.com is a source of s/w Serial Numpers info
 #labels Phase-Requirements
 
 = How we receive and update information from PartnerCenter =
