@@ -10,12 +10,12 @@
   * Subscription or Asset Number _(SN)_, Status, SKU/Description 
 
 From Distributor we also regularely (typecally - Monthly) receive reports
-  * *New Releases* - new SN for Autodesk goods uner Subscriptions genereted by Autodesk
+  * *New Releases* - new _SN_ for Autodesk goods uner Subscriptions genereted by Autodesk
   * *Renewal Reports* - reminders about necessity of end-customer Subsctiption prolongation
 
 = Details =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+All reports comes from _PC_ we put into file ADSK.xlsx.
+Than we're doind *_Mapping_*, i.e. re-arrange the Column seequence and somtimes the content in according with the list of required fields listed above. This information is inserted as a line in *_Table-of-Content (TOC)_* list together with the Range, which pointed to the new handled Report.
+
+Later on the particular report in selected and loaded into *match* application for further work on it.  
