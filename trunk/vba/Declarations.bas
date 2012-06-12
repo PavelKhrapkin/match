@@ -1,7 +1,7 @@
-﻿Attribute VB_Name = "Declarations"
+ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур листов Match
-'   10.6.12
+'   13.6.12
 
 Option Explicit
     
