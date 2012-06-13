@@ -1,4 +1,4 @@
- Attribute VB_Name = "CSITanalitics"
+Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
 '   Пасс А.     13.6.12
