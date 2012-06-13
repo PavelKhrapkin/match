@@ -1,7 +1,7 @@
-﻿Attribute VB_Name = "CSITanalitics"
+ Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
-'   Пасс А.     12.6.12
+'   Пасс А.     13.6.12
 ' - CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
 ' - CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
 ' - SFPostAddr(indx As Long, SFacc As String)   - Стандартное представление почтового адреса
@@ -55,7 +55,7 @@ Sub CSIT_MS_lead()
     hashInit SFAccKTbl, SFAccVTbl    ' делаем таблицу пустой
     
     Dim curAcc As String, SFAccNums As String, SFId As String
-    Dim MSG As String, MSG2 As String, Client As String, Respond As Long
+    Dim Msg As String, MSG2 As String, Client As String, Respond As Long
     
     With Sheets(SFacc)
         For i = 2 To EOL_SFacc
@@ -65,8 +65,8 @@ Sub CSIT_MS_lead()
 '            End If
             SFname = RemIgnored(LCase$(.Cells(i, SFACC_ACCNAME_COL)))
             If Trim(SFname) = "" Then
-                MSG = "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
-                LogWr MSG
+                Msg = "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
+                LogWr Msg
 '                Respond = MsgBox(MSG & vbCrLf & vbCrLf & " Тем не менее включаем?", vbYesNo)
 '                If Respond <> vbYes Then GoTo NextI
                 GoTo NextI      'ВРЕМЕННО!!!
@@ -106,7 +106,7 @@ NextI:
                 ' обработка одного MS предприятия
                 
                 Client = .Cells(i, CSIT_MS_NAME_COL)                                ' Формируем диалог - включаем MS account
-                MSG = "CSIT_MS имя:" + "'" & Client & "';" _
+                Msg = "CSIT_MS имя:" + "'" & Client & "';" _
                     + vbCrLf + "Адрес: " + .Cells(i, CSIT_MS_ADDR_COL) _
                     + vbCrLf + vbCrLf + "---- Возможные SF имена ----"
                 MSG2 = ""
@@ -144,7 +144,7 @@ NextI:
 
                 If MSG2 <> "" Then
                     Do
-                        SFaccountForm.TextBox2.value = MSG + MSG2       ' основной текст
+                        SFaccountForm.TextBox2.value = Msg + MSG2       ' основной текст
                         SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
                         SFaccountForm.Show vbModal
                         
@@ -333,13 +333,7 @@ End Sub
 '    Next i
 'ExitSub:
 'End Sub
-
 Sub Client1CAnlz()
-'
-'(*) Client1CAnlz() - Account analize Acc1C sheet: If exist in SF, Address parse
-'   10.6.12
-'   11.6.12 PKh - "MS result" use as summary
-'   12.6.12 Comments and bug fix
 
     Dim i As Long, j As Long, k As Long
     Dim x() As String, s0 As String                     ' локальные переменные
@@ -392,7 +386,7 @@ Sub Client1CAnlz()
     Dim accntName As String, accntNamePrev As String, wrSF As String
     Dim accntAddr As String
     Dim sfWrds() As String, SFWordIndx As Long
-    Dim MSG As String, MSG2 As String
+    Dim Msg As String, MSG2 As String
     Dim CompSNums(1 To 100) As Long, compNum As Long                ' номерa компонент имени
     Dim namSF(1 To 100) As String, count(1 To 100) As Long          ' SFacc полное имя
     Dim adrTxt(1 To 100) As String, kword(1 To 100) As String
@@ -414,7 +408,7 @@ Sub Client1CAnlz()
                     ' проверяем, нет ли уже ссылки из какого-нибудь SF account'a на это предприятие 1С
                     If hashGet(accSF, accSFind, Compressor(accntName)) = "$" Then
                         
-                        MSG = Str(i) + ":  ИМЯ 1С:     " + accntName + vbCrLf _
+                        Msg = Str(i) + ":  ИМЯ 1С:     " + accntName + vbCrLf _
                             + "АДРЕС:              " + .Cells(i, A1C_ADR_COL)
                         MSG2 = ""
                         compNum = 0
@@ -488,7 +482,7 @@ Sub Client1CAnlz()
 endLoopPrepTxt:
         
 '                   Текст подготовлен. Запускаем диалог.
-                        DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, MSG, MSG2)
+                        DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, Msg, MSG2, namSF, adrTxt, kword)
                         If IsNumeric(DlgRes) Then  ' SF account id  + 1C id
 '                            MsgBox "выбрано " + DlgRes + vbCrLf + " (" _
 '                                + Sheets(Acc1C).Cells(i, A1C_NAME_COL) + "; " _
@@ -595,25 +589,48 @@ Function SFPostAddr(ByVal indx As Long, SFacc As String)
                 + "," + .Cells(indx, SFACC_COUNTRY_COL)), ",,", ",")
     End With
 End Function
-Function DlgAccChoice(CompSNums, count, idCol, MSG, MSG2)
+Function DlgAccChoice(CompSNums, count, idCol, Msg, MSG2, namSF, addrTxt, kword)
     ' CompSNums - массив номеров строк в таблице
     ' count     - actual possibility count
     ' idCol     - номер колонки в таблице
     ' MSG       - заголовок запроса к оператору, часть, не зависящая от выбора
     ' MSG2      - список предложений для выбора
     
+    Dim i As Long
+    
+    If count = 0 Then
+        DlgAccChoice = "create"       ' the only possibility
+        Exit Function
+    End If
+    
     DlgAccChoice = "cont"       ' если связывать не будем - останется так
  '   If MSG2 <> "" Then
+        SFaccountForm.accntChoice.ColumnCount = 3
         Do
-            SFaccountForm.TextBox2.value = MSG + MSG2       ' основной текст
-            SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
-            If count = 1 Then SFaccountForm.TextBox1.value = "1"
+            ' заполнение listbox
+            Do While SFaccountForm.accntChoice.ListCount <> 0
+                SFaccountForm.accntChoice.RemoveItem 0
+            Loop
+            For i = 1 To count
+                SFaccountForm.accntChoice.AddItem
+                SFaccountForm.accntChoice.List(i - 1, 0) = namSF(i)
+                SFaccountForm.accntChoice.List(i - 1, 1) = addrTxt(i)
+                SFaccountForm.accntChoice.List(i - 1, 2) = kword(i)
+            Next i
+                        
+            SFaccountForm.TextBox2.value = Msg          ' + MSG2       ' основной текст
+            If count = 1 Then
+                SFaccountForm.TextBox1.value = "1"
+            Else
+                SFaccountForm.accntChoice.ListIndex = -1
+                SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
+            End If
             
             ' ok button & textbox enabled only when count <> 0
-            SFaccountForm.TextBox1.Visible = True
+'            SFaccountForm.TextBox1.Visible = True
             SFaccountForm.OKButton.Visible = True
             If count = 0 Then
-                SFaccountForm.TextBox1.Visible = False
+'                SFaccountForm.TextBox1.Visible = False
                 SFaccountForm.OKButton.Visible = False
             End If
             SFaccountForm.Show vbModal
