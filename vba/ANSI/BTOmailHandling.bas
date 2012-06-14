@@ -2,7 +2,7 @@ Attribute VB_Name = "BTOmailHandling"
 '------------------------------------------------------------------------------------
 ' BTOhandling - обработка e-mail'ов от CSD по отгрузке Обновлений SN на Склад
 '
-'   14.6.12
+'   15.6.12
 '
 '[*] BTO_Mail_track()   - чтение и обработка файла BTOmails
 ' -  BTOmailHandle (SN, BTOmsg, BTOmsgLines) - обработка письма БТО
@@ -16,7 +16,7 @@ Sub BTO_Mail_track()
 '
 ' When string in file contains BTOstamp, read mail - seek SN on Stock
 '   12.6.12
-'   14.6.12 - иногда строка Autodesk переносится. Просматриваем две,
+'   15.6.12 - иногда строка Autodesk переносится. Просматриваем две,
 '              чтобы не потерять SN
 
 '------ INITIALIZATION AND LOCAL DECLARATION SECTION ---------------------
