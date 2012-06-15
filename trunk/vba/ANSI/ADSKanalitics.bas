@@ -1,6 +1,6 @@
 Attribute VB_Name = "ADSKanalitics"
 '---------------------------------------------------------------------------------
-' ADSKanalitics  - анализ спецификаций продуктов Autodesk в Счете 1С
+' ADSKanalitics  - анализ спецификаций продуктов Autodesk в Счете 1С---
 '
 ' - PaidADSK(PayK, Acc, Dat, Spec,Sbs) - анализ спецификации Spec, ее связь с Autodesk
 ' - ContrADSKbySN(SN)           - возвращает Контракт Autodesk по SN в SF
