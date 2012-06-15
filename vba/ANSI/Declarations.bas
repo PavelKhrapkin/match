@@ -1,7 +1,7 @@
 Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур листов Match
-'   10.6.12
+'   15.6.12
 
 Option Explicit
     
@@ -202,13 +202,16 @@ Public Const STOCK_DATE_COL = 11    ' колонка "Дата"
 '~ ~ ~ ~ ~ ~ ~ ~ ~ Письма БТО не проведенные по Складу ~ ~ ~ ~ ~ ~ ~ ~ ~
 Public Const BTO_SHEET = "BTOlog"   ' Письма БТО без проводки по Складу
 
-Public Const BTO_DATE_COL = 1       ' колонка "Дата письма"
-Public Const BTO_CSDATR_COL = 2     ' колонка "Заказ/Счет CSD"
-Public Const BTO_SALE_COL = 3       ' колонка "Продавец"
-Public Const BTO_CLIENT_COL = 4     ' колонка "Заказчик"
-Public Const BTO_SN_COL = 5         ' колонка "SN"
-Public Const BTO_GOOD_COL = 6       ' колонка "Товар ADSK"
-Public Const BTO_MAIL_COL = 7       ' колонка "Письмо"
+Public Const BTO_DELIVERY_COL = 1   ' колонка "Доставка со склада"
+Public Const BTO_PAID_DATE_COL = 2  ' колонка "Дата оплаты 1С"
+Public Const BTO_INV_1C_COL = 3     ' колонка "Счет 1С"
+Public Const BTO_DATE_COL = 4       ' колонка "Дата письма"
+Public Const BTO_CSDATR_COL = 5     ' колонка "Заказ/Счет CSD"
+Public Const BTO_SALE_COL = 6       ' колонка "Продавец"
+Public Const BTO_CLIENT_COL = 7     ' колонка "Заказчик"
+Public Const BTO_SN_COL = 8         ' колонка "SN"
+Public Const BTO_GOOD_COL = 9       ' колонка "Товар ADSK"
+Public Const BTO_MAIL_COL = 10      ' колонка "Письмо"
 
 '############## Заказы у Дистрибуторов или Поставщиков #################
 Public Const OrderList = "2011-12"   ' Лист Заказов
