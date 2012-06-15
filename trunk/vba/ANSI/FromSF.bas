@@ -21,6 +21,7 @@ Attribute VB_Name = "FromSF"
 '  30.4.12 - SFaccColFill
 '  12.5.12 - bug fix
 '  16.5.12 - новый отчет по свзкам Платежей с Контрактами ADSK SF_PA
+'  16.6.12 - bug fix - не копировать первую строку в новый отчет!
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -183,6 +184,7 @@ Sub SFaccRep()
 '   3.1.12
 '  9.2.2012 - ревизия
 ' 30.4.12 - SFaccColFill для Платежей, Договоров и Организаций
+' 16.6.12 - bug fix - копирование первой строки
     
     Dim LO, Ln As Integer           ' количества строк в старом и новом отчетах
     Dim Same As String
@@ -200,7 +202,7 @@ Sub SFaccRep()
     If LO = Ln Then Same = "тоже " Else Same = ""
     MsgBox "В новом отчете " & Ln - 1 & " Организаций, в прежнем " & Same & LO - 1
                                                             
-    Sheets(SFacc).Rows("1:1").Copy Sheets(1).Rows("1:1")    ' копируем заголовок
+'    Sheets(SFacc).Rows("1:1").Copy Sheets(1).Rows("1:1")    ' копируем заголовок
     AutoFilterReset 1
 
     Sheets(SFacc).Name = "Tmp"          ' переименовываем прежний отчет в "Tmp"
@@ -309,10 +311,10 @@ Sub SF_PA_Rep()
 '   16.6.12
     
     Dim LO As Integer, Ln As Integer    ' кол-ва строк в старом и новом отчетах
-    Dim MSG As String
+    Dim Msg As String
     
     LO = ModStart(SF_PA, "Обновление листа отчета SF_PA их SF")
-    Ln = EOL(1)
+    Ln = EOL(1) - SFresLines
 
     CheckSheet 1, Ln + 2, 1, SFpaRepName
     CheckSheet SF_PA, LO + 2, 1, SFpaRepName
@@ -324,9 +326,9 @@ Sub SF_PA_Rep()
     Sheets("Tmp").Delete                ' уничтожаем прежний отчет SF
     Sheets(SF_PA).Tab.Color = rgbViolet ' окрашиваем Tab нового отчета
     
-    MSG = "В прежнем отчете SF_PA " & LO & " строк, в новом "
-    If LO = Ln Then MSG = MSG & "тоже "
-    MsgBox MSG & Ln
+    Msg = "В прежнем отчете SF_PA " & LO & " строк, в новом "
+    If LO = Ln Then Msg = Msg & "тоже "
+    MsgBox Msg & Ln
     
     ModEnd SF_PA
 End Sub
