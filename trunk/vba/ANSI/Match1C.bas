@@ -10,28 +10,29 @@ Attribute VB_Name = "Match1C"
 '    5.2.2012 - в MoveToMatch - распознавание входного отчета по штампу
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
+'   16.6.2012 - перемещен штамп Acc1C
 
     Option Explicit    ' Force explicit variable declaration
     
     Public Const DownloadDir = "C:\Users\Пользователь\Downloads\"
 
-' Названия листов - отчетов. Перечислено по порядку в Match.xlsm слева направо
-'   !!! после заверщения параметризации можно этот список деклараций    !!!
-'   !!! ... разнести по модулям                                         !!!
-    Public PaidSheet As String  ' обычно отчет 1С по Договорам на первом месте,
-                                    ' !!! но это надо параметризовать!!!
-    Public DogSheet As String   ' обычно отчет 1С по Договорам на втором месте,
-                                    ' !!! но это надо параметризовать!!!
-    Public Const DogHeader = "DogovorHeader" ' шаблоны для DL Dogovor_Insert
-
-'    Public Const PartnerCenter = "PartnerCenter"    ' имя листа отчета из
-                                '                  PartnerCenter.Autodesk.com
-    Public Const PaidContract = "P_PaidContract" ' рабочий лист- список новых
-                                '                   .. оплаченных контрактов
-    Public Const PaidNoContract = "P_PaidNoContract" ' список новых платежей
-                                '               без контрактов - времянка!!!
-'    Public Const PaidUpdate = "P_Update"    ' рабочий лист - список новых
-                                '               платежей для DL - времянка!!!
+'' Названия листов - отчетов. Перечислено по порядку в Match.xlsm слева направо
+''   !!! после заверщения параметризации можно этот список деклараций    !!!
+''   !!! ... разнести по модулям                                         !!!
+'    Public PaidSheet As String  ' обычно отчет 1С по Договорам на первом месте,
+'                                    ' !!! но это надо параметризовать!!!
+'    Public DogSheet As String   ' обычно отчет 1С по Договорам на втором месте,
+'                                    ' !!! но это надо параметризовать!!!
+'    Public Const DogHeader = "DogovorHeader" ' шаблоны для DL Dogovor_Insert
+'
+''    Public Const PartnerCenter = "PartnerCenter"    ' имя листа отчета из
+'                                '                  PartnerCenter.Autodesk.com
+'    Public Const PaidContract = "P_PaidContract" ' рабочий лист- список новых
+'                                '                   .. оплаченных контрактов
+'    Public Const PaidNoContract = "P_PaidNoContract" ' список новых платежей
+'                                '               без контрактов - времянка!!!
+''    Public Const PaidUpdate = "P_Update"    ' рабочий лист - список новых
+'                                '               платежей для DL - времянка!!!
     Public Lines As Integer     ' количество строк текущего/нового отчета
     Public LinesOld As Integer  ' количество строк старого отчета
     Public AllCol As Integer    ' Количество колонок в таблице отчета
@@ -45,6 +46,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "M\n14"
 ' Keyboard Shortcut: Ctrl+Shift+M
 '
 '       8.2.2012 - распознаем новый отчет, запускаем его обработку
+'      16.2.2012 - перемещен штамп Acc1C
 
     Dim SFrepName As String
     Const ErMsg = "На первом листе нераспознанный новый отчет"
@@ -65,13 +67,15 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "M\n14"
         End Select                                              '** отчеты 1С и Autodesk **
     ElseIf Cells(1, 1) = Stamp1Cpay1 And Cells(1, 2) = Stamp1Cpay2 Then From1Cpayment
     ElseIf Cells(1, 2) = Stamp1Cdog1 And Cells(1, 4) = Stamp1Cdog2 Then From1Cdogovor
-    ElseIf Cells(1, 5) = Stamp1Cacc1 And Cells(1, 6) = Stamp1Cacc2 Then From1Caccount
+    ElseIf Cells(4, 2) = Stamp1Cacc1 And Cells(4, 3) = Stamp1Cacc2 Then From1Caccount
     ElseIf Cells(1, 40) = StampADSKp1 And Cells(1, 42) = StampADSKp2 Then FrPartnerCenter
     Else: MsgBox ErMsg, , "РАЗБЕРИСЬ!"
     End If
     ActiveWorkbook.Save
 End Sub
 Sub TriggerOptionsFormulaStyle()
+Attribute TriggerOptionsFormulaStyle.VB_Description = "2.6.12 Trigger Formula Style A1/R1C1"
+Attribute TriggerOptionsFormulaStyle.VB_ProcData.VB_Invoke_Func = "R\n14"
 '
 ' * Trigger Options-Formula Style A1/R1C1
 '
