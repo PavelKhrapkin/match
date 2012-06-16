@@ -163,49 +163,38 @@ Sub From1Caccount()
 '
 ' 22.4.2012 П.Л.Храпкин
 ' 30.4.12 - SFaccColFill
+' 16.6.12 - ревизия, убрал перенос колонок-формул из старого отчета
 
     ModStart Acc1C, "Обновление листа Справочника клиентов 1С"
 
     LinesOld = EOL(Acc1C) - ACC1C_RES   ' кол-во строк в старом отчете
     Lines = EOL(1) - ACC1C_RES          ' кол-во строк в новом отчете
     
-    CheckSheet 1, ACC1C_RES + 1, 2, ACC1C_STAMP
+    CheckSheet 1, 4, 2, ACC1C_STAMP
     CheckSheet Acc1C, 1, A1C_NAME_COL, ACC1C_STAMP
     
-    ' переновим верхние строки в пятку
+    ' переноcим верхние строки в пятку
     Sheets(1).Select
     Rows("1:" & ACC1C_RES).Cut
     Cells(Lines + ACC1C_RES + 2, 1).Select
     ActiveSheet.Paste
     Rows("1:" & ACC1C_RES).Delete
     
-    Sheets(Acc1C).Columns("A:C").Copy   ' из прежнего отчета копируем колонки A:E
-    Sheets(1).Columns("A:A").Select     '    и вставляем их слева к новому отчету
+    ' вставляем колонку 1
+    Sheets(1).Columns("A:A").Select
     Selection.Insert Shift:=xlToRight
-    
-' дополняем колонки формул до конца рабочей области
-    If LinesOld < Lines Then
-        Range(Cells(LinesOld, 1), Cells(LinesOld, 3)).Select
-        Selection.AutoFill Destination:=Range(Cells(LinesOld, 1), Cells(Lines, 3)), _
-            Type:=xlFillDefault
-    Else
-        Range(Cells(Lines + 1, 1), Cells(LinesOld + ACC1C_RES, 3)).CleaContents
-    End If
-    
+        
     Sheets(Acc1C).Name = "RRR"          ' прежний отчет переименовываем в RRR
-    Worksheets(1).Name = Acc1C          ' новый отчет переименовываем в SF
+    Worksheets(1).Name = Acc1C          ' новый отчет переименовываем в "Список клиентов 1С"
     
     Sheets(Acc1C).UsedRange.Activate
     Rows.RowHeight = 15                 ' высота строк до конца = 15
     
-    Call SheetsCtrlH(2, "RRR!", Acc1C)  ' заменяем ссылки в формулах Платежей 1С
-    Call SheetsCtrlH(4, "RRR!", Acc1C)  '   и в Договорах
-    
     Sheets(Acc1C).Move After:=Sheets("RRR") ' перемещаем новый отчет после листа Acc1C
     Sheets("RRR").Delete
     
-    SFaccColFill Acc1C              ' в колонке 1 если Организация есть в SF
-    SFaccCol Acc1C, ACC1C_RES       ' раскрашиваем колонку A
+    SFaccColFill Acc1C              ' заполняем в колонке 1 если Организация есть в SF
+    SFaccCol Acc1C, ACC1C_RES       ' раскрашиваем колонку: желтый - есть в SF, красный - нет
       
     Sheets(Acc1C).Tab.Color = rgbRed    ' окрашиваем Tab нового отчета в красный цвет
     ModEnd Acc1C
@@ -218,7 +207,7 @@ Sub FromStock()
 
 
     Dim LO As Integer, Ln As Integer    ' кол-ва строк в старом и новом отчетах
-    Dim MSG As String
+    Dim Msg As String
     
     LO = ModStart(STOCK_SHEET, "Обновление Складской Книги")
     Ln = EOL(1)
@@ -241,9 +230,9 @@ Sub FromStock()
     Sheets("Tmp").Delete                ' уничтожаем прежний отчет SF
     Sheets(STOCK_SHEET).Tab.Color = rgbBlue ' окрашиваем Tab нового отчета
     
-    MSG = "В прежней Складской Книге " & LO & " строк, в новой "
-    If LO = Ln Then MSG = MSG & "тоже "
-    MsgBox MSG & Ln
+    Msg = "В прежней Складской Книге " & LO & " строк, в новой "
+    If LO = Ln Then Msg = Msg & "тоже "
+    MsgBox Msg & Ln
         
     ModEnd STOCK_SHEET
 End Sub
