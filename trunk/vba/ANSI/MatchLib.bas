@@ -2,10 +2,9 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта MatchSF-1C
 '
-' П.Л.Храпкин, А.Пасс 12.6.2012
+' П.Л.Храпкин, А.Пасс 17.6.2012
 '
 ' - ModStart(SheetN, MSG)       - начало модуля работы с Листом SheetN
-' - PublicVarInit()             - инициализация глобальных переменных EOL и др
 ' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
@@ -19,6 +18,8 @@ Attribute VB_Name = "MatchLib"
 ' - CurCode(Row, Col, CurCol)   - формат ячейки (Row,Col) по коду валюты в CurCol
 ' - CurRate(Cur)                - возвращает курс валюты к рублю по коду Cur для We
 ' - CurISO(Cur1C)               - возвращает код валюты в стандарте ISO
+' - TxDate(D)                   - преобразование текстовой строки D в Date
+' T testTxDate                  - отладка TxDate
 ' - DDMMYYYY(d)                 - преобразование даты d в текстовый формат DDMMYYYY
 ' - Dec(a)                      - формат числа а в виде текста с десятичной точкой
 ' - EOL(SheetN)                 - возвращает номер последней строки листа SheetN
@@ -55,9 +56,9 @@ Function ModStart(SheetN, Msg, Optional P As Boolean = False) As Integer
 '
 ' подпрограмма - начало работы Модуля с листом SheetN, возвращает количество строк
 '  23.3.2012
-'  19.4.12  - отключение вывода Excel
+'  19.4.12 - отключение вывода Excel
+'  12.6.12 - Select Case в зависимости от основного листа SheetN
 
-    Call PublicVarInit
     Doing = Msg
     With Application
         .DisplayStatusBar = True
@@ -70,7 +71,34 @@ Function ModStart(SheetN, Msg, Optional P As Boolean = False) As Integer
     End With
     ActiveSheet.DisplayPageBreaks = False
     Call AutoFilterReset(SheetN)
-    ModStart = EOL(SheetN)
+    
+' ---- определение EOL для всех основных листов
+    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
+    EOL_SF = EOL(SF) - SFresLines
+    EOL_SFD = EOL(SFD) - SFresLines
+    EOL_SFopp = EOL(SFopp) - SFresLines
+    EOL_SFacc = EOL(SFacc) - SFresLines
+    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
+    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
+    EOL_Stock = EOL(STOCK_SHEET)
+    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
+    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
+    
+    Select Case SheetN
+    Case PAY_SHEET:     ModStart = EOL_PaySheet
+    Case DOG_SHEET:     ModStart = EOL_DogSheet
+    Case Acc1C:         ModStart = EOL_Acc1C
+    Case STOCK_SHEET:   ModStart = EOL_Stock
+    Case SF:            ModStart = EOL_SF
+    Case SFD:           ModStart = EOL_SFD
+    Case SFacc:         ModStart = EOL_SFacc
+    Case SF_PA:         ModStart = EOL_SFlnkADSK
+    Case Else:
+        ModStart = EOL(SheetN)
+    End Select
+' ----
+    ExRespond = True
+    
     Range("A1:A" & ModStart).EntireRow.Hidden = False
     If P Then
         With ProgressForm
@@ -81,24 +109,6 @@ Function ModStart(SheetN, Msg, Optional P As Boolean = False) As Integer
     LogWr ""
     LogWr (Doing)
 End Function
-Sub PublicVarInit()
-'
-' PublicVarInit()   - инициализация глобальных переменных
-'   15.5.12
-
-    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
-    EOL_SFD = EOL(SFD) - SFresLines
-    EOL_SFopp = EOL(SFopp) - SFresLines
-    EOL_SFacc = EOL(SFacc) - SFresLines
-    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
-    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
-    EOL_Stock = EOL(STOCK_SHEET)
-    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
-    
-    ExRespond = True
-
-End Sub
 Sub ModEnd(SheetN)
 '
 ' подпрограмма завершения работы Модуля с листом SheetN
@@ -286,12 +296,28 @@ Function CurISO(Cur1C)
     CurISO = WorksheetFunction.VLookup(Cur1C, Range("Currency"), 2, False)
     On Error GoTo 0
 End Function
-Function DDMMYYYY(d) As String
+Function DDMMYYYY(D) As String
 '
 ' преобразование даты d в текстовый формат DDMMYYYY
 '   14.2.2012
-    DDMMYYYY = Day(d) & "." & Month(d) & "." & Year(d)
+    DDMMYYYY = Day(D) & "." & Month(D) & "." & Year(D)
 End Function
+Function TxDate(D) As Date
+'
+' - TxDate(D)   - преобразование текстовой строки D в Date
+'
+    If IsDate(D) Then
+        TxDate = D
+    Else
+        TxDate = "1.1.1900"
+    End If
+End Function
+Sub testTxDate()
+    Dim A(4) As Date
+    A(1) = TxDate("15/6")
+    A(2) = TxDate("")
+    A(3) = TxDate(Now)
+End Sub
 Function Dec(A) As String
 '
 ' преобразование числа а в текстовый формат с десятичной точкой
@@ -341,7 +367,11 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
 '   6.6.12 - Delete старый лист, создаем новый
 '  11.6.12 - листы A_Acc и AccntUpd
 '  12.6.12 - лист BTO_SHEET - лог для писем БТО
+'  12.6.12 - форматирование шапки по ширине колонок во второй строке HDR_Range
 
+    Dim Col As Range    '= текущая колонка в листе SheetN
+    Dim W               '= ширина колонок шапки
+    
 ' -- стираем старый лист
     On Error Resume Next
     Application.DisplayAlerts = False
@@ -355,6 +385,12 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
     HDR_Range.Copy Sheets(SheetN).Cells(1, 1)   ' копируем шапку из Header
+    
+' -- форматируем колонки шапки по ширине, указанной по второй строке HDR_Range
+    For Each Col In Sheets(SheetN).Columns
+        W = Col.Cells(2, 1)
+        If IsNumeric(W) And W > 0 And W < 200 Then Col.ColumnWidth = W
+    Next Col
     
     Select Case SheetN
     Case O_NewOpp:      EOL_NewOpp = 1
@@ -470,16 +506,16 @@ Sub DateCol(SheetN, Col)
 
     Dim i, DD, MM, YY As Integer
     Dim Dat As Date
-    Dim d() As String
+    Dim D() As String
     
     For i = 1 To EOL(SheetN)
-        d = split(Sheets(SheetN).Cells(i, Col), ".")
-        If UBound(d) = 2 Then
-            DD = d(0)
+        D = split(Sheets(SheetN).Cells(i, Col), ".")
+        If UBound(D) = 2 Then
+            DD = D(0)
             If DD < 1 Or DD > 31 Then GoTo NXT
-            MM = d(1)
+            MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo NXT
-            YY = d(2)
+            YY = D(2)
             Dat = DD & "." & MM & "." & YY
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
