@@ -29,7 +29,6 @@ Sub StockHandling()
     Dim Client As String    ' запись в складской книге, Клиент, Счет, Заказ
     Dim SameClient As Boolean
     Dim Acc1C As String     ' имя Организации в справочнике 1С
-    Dim D As String         'поле "Дата" в складской книге
     Dim Dat As Date         'поле "Дата" в складской книге
     Dim good, T As String   ' Товар (спецификация) и Тип товара
     Dim StockSN As String   ' Складская запись об SN
@@ -48,13 +47,7 @@ If i >= 7766 Then
 i = i
 End If
             Client = .Cells(i, STOCK_CLIENT_COL)
-            
-            D = .Cells(i, STOCK_DATE_COL)
-            If IsDate(D) Then
-                Dat = D
-            Else
-                Dat = "1.1.1900"
-            End If
+            Dat = TxDate(.Cells(i, STOCK_DATE_COL))
             If Client = .Cells(i - 1, STOCK_CLIENT_COL) Then
                 SameClient = True
             Else
@@ -293,10 +286,10 @@ Function SN_ADSKbyStock(PayK, Acc, Dat, StockRec) As String
 '         Делается проверка корректности параметров Платежа PayId и данных по Складу.
 '         Если проверка не прошла - возвращает "".
 '   24.5.12
+'   18.6.12 - use TxDate
 
     Const MaxDeliveryDays = 70
 
-    Dim DatStr As String    'поле - дата проводки товара по Складу
     Dim StockDat As Date    ' = дата проводки товара по Складу
     Dim StockSN As String   ' = SN товара Autodesk по Складу
     Dim StockSch As Integer ' = номер Счета по Складу
@@ -305,9 +298,7 @@ Function SN_ADSKbyStock(PayK, Acc, Dat, StockRec) As String
     SN_ADSKbyStock = ""
     With Sheets(STOCK_SHEET)
         For i = 2 To EOL_Stock
-            DatStr = .Cells(i, STOCK_DATE_COL)
-            StockDat = "1.1.2000"
-            If IsDate(DatStr) Then StockDat = DatStr
+            StockDat = TxDate(.Cells(i, STOCK_DATE_COL))
             If StockDat >= Dat And StockDat < Dat + MaxDeliveryDays Then
                 If Acc = .Cells(i, STOCK_ACC_COL) Then
                     If .Cells(i, STOCK_GOOD_COL) = WE_GOODS_ADSK Then
