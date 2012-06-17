@@ -17,10 +17,11 @@ Sub BTO_Mail_track()
 ' When string in file contains BTOstamp, read mail - seek SN on Stock
 '   12.6.12
 '   15.6.12 - иногда строка Autodesk переносится. Просматриваем две,
-'              чтобы не потерять SN
+'             чтобы не потерять SN
+'   15.6.12 -
 
 '------ INITIALIZATION AND LOCAL DECLARATION SECTION ---------------------
-    Const BTOfileName = "BTOmails.txt"
+    Const BTOfileName = "BTOmails.txt"  ' входной файл - письма из Outlook
     Dim iMail As Integer    '= число обработаных мейлов
     Dim iSN As Integer      '= число SN, не проведенных по Складу
     Dim iADSK As Integer    '= номер строки ADSK из файла BTOmails.txt
@@ -64,7 +65,7 @@ Sub BTO_Mail_track()
     Loop
     Close #1
 '----------------------- SUMMARY SECTION -------------------------------
-    Columns("F:G").Select           ' письма БТО без WrapText
+    Columns("A:J").Select           ' текст без WrapText
     Selection.WrapText = False
     
     MS "В файле " & BTOfileName & " просмотрено " _
@@ -78,9 +79,15 @@ Function BTOmailHandle(SN, BTOmsg, BTOmsgLines) As Boolean
 '       возвращает FALSE, если письмо обработать не удалось или
 '       указанный в нем SN был проведен по Складу и обрабатывать не надо
 '   12.6.12
+'   15.6.12 - добавлены колонки "Доставка со Склада", "Дата оплаты" и "Счет 1С"
 
     Dim Sale As String      'поле BTO "Продавец"
     Dim Client As String    'поле BTO "Заказчик"
+    Dim Delivery As String  'поле "Доставка со склада"
+    Dim Paid As String      'поле "Дата оплаты Счета в 1С"
+    Dim Inv1C As String     'поле "Счет 1С"
+    Dim iStock As Integer   '= номер строки по Складской книге
+    Dim iCSD As Integer     '= по листу Заказов
     Dim SN_SF As SNatr      '= структура SN в SF
     Dim iSF As Integer      '= номер строки в отчете ADSKfrSF по SN
     Dim GoodADSK As String  'поле ВТО "Товар ADSK" - строка из письма
@@ -123,37 +130,53 @@ Function BTOmailHandle(SN, BTOmsg, BTOmsgLines) As Boolean
                 Exit For
             End If
         Next i
+'---- работа с Заказом через CSD
+        If IsCSDinv(.Cells(iSF, BTO_CSDATR_COL), iCSD) Then
+            With Sheets(OrderList)
+                Paid = .Cells(iCSD, OL_PAIDDAT_COL)
+                Inv1C = .Cells(iCSD, OL_INV1C_COL)
+            End With
+        Else
+            Paid = "": Inv1C = ""
+        End If
     
 '---- работа с SN
         .Cells(EOL_BTO, BTO_SN_COL) = SN
                
         If Len(SN) <> 12 Then
             Sale = "<-- Нет SN в письме БТО -->"
-            Client = ""
-        ElseIf IsSNonStock(SN) Then
-            Sale = "<-- SN проведен по Складу -->"
-            Client = ""
+            Client = "": Delivery = "": Sale = "": Inv1C = "": Paid = ""
         Else
+            If IsSNonStock(SN, iStock) Then
+               Delivery = Sheets(STOCK_SHEET).Cells(iStock, STOCK_DELIVERY_COL)
+            End If
+'---- SN из SF
             SN_SF = SNinSFatr(SN, iSF)  '<<< находим SN в SF >>>
             If SN_SF.ErrFlag Then
                 Sale = "<-!- отсутствует в SF -!->"
                 Client = ""
                 ErrMsg TYPE_ERR, "В SF нет SN=" & SN
             Else
+                
+'---- запись в BTOlog
                 With Sheets(ADSKfrSF)
                     Sale = .Cells(iSF, SFADSK_SALE_COL)
                     Client = .Cells(iSF, SFADSK_ACC1C_COL)
                 End With
             End If
         End If
+        .Cells(EOL_BTO, BTO_DELIVERY_COL) = Delivery
+        .Cells(EOL_BTO, BTO_PAID_DATE_COL) = Paid
+        .Cells(EOL_BTO, BTO_INV_1C_COL) = Inv1C
         .Cells(EOL_BTO, BTO_SALE_COL) = Sale
         .Cells(EOL_BTO, BTO_CLIENT_COL) = Client
     End With
 End Function
-Function IsSNonStock(SN) As Boolean
+Function IsSNonStock(SN, iStock) As Boolean
 '
-' - IsSNonStock(SN)    - return TRUE if SN is registered on Stock
+' - IsSNonStock(SN, iStock)    - return TRUE if SN is registered on Stock
 '   11.6.12
+'   15.6.12 возвращает номер строки по Складу
     
     Dim i As Integer
     
@@ -165,9 +188,32 @@ Function IsSNonStock(SN) As Boolean
 '                Client = .Cells(i, STOCK_CLIENT_COL)
 '                Dat = .Cells(i, STOCK_DATE_COL)
                 IsSNonStock = True
+                iStock = i
                 Exit Function
             End If
         Next i
     End With
 End Function
+Function IsCSDinv(Str, iCSD) As Boolean
+'
+' - IsCSDinv(Str, iCSD) - возвращает TRUE и номер строки,
+'              если номер заказа найден среди Заказов CSD
+'   17.6.12
 
+    Dim Inv As String   'поле "№ счета CSD" Заказов
+    Dim Dat As String   'поле "Дата счета CSD" Заказов
+    
+    IsCSDinv = False
+    If Str = "" Then Exit Function
+
+    With Sheets(OrderList)
+        For iCSD = 2 To EOL_OrderList
+            Inv = .Cells(iCSD, OL_CSDINVN_COL)
+            Dat = .Cells(iCSD, OL_CSDINVDAT_COL)
+            If InStr(Str, Inv) <> 0 And InStr(Str, Dat) <> 0 Then
+                IsCSDinv = True
+                Exit Function
+            End If
+        Next iCSD
+    End With
+End Function
