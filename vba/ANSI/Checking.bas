@@ -2,10 +2,14 @@ Attribute VB_Name = "Checking"
 '------------------------------------------------------
 ' Checking -- проверка консистентности базы Match
 '
-' (*) CheckPaySales()   - проверка Продавца 1C-SF - вызов Ctlr/Sft/Q
-'  - CheckSheet SheetN, R, C, Stamp - проверка, что SheetN правильный
-' [*] CheckGoodType()   - проход по Платежам и проверка все ли товары распознаются
-' [*] ContractCheck()   - Проверка состояния Договоров
+'[*] CheckFofmOutput()  - Подготовка и вывод формы CheckingForm
+'[*] CheckPaySales()   - проверка Продавца 1C-SF - вызов Ctlr/Sft/Q
+' -  IsSameTeam(S1, S2, Optional OppN = "")  - возвращает TRUE, если Продавцы S1 и S2
+'                                              работали вместе или это один и тот же.
+' -  IsRightSale(Sale, GoodType) - Возвращает True, если Продавец Sale
+'                                  работает с Товаром типа GoodType.
+'[*] CheckGoodType()   - проход по Платежам и проверка все ли товары распознаются
+'[*] ContractCheck()   - Проверка состояния Договоров
 '
 '   19.2.2012
 '   24.2.2012 - кол-во ошибок по Продавцу в We
@@ -19,7 +23,7 @@ Const WE_GOOD_COL = 6   ' колонка Продукция, соответствующая Продавцу в We
 
 Sub CheckFofmOutput()
 '
-'   Подготовка и вывод формы CheckingForm
+'[*] CheckFofmOutput()  - Подготовка и вывод формы CheckingForm
 '   24.2.2012
     
     Dim S As Range
@@ -137,7 +141,8 @@ Function CheckSaleErr(Sale1C) As Integer
 End Function
 Function IsSameTeam(S1, S2, Optional OppN = "") As Boolean
 '
-' Возвращает True, если Продавцы S1 и S2 работали вместе или это один и тот же.
+' - IsSameTeam(S1, S2, Optional OppN = "")  - возвращает TRUE, если Продавцы S1 и S2
+'                                             работали вместе или это один и тот же.
 ' Состав SalesTeam в массиве Продавцы листа [We], или в поле SF Компаньон
 '   17.2.2012
 '   26.2.2012 - учет поля SF Компаньон помимо профиля в We, переписано с InStr
@@ -184,7 +189,8 @@ ErrorWe1:
 End Function
 Function IsRightSale(Sale, GoodType) As Boolean
 '
-' Возвращает True, если Продавец Sale работает с Товаром типа GoodType.
+' - IsRightSale(Sale, GoodType) - Возвращает True, если Продавец Sale
+'                                 работает с Товаром типа GoodType.
 ' Таблица соответствия в массиве Продавцы листа [We]
 '   17.2.2012
 '   18.3.12 - не ошибка, если GoodType ="" - часто в Договорах
@@ -230,7 +236,6 @@ Sub CheckSheet(SheetN, R, c, txt)
         Stop
     End If
 End Sub
-
 Sub CheckGoodType()
 '
 ' Проход по Платежам и проверка, все ли типы товаров распознаются
