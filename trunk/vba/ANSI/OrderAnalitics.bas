@@ -8,35 +8,107 @@ Attribute VB_Name = "OrderAnalitics"
 
 Option Explicit
 
-Const EOLSTART = 100        ' заведомо избуточный размер пятки
-
 Sub OrderPass()
 '
 ' [*] OrderPass()   - проход по листу Заказов, формирование Новых Заказов
 '   28.4.12
+'   16.6.12 - дописываю, 5 сиреневых колонок
 
+'------ INITIALIZATION AND LOCAL DECLARATION SECTION ---------------------
+    Dim Inv1C As String     '= извлекаемый из листа Счет 1С
+    Dim Dat As String       'поле Дата Счета CSD
+    Dim PaidDat As String   'поле Дата оплаты Платежа
+    Dim Client As String    'поле Клиент 1С
+    Dim iOL As Integer      '= номер строки в Заказах
+    Dim i1С As Integer      '= номер строки в Платежах
+    
     Dim i As Integer
     
-    ModStart OrderList, "Проход по Заказам: Занесение в SF", True
+    EOL_OrderList = ModStart(OrderList, "Проход по Заказам: Занесение в SF", True)
     
-    CheckSheet OrderList, 2, 3, OrderListStamp
+    CheckSheet OrderList, 1, OL_ORDERN_COL, OrderListStamp
     ClearSheet NewOrderList, Range("HDR_NewOrderList")
-    EOL_OrderList = EOL_Order(Lines)
+    
     EOL_SForders = EOL(SForders)
     
+'---------------------- CODE SECTION -----------------------------------
     With Sheets(OrderList)
-        For i = 4 To EOL_OrderList
+        '-- отодвинем EOL_OrderList выбросив пятку
+        EOL_OrderList = EOL_OrderList - OL_MIN_RESLINES
+        Do While .Cells(EOL_OrderList, OL_ORDERN_COL) = ""
+            EOL_OrderList = EOL_OrderList - 1
+        Loop
+         
+        For i = 2 To EOL_OrderList
             Progress i / EOL_OrderList
-            OrderN = .Cells(i, OL_ORDERN_COL)
-            If Not IsOrderN(OrderN) Then
-                NewOrder (i)
+            
+If i >= 477 Then
+i = i
+End If
+            Inv1C = .Cells(i, OL_INV_1C_COL)
+            If Trim(Inv1C) = "" Then
+                Inv1C = SeekInv(.Cells(i, OL_ORDERN_COL))
             End If
+            Dat = .Cells(i, OL_CSDINVDAT_COL)
+            If IsInv1C(Inv1C, Dat, i1С) Then
+                With Sheets(PAY_SHEET)
+                    PaidDat = .Cells(i1С, PAYDATE_COL)
+                    Inv1C = .Cells(i1С, PAYINVOICE_COL)
+                    Client = .Cells(i1С, PAYACC_COL)
+                End With
+            Else
+                PaidDat = "": Inv1C = "": Client = ""
+            End If
+            .Cells(i, OL_PAIDDAT_COL) = PaidDat
+            .Cells(i, OL_INV1C_COL) = Inv1C
+            .Cells(i, OL_ACC1C_COL) = Client
+            
+'            OrderN = .Cells(i, OL_ORDERN_COL)
+'            If Not IsOrderN(OrderN, iOL) Then
+'                NewOrder (i)
+'            End If
         Next i
     End With
-
+'----------------------- SUMMARY SECTION -------------------------------
     ModEnd OrderList
 End Sub
-Function IsOrderN(OrderN) As Boolean
+Function IsInv1C(Str, Dat, i1C) As Boolean
+'
+' - IsInv1C(Str, Dat, i1C)  - возвращает TRUE и номер строки в Платежах 1С,
+'                             если Счет из Str распознан и найден
+'   16.6.12
+    
+    Const PO_DAYS = 50      ' наибольшее число дней от Платежа до Заказа
+    
+    Dim Inv1C As String     'поле "Счет" Платежа 1С
+    Dim D As Date           'поле "Дата прихода денег"
+    Dim D_Min As Date
+    Dim D_Max As Date
+    
+    IsInv1C = False
+    If Not IsDate(Dat) Or Str = "" Then Exit Function
+    
+    D_Min = CDate(Dat) - PO_DAYS
+    D_Max = CDate(Dat) + PO_DAYS
+    
+    For i1C = 2 To EOL_PaySheet
+        Inv1C = Sheets(PAY_SHEET).Cells(i1C, PAYINVOICE_COL)
+        If InStr(Inv1C, Str) <> 0 Then
+            D = Sheets(PAY_SHEET).Cells(i1C, PAYDATE_COL)
+            If D < D_Max And D > D_Min Then
+                IsInv1C = True
+                Exit Function
+            End If
+        End If
+    Next i1C
+End Function
+Sub testInv1C()
+    Dim i1C As Integer
+    ModStart PAY_SHEET, "Тест Inv1C"
+    Call IsInv1C("Сч-278", "01.06.12", i1C)
+End Sub
+
+Function IsOrderN(OrderN, iOL) As Boolean
 '
 ' если Заказ OrderN есть в SF, возвращает TRUE
 ' 28.4.12
@@ -75,17 +147,3 @@ Sub NewOrder(i)
     End With
 
 End Sub
-Function EOL_Order(Lines)
-'
-' поиск последней значащей строки в файле Заказов
-'   28.4.12
-
-    Dim i As Integer
-    
-    i = Lines
-    Do While Sheets(OrderList).Cells(i, OL_ORDER_COL) <> ""
-        i = i + 1
-    Loop
-        
-    EOL_Order = i - 1
-End Function
