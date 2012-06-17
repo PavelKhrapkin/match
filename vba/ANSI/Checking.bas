@@ -10,6 +10,7 @@ Attribute VB_Name = "Checking"
 '   19.2.2012
 '   24.2.2012 - кол-во ошибок по Продавцу в We
 '   29.4.12 - проверка состояния Договоров
+'   18.6.12 - Optional OppN в InSameTeam для использования в Заказах
 
 Option Explicit
 
@@ -30,7 +31,7 @@ Sub CheckFofmOutput()
     For Each S In Sheets(We).Range("Продавцы").Rows
         E = S.Cells(1, WE_ERR_COL)  ' число несоответствий для данного Продавца
         If E > 0 Then
-            CheckingForm.SalesList.AddItem S.Cells(1, 1).Value
+            CheckingForm.SalesList.AddItem S.Cells(1, 1).value
             CheckingForm.SalesList.List(N - 1, 1) = E
             N = N + 1
         End If
@@ -46,7 +47,7 @@ Sub CheckPaySales(SelectedSale)
     
     Dim i, j, OppN As Integer
     Dim AllSales As Boolean
-    Dim K, SaleSF, Sale1C, ContrK, ErrMsg As String
+    Dim k, SaleSF, Sale1C, ContrK, ErrMsg As String
     Dim S As Range
 
     Lines = ModStart(1, "Проверка фамилий Продавцов 1С по Проектам SF." & _
@@ -66,10 +67,10 @@ Sub CheckPaySales(SelectedSale)
             Cells(i, 1) = 1 And _
             Cells(i, 4) = 1 And _
             Trim(Cells(i, 6)) <> "" Then
-                K = Cells(i, 5)             ' код Платежа
+                k = Cells(i, 5)             ' код Платежа
                 Sale1C = Cells(i, 22)       ' Продавец в 1С
-                OppN = OppNbyPay(K)         ' Проект SF по Коду Платежа
-                SaleSF = OppOwner(K)
+                OppN = OppNbyPay(k)         ' Проект SF по Коду Платежа
+                SaleSF = OppOwner(k)
                 ContrK = ContrCod(Cells(i, 25), Cells(i, 26))
                 If Not ContrOK(OppN, ContrK) Then
                     ErrMsg = "По Платежу '" & Trim(Cells(i, 6)) & _
@@ -106,7 +107,7 @@ Sub CheckPaySales(SelectedSale)
                     ErrMsg = "Платеж " & Trim(Cells(i, 6)) & vbTab & _
                             ", Продавец 1С=" & Sale1C & vbTab & _
                             ", а в SF=" & SaleSF & ", строка " & i & _
-                            ", Проект SF=" & OppByPay(K)
+                            ", Проект SF=" & OppByPay(k)
                     LogWr ("Несоответствие SF и 1С! " & ErrMsg)
                 End If
         End If
@@ -134,13 +135,14 @@ Function CheckSaleErr(Sale1C) As Integer
         End If
     Next S
 End Function
-Function IsSameTeam(S1, S2, OppN) As Boolean
+Function IsSameTeam(S1, S2, Optional OppN = "") As Boolean
 '
 ' Возвращает True, если Продавцы S1 и S2 работали вместе или это один и тот же.
 ' Состав SalesTeam в массиве Продавцы листа [We], или в поле SF Компаньон
 '   17.2.2012
 '   26.2.2012 - учет поля SF Компаньон помимо профиля в We, переписано с InStr
 '   6.3.12 - переписано, теперь S1 и S2 приводятся к фамилии продавцов
+'   18.6.12 - Optional OppN для использования в Заказах
 
     Dim S, T, Sales() As String  ' массив Продавцов
     Dim X1, X2 As Range
@@ -162,6 +164,7 @@ Function IsSameTeam(S1, S2, OppN) As Boolean
     If InStr(X2.Cells(1, 5), X1.Cells(1, 1)) <> 0 Then GoTo Found ' они в одной команде
     If InStr(X1.Cells(1, 5), X2.Cells(1, 1)) <> 0 Then GoTo Found ' они в одной команде
 ' проверка по полю SF Компаньон
+    If OppN = "" Then Exit Function
     On Error Resume Next        ' почему-то (?) некоторыые Проекты в SFopp отсутствуют
     S = WorksheetFunction.VLookup(Trim(OppN), _
         Sheets(SFopp).Range("B:K"), 10, False)
@@ -188,16 +191,16 @@ Function IsRightSale(Sale, GoodType) As Boolean
 
     Dim S, Goods() As String  ' массив Продавцов и товаров
     Dim i
-    Dim X As Range
+    Dim x As Range
 
     IsRightSale = False
     
-    For Each X In Range("Продавцы").Rows
-        If InStr(Sale, X.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
-    Next X
+    For Each x In Range("Продавцы").Rows
+        If InStr(Sale, x.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
+    Next x
 
     On Error Resume Next
-    S = WorksheetFunction.VLookup(X.Cells(1, 1), _
+    S = WorksheetFunction.VLookup(x.Cells(1, 1), _
             Range("Продавцы"), WE_GOOD_COL, False)
     On Error GoTo 0
     If S = "" Then
@@ -207,7 +210,7 @@ Function IsRightSale(Sale, GoodType) As Boolean
         Exit Function
     End If
 '==== разбор в Goods список товаров (Goods) из таблицы We, с которыми работает Продавец
-    Goods = Split(S, ",")
+    Goods = split(S, ",")
     For i = 0 To UBound(Goods)
         If Trim(Goods(i)) = GoodType Then
             IsRightSale = True
@@ -215,14 +218,14 @@ Function IsRightSale(Sale, GoodType) As Boolean
         End If
     Next i
 End Function
-Sub CheckSheet(SheetN, R, C, txt)
+Sub CheckSheet(SheetN, R, c, txt)
 '
 ' проверка, что в ячейке листа SheetN действительно лежит штамп Txt
 '   26/1/2012
 
     Sheets(SheetN).Select
-    If Cells(R, C) <> txt Then
-        Cells(R, C).Activate
+    If Cells(R, c) <> txt Then
+        Cells(R, c).Activate
         MsgBox "Неправильный лист " & SheetN, vbCritical, "ERROR!"
         Stop
     End If
@@ -233,14 +236,14 @@ Sub CheckGoodType()
 ' Проход по Платежам и проверка, все ли типы товаров распознаются
 '   12.3.12
 
-    Dim i, X As Integer
+    Dim i, x As Integer
     Dim T As String
     
 '    profileGlobal = 0
         
     Lines = ModStart(1, "CheckGoodType", True)
     
-    X = 0
+    x = 0
     For i = 2 To Lines - 3
        Call Progress(i / Lines)
 '       profileGlobal = getPoint()
@@ -248,10 +251,10 @@ Sub CheckGoodType()
        If Sheets(1).Cells(i, 1) = 1 And _
           Trim(Sheets(1).Cells(i, 6)) <> "" Then
             T = GoodType(Sheets(1).Cells(i, 19))
-            If T = "" Then X = X + 1
+            If T = "" Then x = x + 1
         End If
     Next i
-    MsgBox "Не распознаны Товары в " & X & " Платежах"
+    MsgBox "Не распознаны Товары в " & x & " Платежах"
     ModEnd 1
 End Sub
 Sub ContractCheck()
@@ -259,7 +262,7 @@ Sub ContractCheck()
 ' [*] ContractCheck()   - Проверка состояния Договоров
 '   29.4.12
 
-    Dim MSG, DogSFstat, ContrK, ContrId As String
+    Dim Msg, DogSFstat, ContrK, ContrId As String
     Dim i, DogPaid
 
     Lines = ModStart(DOG_SHEET, "ContractCheck: Проход по Договорам", True) - DOGRES
@@ -278,11 +281,19 @@ Sub ContractCheck()
             ContrK = .Cells(i, DOGCOD_COL)
             ContrId = ContractId(ContrK)
 
-            MSG = ""
-            If DogPaid = "1" And DogSFstat <> "Закрыт" Then
-                MSG = "ЗАКРЫТЬ! Договор " & ContrK & " (" & ContrId & ") оплачен, " _
-                    & " а в SF его статус '" & DogSFstat & "'"
-                LogWr MSG
+            If DogPaid = "1" And DogSFstat <> DOG_STAT_CLOSED Then
+                Msg = "ЗАКРЫТЬ! Договор " & ContrK & " (" & ContrId & ") оплачен, "
+                Select Case DogSFstat
+                Case DOG_STAT_OPEN:
+                    Msg = Msg & " в SF Открыт, "
+                    LoWr Msg
+                Case Else
+                    MsgBox "Странный статус Договора " & ContrK & " '" & DogStat & "'"
+                    Stop
+                    ExRespond = False
+                End Select
+'                    & " а в SF его статус '" & DogSFstat & "'"
+'                LogWr MSG
             End If
         End With
     Next i
