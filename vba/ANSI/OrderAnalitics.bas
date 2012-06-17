@@ -4,7 +4,7 @@ Attribute VB_Name = "OrderAnalitics"
 '
 ' [*] OrderPass()     - проход по листу Заказов Orders
 '
-'   28.4.2012
+'   18.6.2012
 
 Option Explicit
 
@@ -42,7 +42,7 @@ Sub OrderPass()
         For i = 2 To EOL_OrderList
             Progress i / EOL_OrderList
             
-If i >= 477 Then
+If i >= 113 Then
 i = i
 End If
             Inv1C = .Cells(i, OL_INV_1C_COL)
@@ -76,7 +76,7 @@ Function IsInv1C(Str, Dat, i1C) As Boolean
 '
 ' - IsInv1C(Str, Dat, i1C)  - возвращает TRUE и номер строки в Платежах 1С,
 '                             если Счет из Str распознан и найден
-'   16.6.12
+'   18.6.12
     
     Const PO_DAYS = 50      ' наибольшее число дней от Платежа до Заказа
     
@@ -94,7 +94,7 @@ Function IsInv1C(Str, Dat, i1C) As Boolean
     For i1C = 2 To EOL_PaySheet
         Inv1C = Sheets(PAY_SHEET).Cells(i1C, PAYINVOICE_COL)
         If InStr(Inv1C, Str) <> 0 Then
-            D = Sheets(PAY_SHEET).Cells(i1C, PAYDATE_COL)
+            D = TxDate(Sheets(PAY_SHEET).Cells(i1C, PAYDATE_COL))
             If D < D_Max And D > D_Min Then
                 IsInv1C = True
                 Exit Function
@@ -133,7 +133,7 @@ Sub NewOrder(i)
     EOL_NewOrderList = EOL_NewOrderList + 1
     j = EOL_NewOrderList
     
-    Dim invoice As Integer
+    Dim Invoice As Integer
     for i
     
     With Sheets(NewOrderList)
