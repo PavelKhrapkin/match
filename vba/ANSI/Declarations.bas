@@ -1,7 +1,9 @@
 Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур листов Match
-'   17.6.12 - А.Пасс
+'
+'   А.Пасс & П.Храпкин
+'   18.6.12 - ПХ merge с версией АП от 17/6
 
 Option Explicit
     
@@ -178,14 +180,14 @@ Public Const Acc1C = "Список клиентов 1C"   ' Справочник клиентов 1С
 
 Public Const ACC1C_RES = 3      ' пятка справочника организаций 1С
 
-Public Const A1C_NAME_COL = 5   ' колонка "Название фирмы" в 1С
-Public Const A1C_CON_COL = 6    ' колонка "контакт" в 1С
-Public Const A1C_TEL_COL = 7    ' колонка "Телефон"
-Public Const A1C_ADR_COL = 8    ' колонка "Адрес" в 1С
-Public Const A1C_FACTADR_COL = 9 ' колонка "Факт. адрес" в 1С
-Public Const A1C_INN_COL = 10   ' колонка "ИНН" в 1С
-Public Const A1C_INVOICE_COL = 17  ' колонка "Список счетов с оплатой" в 1С
-Public Const A1C_GOOD_COL = 18  ' колонка "Товар последнего счета" в 1С
+Public Const A1C_NAME_COL = 3   ' колонка "Название фирмы" в 1С
+Public Const A1C_CON_COL = 4    ' колонка "контакт" в 1С
+Public Const A1C_TEL_COL = 5    ' колонка "Телефон"
+Public Const A1C_ADR_COL = 6    ' колонка "Адрес" в 1С
+Public Const A1C_FACTADR_COL = 7 ' колонка "Факт. адрес" в 1С
+Public Const A1C_INN_COL = 8    ' колонка "ИНН" в 1С
+Public Const A1C_INVOICE_COL = 15  ' колонка "Список счетов с оплатой" в 1С
+Public Const A1C_GOOD_COL = 16  ' колонка "Товар последнего счета" в 1С
 
 
 Public Const ACC1C_STAMP = "Название фирмы" ' Название фирмы используется как штамп
@@ -205,9 +207,30 @@ Public Const STOCK_CLIENT_COL = 7   ' колонка "Клиент"
 Public Const STOCK_PRODUCT_COL = 8  ' колонка "Наименование продукта"
 Public Const STOCK_SN_COL = 10      ' колонка "Серийный №"
 Public Const STOCK_DATE_COL = 11    ' колонка "Дата"
+Public Const STOCK_DELIVERY_COL = 12 ' колонка "Доставка"
 
-'~ ~ ~ ~ ~ ~ ~ ~ ~ Письма БТО не проведенные по Складу ~ ~ ~ ~ ~ ~ ~ ~ ~
-Public Const BTO_SHEET = "BTOlog"   ' Письма БТО без проводки по Складу
+
+'############## Заказы у Дистрибуторов или Поставщиков #################
+Public Const OrderList = "Заказы"   ' Лист Заказов
+Public Const OrderListStamp = "Заказ"
+Public Const OrderList_MYCOLS = 5   ' количество моих колонок слева
+Public Const OL_MIN_RESLINES = 30   ' Min кол-во строк пятки OL
+
+Public Const OL_PAIDDAT_COL = 1     ' колонка "Дата оплаты"
+Public Const OL_INV1C_COL = 2       ' колонка "Счет 1С"
+Public Const OL_SALE1C_COL = 4      ' колонка "Продавец 1С"
+Public Const OL_ACC1C_COL = 5       ' колонка "Acc1С"
+Public Const OL_ORDERN_COL = 10     ' колонка "ЗаказCSD"
+Public Const OL_INV_1C_COL = 11     ' "Номер счета 1С" - Фролов
+Public Const OL_CSDINVN_COL = 15    ' колонка "№ счета CSD"
+Public Const OL_CSDINVDAT_COL = 16  ' колонка "Дата счета CSD"
+
+'#.#.#.#.#.#.#. Лист новых Заказов для DL .#.#.#.#.#.#.#.#.#
+Public Const NewOrderList = "NewOrderList"   ' Лист Новых Заказов
+Public EOL_NewOrderList     ' последняя значащая строка листа Новых Заказов
+
+'~#~#~#~#~#~#~#~#~ Письма БТО - Заказы CSD - Склад ~#~#~#~#~#~#~#~#~
+Public Const BTO_SHEET = "BTOlog"   ' Сводка по письмам БТО из CSD
 
 Public Const BTO_DELIVERY_COL = 1   ' колонка "Доставка со склада"
 Public Const BTO_PAID_DATE_COL = 2  ' колонка "Дата оплаты 1С"
@@ -219,18 +242,6 @@ Public Const BTO_CLIENT_COL = 7     ' колонка "Заказчик"
 Public Const BTO_SN_COL = 8         ' колонка "SN"
 Public Const BTO_GOOD_COL = 9       ' колонка "Товар ADSK"
 Public Const BTO_MAIL_COL = 10      ' колонка "Письмо"
-
-'############## Заказы у Дистрибуторов или Поставщиков #################
-Public Const OrderList = "2011-12"   ' Лист Заказов
-Public Const OrderListStamp = "Заказ подтвердил"
-
-Public Const OL_ORDER_COL = 8    ' колонка "Адрес" в 1С
-
-
-
-'#.#.#.#.#.#.#. Лист новых Заказов для DL .#.#.#.#.#.#.#.#.#
-Public Const NewOrderList = "NewOrderList"   ' Лист Новых Заказов
-Public EOL_NewOrderList     ' последняя значащая строка листа Новых Заказов
 
 '................. Лист новых Организаций A_Acc ..................
 Public Const A_Acc = "A_Acc"            ' лист новых Организаций
