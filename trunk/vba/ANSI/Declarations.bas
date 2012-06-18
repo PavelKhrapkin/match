@@ -3,6 +3,7 @@ Attribute VB_Name = "Declarations"
 ' Declarations - декларация структур листов Match
 '
 '   А.Пасс & П.Храпкин
+'   17.6.12 - А.Пасс
 '   18.6.12 - ПХ merge с версией АП от 17/6
 
 Option Explicit
