@@ -22,6 +22,7 @@ Attribute VB_Name = "FromSF"
 '  12.5.12 - bug fix
 '  16.5.12 - новый отчет по свзкам Платежей с Контрактами ADSK SF_PA
 '  16.6.12 - bug fix - не копировать первую строку в новый отчет!
+'  18.6.12 - ревизия процедуры Match1C-SF
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -52,56 +53,51 @@ Sub Match1C_SF()
 '   9.1.12 - корректное копирование сводки по SF
 '  26.1.12 - проверка, что на входе действительно отчет Платежи, сортировка SF
 '  28.1.12 - параметризация по именам листов
+'  18.6.12 - ревизия, EOL fix
     
-    LinesOld = ModStart("SF", _
-        "MatchSF_1C - обновляем лист SF по отчету Salesforce <Платежи из 1С>")
+    ModStart SF, "Oбновляем лист SF по отчету Salesforce <Платежи из 1С>"
     
-    Lines = Sheets(1).UsedRange.Rows.count      ' кол-во строк в новом отчете
-    CheckSheet 1, Lines - 4, 1, SFpayRepName    ' проверяем правильность нового и
-    CheckSheet "SF", LinesOld + 2, 3, SFpayRepName  '   .. прежнего отчетов SF
+    Lines = EOL(1) - SFresLines         ' кол-во строк в новом отчете без пятки
+    CheckSheet 1, Lines + 2, 1, SFpayRepName    ' проверяем правильность нового и
+    CheckSheet SF, EOL_SF + 2, 3, SFpayRepName  '   .. прежнего отчетов SF
     SheetSort 1, 3                      ' новый отчет сортируем по датам
     
-    Sheets("SF").Select
+    Sheets(SF).Select
     Columns("A:B").Copy                 ' копируем 2 правые колонки
     
-    Sheets("SF").Name = "RRR"           ' прежний отчет SF переименовываем в RRR
+    Sheets(SF).Name = "TMP"             ' прежний отчет SF переименовываем в RRR
     
     Worksheets(1).Name = "SF"           ' новый отчет переименовываем в SF
-    Sheets("SF").Select
+    Sheets(SF).Select
     Columns("A:A").Select
     Selection.Insert Shift:=xlToRight   ' вставляем 2 колонки из прежнего листа
 
     Rows("2:" & Lines).RowHeight = 15
-    
-    Sheets("RRR").Range("E" & LinesOld - 1 & ":G" & LinesOld).Copy
-    Sheets("SF").Range("E" & Lines - 1).Select
-    ActiveSheet.Paste                   ' копируем оборот CSIT
-    Sheets("RRR").Range("A" & LinesOld - 1 & ":B" & LinesOld).Copy
-    Sheets("SF").Range("A" & Lines - 1).Select
-    ActiveSheet.Paste   ' копируем красную сводку - "не сошлось с Платежами 1С"
 
-' если надо, продлеваем вниз колонки формул
-    If Lines > LinesOld Then Range("A" & LinesOld - SFresLines & _
-                                  ":B" & Lines - SFresLines).FillDown
+'--- если надо, продлеваем вниз колонки формул или обрезаем
+    If Lines > EOL_SF Then
+        Range("A" & EOL_SF & ":B" & Lines).FillDown
+    Else
+        Range("A" & Lines + 1 & ":B" & EOL_SF + SFresLines).Clear
+    End If
     
-    With Range("A" & Lines - 5 & ":B" & Lines - 2)
-        .ClearContents
-        .Interior.Color = rgbWhite      ' очищаем под колонкой до блока итогов
-    End With
-
-    Call SheetsCtrlH(2, "RRR!", "SF!")  ' заменяем ссылки в формулах Платежей 1С
-'    Call SheetsCtrlH("P_Update", "RRR!", "SF!") '   в DL Payment_Update
+'--- копируем оборот CSIT и красную сводку - "не сошлось с Платежами 1С"
+    Sheets("TMP").Range("E" & EOL_SF + 5 & ":G" & EOL_SF + 6).Copy _
+        Destination:=Sheets(SF).Range("E" & Lines + 5)
+    Sheets("TMP").Range("A" & EOL_SF + 1 & ":B" & EOL_SF + SFresLines).Copy _
+        Destination:=Sheets(SF).Range("A" & Lines + 1)
     
-    Sheets("SF").Move After:=Sheets(2)  ' переносим новый отчет SF на второе место
-    Sheets("RRR").Select
-    ActiveWindow.SelectedSheets.Delete  ' уничтожаем старый отчет SF
+    Call SheetsCtrlH(2, "TMP!", "SF!")  ' заменяем ссылки в формулах Платежей 1С
+    
+    Sheets(SF).Move After:=Sheets(2)    ' переносим новый отчет SF на второе место
+    Sheets("TMP").Delete                ' уничтожаем старый отчет SF
     
 '********************
     PaymentPaint   '*
 '********************
 
-    Sheets("SF").Tab.Color = rgbViolet ' окрашиваем Tab нового отчета SF
-    ModEnd 1
+    Sheets(SF).Tab.Color = rgbViolet ' окрашиваем Tab нового отчета SF
+    ModEnd SF
 End Sub
 Sub SFDreport()
 '
