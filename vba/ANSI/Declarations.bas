@@ -1,7 +1,7 @@
 Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур листов Match
-'   15.6.12
+'   17.6.12 - А.Пасс
 
 Option Explicit
     
@@ -40,6 +40,13 @@ Public Const SFACC_CITY_COL = 5         ' колонка "Город для счета"
 Public Const SFACC_STATE_COL = 6        ' колонка "Область для счета"
 Public Const SFACC_INDEX_COL = 7        ' колонка "Индекс для счета"
 Public Const SFACC_COUNTRY_COL = 8      ' колонка "Страна для счета"
+Public Const SFACC_INN_COL = 12         ' колонка "INN"
+Public Const SFACC_TEL_COL = 13         ' колонка "TEL"
+Public Const SFACC_DELSTREET_COL = 14   ' колонка "Улица для доставки"
+Public Const SFACC_DELCITY_COL = 15     ' колонка "Город для доставки"
+Public Const SFACC_DELSTATE_COL = 16    ' колонка "Область для доставки"
+Public Const SFACC_DELINDEX_COL = 17    ' колонка "Индекс для доставки"
+Public Const SFACC_DELCOUNTRY_COL = 18  ' колонка "Страна для доставки"
 
 '--------------- SFADSK - отчет по Autodesk из SF ------------------------
 Public Const SFADSK_CONTRACT_COL = 19   ' колонка "Номер Контракта Autodesk"
@@ -249,6 +256,18 @@ Public Const AccntUpd = "AccntUpd"      ' лист новых связей Организаций SF и 1С
 
 Public Const ACCUPD_SFID_COL = 1        ' колонка "SFaccId"
 Public Const ACCUPD_1CNAME_COL = 2      ' колонка "Acc1C"
+Public Const ACCUPD_INN_COL = 3         ' колонка "SFinn"
+Public Const ACCUPD_TEL_COL = 4         ' колонка "SFtel"
+Public Const ACCUPD_STREET_COL = 5      ' колонка "AccStreet"
+Public Const ACCUPD_CITY_COL = 6        ' колонка "AccCity"
+Public Const ACCUPD_INDEX_COL = 7       ' колонка "AccIndex"
+Public Const ACCUPD_STATE_COL = 8       ' колонка "AccState"
+Public Const ACCUPD_COUNTRY_COL = 9     ' колонка "AccCountry"
+Public Const ACCUPD_DELSTREET_COL = 10  ' колонка "fact Street"
+Public Const ACCUPD_DELCITY_COL = 11    ' колонка "fact City"
+Public Const ACCUPD_DELINDEX_COL = 12   ' колонка "fact Index"
+Public Const ACCUPD_DELSTATE_COL = 13   ' колонка "fact State"
+Public Const ACCUPD_DELCOUNTRY_COL = 14 ' колонка "fact Country"
 
 '................ Лист новых Договоров C_Contr ..........................
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
