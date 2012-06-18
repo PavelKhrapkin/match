@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} NewSFaccForm 
-   Caption         =   "Организация - Клиент 1С"
+   Caption         =   "Создание организации SF связанной с Клиентом 1С"
    ClientHeight    =   9165
    ClientLeft      =   45
    ClientTop       =   375
@@ -16,17 +16,21 @@ Attribute VB_Exposed = False
 
 
 
-
 Option Explicit
 
 Private Sub CancelButton_Click()
     Me.result.value = "cancel"
     Me.Hide
 End Sub
+
+Private Sub ExitButton_Click()
+    Me.result.value = "exit"
+    Me.Hide
+End Sub
 Private Sub AccSaveForSF_Click()
     
     If Not checkDigits(Me.INN, 10) Then
-        MsgBox "неверный ИНН"
+        MsgBox "ИНН неверен. Он должен состоять из 10 цифр."
     ElseIf checkAddr() Then
         Me.result.value = "save"
         Me.Hide
@@ -60,7 +64,7 @@ Private Function checkAddr() As Boolean
     Dim i As Long
     checkAddr = checkIndex(Me.Index)
     If Not checkAddr Then
-        MsgBox "неверный индекс"
+        MsgBox "индекс должен состоять из 10 цифр"
     End If
     If Trim(Me.Street) = "" Then
         MsgBox "не введено поле 'улица'"
@@ -72,7 +76,7 @@ Private Function checkAddr() As Boolean
     End If
     If Me.IndexD <> "" Or Me.StreetD <> "" Or Me.CityD <> "" Then
         If Not checkIndex(Me.IndexD) Then
-            MsgBox "неверный индекс факт. адреса"
+            MsgBox "индекс факт. адреса должен состоять из 10 цифр"
         End If
         If Trim(Me.StreetD) = "" Then
             MsgBox "не введено поле 'улица' факт. адреса"
@@ -91,7 +95,7 @@ Function checkIndex(Index) As Boolean
     checkIndex = checkDigits(Index, 6)
 End Function
 Function checkDigits(Index, ByVal lng As Long) As Boolean
-' проверить корректность почтового индекса: должно быть 6 символов и все - цифры.
+' проверить корректность почтового индекса / ИНН : должно быть lng символов и все - цифры.
     Dim i As Long
     checkDigits = False
     If Len(Index) <> lng Then GoTo exitFunction

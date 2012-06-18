@@ -1,10 +1,12 @@
 Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
-'   Пасс А.     13.6.12
+'   Пасс А.     17.6.12
 ' - CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
 ' - CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
+' - Client1CAnlz                                - проход по таблице клиентов 1С
 ' - SFPostAddr(indx As Long, SFacc As String)   - Стандартное представление почтового адреса
+' - DlgAccChoice                                - вызов формы "выбор предприятия SF для связывания"
 
 Option Explicit
 
@@ -335,13 +337,17 @@ End Sub
 'End Sub
 Sub Client1CAnlz()
 
+' проход по таблице клиентов 1С с поиском соответствующих клиентов SF
+' для связывания и возможной модификации клиентов SF
+'   17.6.12
+
     Dim i As Long, j As Long, k As Long
     Dim x() As String, s0 As String                     ' локальные переменные
     
     ModStart Acc1C, "Анализ справочника клиентов 1С"
     
     CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
-    CheckSheet Acc1C, 1, 5, "Название фирмы"
+    CheckSheet Acc1C, 1, A1C_NAME_COL, ACC1C_STAMP
     
     ClearSheet A_Acc, Range("HDR_AdAcc")
     ClearSheet AccntUpd, Range("HDR_AccntUpd")
@@ -373,6 +379,7 @@ Sub Client1CAnlz()
             hashSet accSFComps, accSFIndxs, x(j), s0 + Str(i)
         Next j
     Next i
+    
 '---------- Проход по справочнику клиентов 1С --------------------------
 
 ' EOL_AccntUpd - строка выходного файла - модификация предприятий SF
@@ -386,14 +393,17 @@ Sub Client1CAnlz()
     Dim accntName As String, accntNamePrev As String, wrSF As String
     Dim accntAddr As String
     Dim sfWrds() As String, SFWordIndx As Long
-    Dim Msg As String, MSG2 As String
+    Dim Msg As String
     Dim CompSNums(1 To 100) As Long, compNum As Long                ' номерa компонент имени
     Dim namSF(1 To 100) As String, count(1 To 100) As Long          ' SFacc полное имя
     Dim adrTxt(1 To 100) As String, kword(1 To 100) As String
-    Dim adrField As String, AdrSruct As PostAddr
+    Dim adrField As String
+    Dim AdrStruct As PostAddr, AdrStruct1C As PostAddr
+    Dim delAddrSF As PostAddr, factAddr1C As PostAddr
     Dim DlgRes As String
 
-    For i = 2 To EOL_Acc1C                                          ' цикл по справочнику 1С
+'    For i = 2 To EOL_Acc1C                                          ' цикл по справочнику 1С
+    For i = 1507 To EOL_Acc1C                                          ' цикл по справочнику 1С
         If ExRespond = False Then GoTo ExitSub
         
         With Sheets(Acc1C)
@@ -410,7 +420,7 @@ Sub Client1CAnlz()
                         
                         Msg = Str(i) + ":  ИМЯ 1С:     " + accntName + vbCrLf _
                             + "АДРЕС:              " + .Cells(i, A1C_ADR_COL)
-                        MSG2 = ""
+'                        MSG2 = ""
                         compNum = 0
                         ' Разбиваем 1С имя на слова и формируем запрос: ищем слова в хеше слов SF
                         sfWrds = split(LCase$(RemIgnored(accntName)))
@@ -471,9 +481,9 @@ Sub Client1CAnlz()
 '                   финальная подготовка текста
                         For j = 1 To compNum
                             If count(j) > 0 Then
-                                MSG2 = MSG2 + vbCrLf + vbCrLf + "            " _
-                                    + Format(j) + ".     '" + "'" + namSF(j) + "'            КЛЮЧИ: " + kword(j) _
-                                    + vbCrLf & "                 Адрес: " + adrTxt(j)
+'                                MSG2 = MSG2 + vbCrLf + vbCrLf + "            " _
+'                                    + Format(j) + ".     '" + "'" + namSF(j) + "'            КЛЮЧИ: " + kword(j) _
+'                                    + vbCrLf & "                 Адрес: " + adrTxt(j)
                             Else
                                 compNum = j - 1             ' модифицируем ограничение для диалога
                                 GoTo endLoopPrepTxt         ' и форсируем выход из цикла
@@ -482,18 +492,58 @@ Sub Client1CAnlz()
 endLoopPrepTxt:
         
 '                   Текст подготовлен. Запускаем диалог.
-                        DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, Msg, MSG2, namSF, adrTxt, kword)
+                        DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, Msg, namSF, adrTxt, kword)
                         If IsNumeric(DlgRes) Then  ' SF account id  + 1C id
 '                            MsgBox "выбрано " + DlgRes + vbCrLf + " (" _
 '                                + Sheets(Acc1C).Cells(i, A1C_NAME_COL) + "; " _
 '                                + Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_ACCNAME_COL) + "')" _
 
-                            EOL_AccntUpd = EOL_AccntUpd + 1
-                        ' связка: пара(id SF предприятия, 1С имя)
-                            With Sheets(AccntUpd)
-                                .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_IDACC_COL)
-                                .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
-                            End With
+
+                            
+
+
+                        ' Заполняем и вызываем форму
+                            SFaccMergeWith1C.SFacc = accntName
+                            SFaccMergeWith1C.name1C = namSF(CInt(DlgRes))
+                            Dim xx As String, yy
+                            xx = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INN_COL)
+                            yy = Sheets(Acc1C).Cells(i, A1C_INN_COL)
+                            SFaccMergeWith1C.setInn Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INN_COL), _
+                                                    Sheets(Acc1C).Cells(i, A1C_INN_COL)
+                            SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                                                    Sheets(Acc1C).Cells(i, A1C_TEL_COL)
+                                                    
+                            ' заполнение адресных полей формы
+                            AdrStruct.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_CITY_COL)
+                            AdrStruct.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STREET_COL)
+                            AdrStruct.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STATE_COL)
+                            AdrStruct.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INDEX_COL)
+                            AdrStruct.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_COUNTRY_COL)
+                            AdrStruct1C = AdrParse(Sheets(Acc1C).Cells(i, A1C_ADR_COL))
+                            delAddrSF.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCITY_COL)
+                            delAddrSF.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTREET_COL)
+                            delAddrSF.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTATE_COL)
+                            delAddrSF.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELINDEX_COL)
+                            delAddrSF.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCOUNTRY_COL)
+                            factAddr1C = AdrParse(Sheets(Acc1C).Cells(i, A1C_FACTADR_COL))
+                            SFaccMergeWith1C.setAddr AdrStruct, AdrStruct1C, delAddrSF, factAddr1C
+                           
+                            SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                                                    Sheets(Acc1C).Cells(i, A1C_TEL_COL)
+                            
+                            SFaccMergeWith1C.Show                               ' ВЫЗОВ ФОРМЫ
+                            
+                            If SFaccMergeWith1C.result = "exit" Then            ' обработка заполненной формы
+                                ExRespond = False
+                            ElseIf SFaccMergeWith1C.result = "save" Then
+                                EOL_AccntUpd = EOL_AccntUpd + 1
+                                With Sheets(AccntUpd)
+                                    .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_IDACC_COL)
+                                    .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
+                                    .Cells(EOL_AccntUpd, ACCUPD_INN_COL) = SFaccMergeWith1C.innSF
+                                    .Cells(EOL_AccntUpd, ACCUPD_TEL_COL) = SFaccMergeWith1C.telSF
+                                End With
+                            End If  'если ни одно условие не выполнено - нажато "Пропустить'
                         ElseIf DlgRes = "create" Then
                             ' заполняем поля формы: имя 1С, имя SF (сейчас они идентичны)
                             NewSFaccForm.Adr1C.Caption = Sheets(Acc1C).Cells(i, A1C_NAME_COL)
@@ -501,26 +551,26 @@ endLoopPrepTxt:
                             
                             ' почтовый адрес
                             s0 = Trim(Sheets(Acc1C).Cells(i, A1C_ADR_COL))
-                            AdrSruct = AdrParse(s0)
-                            NewSFaccForm.Area.value = AdrSruct.State
-                            NewSFaccForm.City.value = AdrSruct.City
-                            NewSFaccForm.Street.value = AdrSruct.Street
-                            NewSFaccForm.Index.value = AdrSruct.PostIndex
-                            NewSFaccForm.Country.value = AdrSruct.Country
+                            AdrStruct = AdrParse(s0)
+                            NewSFaccForm.Area.value = AdrStruct.State
+                            NewSFaccForm.City.value = AdrStruct.City
+                            NewSFaccForm.Street.value = AdrStruct.Street
+                            NewSFaccForm.Index.value = AdrStruct.PostIndex
+                            NewSFaccForm.Country.value = AdrStruct.Country
                             ' фактический адрес(1С) / адрес доставки(SF)
                             s0 = Trim(Sheets(Acc1C).Cells(i, A1C_FACTADR_COL))
-                            AdrSruct = AdrParse(s0)
-                            NewSFaccForm.AreaD.value = AdrSruct.State
-                            NewSFaccForm.CityD.value = AdrSruct.City
-                            NewSFaccForm.StreetD.value = AdrSruct.Street
-                            NewSFaccForm.IndexD.value = AdrSruct.PostIndex
-                            NewSFaccForm.CountryD.value = AdrSruct.Country
+                            AdrStruct = AdrParse(s0)
+                            NewSFaccForm.AreaD.value = AdrStruct.State
+                            NewSFaccForm.CityD.value = AdrStruct.City
+                            NewSFaccForm.StreetD.value = AdrStruct.Street
+                            NewSFaccForm.IndexD.value = AdrStruct.PostIndex
+                            NewSFaccForm.CountryD.value = AdrStruct.Country
                             
                             NewSFaccForm.contact.value = Sheets(Acc1C).Cells(i, A1C_CON_COL)
                             Dim INN
-                            INN = Sheets(Acc1C).Cells(i, A1C_INN_COL)
+                            INN = Trim(Sheets(Acc1C).Cells(i, A1C_INN_COL))
                             If INN <> "" Then INN = split(INN, "/")(0)
-                            NewSFaccForm.INN = INN
+                            NewSFaccForm.INN = Trim(INN)
                             NewSFaccForm.phone.value = Sheets(Acc1C).Cells(i, A1C_TEL_COL)
                             
                             ' справочные поля - не вводятся
@@ -530,7 +580,9 @@ endLoopPrepTxt:
                             NewSFaccForm.Show vbModal
                             
                             DlgRes = NewSFaccForm.result.value
-                            If DlgRes = "save" Then
+                            If DlgRes = "exit" Then
+                                ExRespond = False
+                            ElseIf DlgRes = "save" Then
                                 EOL_AdAcc = EOL_AdAcc + 1
 '                                MsgBox NewSFaccForm.SFacc.value _
 '                                    + vbCrLf + NewSFaccForm.Adr1C.value _
@@ -539,23 +591,23 @@ endLoopPrepTxt:
 '                                    + vbCrLf + NewSFaccForm.Street.value _
 '                                    + vbCrLf + NewSFaccForm.Index.value _
 '                                    + vbCrLf + NewSFaccForm.Country.value
-                            With Sheets(A_Acc)
-                                .Cells(EOL_AdAcc, ADACC_NAME_COL) = NewSFaccForm.SFacc
-                                .Cells(EOL_AdAcc, ADACC_1CNAME_COL) = NewSFaccForm.Adr1C
-                                .Cells(EOL_AdAcc, ADACC_CITY_COL) = NewSFaccForm.City.value
-                                .Cells(EOL_AdAcc, ADACC_STATE_COL) = NewSFaccForm.Area.value
-                                .Cells(EOL_AdAcc, ADACC_STREET_COL) = NewSFaccForm.Street.value
-                                .Cells(EOL_AdAcc, ADACC_INDEX_COL) = NewSFaccForm.Index.value
-                                .Cells(EOL_AdAcc, ADACC_COUNTRY_COL) = NewSFaccForm.Country.value
-                                .Cells(EOL_AdAcc, ADACC_CONTACT1C_COL) = NewSFaccForm.contact.value
-                                .Cells(EOL_AdAcc, ADACC_INN_COL) = NewSFaccForm.INN
-                                .Cells(EOL_AdAcc, ADACC_TEL_COL) = NewSFaccForm.phone.value
-                                .Cells(EOL_AdAcc, ADACC_FACTCITY_COL) = NewSFaccForm.CityD.value
-                                .Cells(EOL_AdAcc, ADACC_FACTSTATE_COL) = NewSFaccForm.AreaD.value
-                                .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD.value
-                                .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD.value
-                                .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD.value
-                            End With
+                                With Sheets(A_Acc)
+                                    .Cells(EOL_AdAcc, ADACC_NAME_COL) = NewSFaccForm.SFacc
+                                    .Cells(EOL_AdAcc, ADACC_1CNAME_COL) = NewSFaccForm.Adr1C
+                                    .Cells(EOL_AdAcc, ADACC_CITY_COL) = NewSFaccForm.City.value
+                                    .Cells(EOL_AdAcc, ADACC_STATE_COL) = NewSFaccForm.Area.value
+                                    .Cells(EOL_AdAcc, ADACC_STREET_COL) = NewSFaccForm.Street.value
+                                    .Cells(EOL_AdAcc, ADACC_INDEX_COL) = NewSFaccForm.Index.value
+                                    .Cells(EOL_AdAcc, ADACC_COUNTRY_COL) = NewSFaccForm.Country.value
+                                    .Cells(EOL_AdAcc, ADACC_CONTACT1C_COL) = NewSFaccForm.contact.value
+                                    .Cells(EOL_AdAcc, ADACC_INN_COL) = NewSFaccForm.INN
+                                    .Cells(EOL_AdAcc, ADACC_TEL_COL) = NewSFaccForm.phone.value
+                                    .Cells(EOL_AdAcc, ADACC_FACTCITY_COL) = NewSFaccForm.CityD.value
+                                    .Cells(EOL_AdAcc, ADACC_FACTSTATE_COL) = NewSFaccForm.AreaD.value
+                                    .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD.value
+                                    .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD.value
+                                    .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD.value
+                                End With
                             
                             End If
                             
@@ -589,12 +641,14 @@ Function SFPostAddr(ByVal indx As Long, SFacc As String)
                 + "," + .Cells(indx, SFACC_COUNTRY_COL)), ",,", ",")
     End With
 End Function
-Function DlgAccChoice(CompSNums, count, idCol, Msg, MSG2, namSF, addrTxt, kword)
+Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     ' CompSNums - массив номеров строк в таблице
     ' count     - actual possibility count
     ' idCol     - номер колонки в таблице
     ' MSG       - заголовок запроса к оператору, часть, не зависящая от выбора
-    ' MSG2      - список предложений для выбора
+    ' namSF     - имена предприятий
+    ' addrTxt   - адреса предприятий
+    ' kword     - ключевые слова по которым предприятия выбраны
     
     Dim i As Long
     
@@ -604,55 +658,52 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, MSG2, namSF, addrTxt, kword)
     End If
     
     DlgAccChoice = "cont"       ' если связывать не будем - останется так
- '   If MSG2 <> "" Then
-        SFaccountForm.accntChoice.ColumnCount = 3
-        Do
-            ' заполнение listbox
-            Do While SFaccountForm.accntChoice.ListCount <> 0
-                SFaccountForm.accntChoice.RemoveItem 0
-            Loop
-            For i = 1 To count
-                SFaccountForm.accntChoice.AddItem
-                SFaccountForm.accntChoice.List(i - 1, 0) = namSF(i)
-                SFaccountForm.accntChoice.List(i - 1, 1) = addrTxt(i)
-                SFaccountForm.accntChoice.List(i - 1, 2) = kword(i)
-            Next i
-                        
-            SFaccountForm.TextBox2.value = Msg          ' + MSG2       ' основной текст
-            If count = 1 Then
-                SFaccountForm.TextBox1.value = "1"
-            Else
-                SFaccountForm.accntChoice.ListIndex = -1
-                SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
-            End If
-            
-            ' ok button & textbox enabled only when count <> 0
-'            SFaccountForm.TextBox1.Visible = True
-            SFaccountForm.OKButton.Visible = True
-            If count = 0 Then
-'                SFaccountForm.TextBox1.Visible = False
-                SFaccountForm.OKButton.Visible = False
-            End If
-            SFaccountForm.Show vbModal
-            
-            Dim inpt As String, j As Long
-            inpt = SFaccountForm.TextBox1
-            j = 0                                           ' на случай некорректного ввода, к след. account'у
-            If IsNumeric(inpt) Then
-                j = CInt(inpt)
-                If j > 0 And j <= count Then
-                    DlgAccChoice = j
-                    GoTo endloop
-                End If
-            ElseIf inpt = "exit" Or inpt = "cont" Or inpt = "create" Then
-                DlgAccChoice = inpt
-                GoTo endloop                            '
-            End If
-            If MsgBox("Некорректное значение номера: '" + inpt + "' Продолжать?", vbYesNo) <> vbYes Then Exit Do
+    SFaccountForm.accntChoice.ColumnCount = 3
+    Do                          ' цикл по предпиятиям, которые можно связать
+        ' сделать listbox пустым
+        Do While SFaccountForm.accntChoice.ListCount <> 0
+            SFaccountForm.accntChoice.RemoveItem 0
         Loop
+        ' заполнение listbox
+        For i = 1 To count
+            SFaccountForm.accntChoice.AddItem
+            SFaccountForm.accntChoice.List(i - 1, 0) = namSF(i)
+            SFaccountForm.accntChoice.List(i - 1, 1) = addrTxt(i)
+            SFaccountForm.accntChoice.List(i - 1, 2) = kword(i)
+        Next i
+                    
+        SFaccountForm.TextBox2 = Msg                        ' основной текст: имя SF, адрес SF
+        If count = 1 Then
+            SFaccountForm.TextBox1.value = "1"              ' если выбора нет, уставливаем default
+            SFaccountForm.accntChoice.ListIndex = 0         ' listbox - выбрана единственная строка
+        Else
+            SFaccountForm.accntChoice.ListIndex = -1        ' listbox - не выбрано
+            SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
+        End If
+        
+        ' textbox невидим, ОК ("Связать") - если есть возможность связать
+        SFaccountForm.OKButton.Visible = True
+        If count = 0 Then SFaccountForm.OKButton.Visible = False
+        
+        SFaccountForm.Show vbModal                      ' входим в диалог
+        
+        Dim inpt As String, j As Long
+        inpt = SFaccountForm.TextBox1
+        j = 0                                           ' на случай некорректного ввода, к след. account'у
+        If IsNumeric(inpt) Then
+            j = CInt(inpt)
+            If j > 0 And j <= count Then
+                DlgAccChoice = j
+                GoTo endloop
+            End If
+        ElseIf inpt = "exit" Or inpt = "cont" Or inpt = "create" Then
+            DlgAccChoice = inpt
+            GoTo endloop                            '
+        End If
+        If MsgBox("Необходимо выбрать предприятие. Продолжать?", vbYesNo) <> vbYes Then Exit Do
+    Loop
 endloop:
-        If inpt = "exit" Then ExRespond = False
-'    End If
+    If inpt = "exit" Then ExRespond = False
 
 End Function
 Function switch(kword, j, k)
