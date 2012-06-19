@@ -6,12 +6,12 @@ Attribute VB_Name = "AccountAnalitics"
 ' (*) PaymentAccPass() - Проход по листу Платежей 1С для внесения
 '                        новых Организаций в SF
 '  -  RemIgnored(Client) - удаление игнорируемых слов из строки Client
-'  -  FindAcc(Client)   - поиск Организации в SF по Словарю A_Dic
+'''''  -  FindAcc(Client)   - поиск Организации в SF по Словарю A_Dic
 ' x?x NewAcc(Client)    - занесение новой Организации в SF
 '  ?  Adr1c(Client)     - адрес клиента 1С или CSIS_MS
 '  ?  AdrSF(id)         - адрес Организации по ее Id в SF
 '
-'   23.5.2012
+'   19.6.2012
 
 Option Explicit
 
@@ -21,16 +21,18 @@ Sub SFaccDicBuild()
 '   19.4.12
 '  7.5.12 - во второй колонке словаря имя организации в 1С
 ' 23.5.12 - используем SheetDedup2 для А_Dic
+' 19.6.12 - добавил колонку 3 IdSFass в A_DIC
 
     Dim i, j As Integer
     
     Dim Acc As String
     Dim Acc1C As String
+    Dim IdSFacc As String
     Dim accWords() As String
     
     Lines = ModStart(SFacc, "SFaccDicBuild: Построение Словаря Организаций", True) - SFresLines
     
-    CheckSheet SFacc, Lines + 2, 1, SFaccRepName
+    CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
     ClearSheet A_Dic, Range("HDR_AccDic")
 
     For i = 2 To Lines
@@ -39,18 +41,19 @@ Sub SFaccDicBuild()
         
         Acc = LCase$(Sheets(SFacc).Cells(i, SFACC_ACCNAME_COL))
         Acc1C = Sheets(SFacc).Cells(i, SFACC_ACC1C_COL)
+        IdSFacc = Sheets(SFacc).Cells(i, SFACC_IDACC_COL)
         accWords = split(RemIgnored(Acc), " ")
         
         For j = LBound(accWords) To UBound(accWords)
             EOL_DIC = EOL_DIC + 1
             Sheets(A_Dic).Cells(EOL_DIC, 1) = accWords(j)
             Sheets(A_Dic).Cells(EOL_DIC, 2) = Acc1C
+            Sheets(A_Dic).Cells(EOL_DIC, 3) = IdSFacc
         Next j
     Next i
 
     Call SheetDedup2(A_Dic, 1, 2)
     
-    Sheets(A_Dic).Cells(1, 3) = Date & " " & Time
     ModEnd A_Dic
 End Sub
 Sub PaymentAccPass()
@@ -68,7 +71,7 @@ Sub PaymentAccPass()
     
     CheckSheet 1, 1, 6, Stamp1Cpay1    ' проверяем правильность отчета по платежам 1С
     CheckSheet 1, 1, 7, Stamp1Cpay2
-    ClearSheet A_Acc, Range("HDR_AdAcc")    ' котовим лист новых Организаций
+    ClearSheet A_Acc, Range("HDR_AdAcc")    ' готовим лист новых Организаций
     EOL_DIC = EOL(A_Dic)
     EOL_Acc1C = EOL(Acc1C)
     
@@ -81,7 +84,7 @@ i = i
 End If
         If Sheets(1).Cells(i, 1) <> 1 Then
             Acc = Sheets(1).Cells(i, PAYACC_COL)
-            If FindAcc(Acc) = "*" Then
+            If FindAcc(Acc) = "$" Then
                 AdAccFr1C Acc           ' такой Организации нет в SF - занесем!
             End If
         End If
@@ -97,9 +100,9 @@ End If
 End Sub
 Sub testRemIgnored()
     Dim cmp As Integer
-    Dim T As String
+    Dim t As String
     
-    T = RemIgnored("OOO")
+    t = RemIgnored("OOO")
     cmp = StrComp("ооо", "аорг", vbTextCompare)
 End Sub
 
@@ -167,36 +170,6 @@ Function RemIgnored(Client) As String
     Next i
     
 End Function
-Function FindAcc(Client) As String
-'
-' FindAcc(Client) - поиск Организации в SF по Словарю A_Dic
-'   8.5.12
-
-    Dim i As Integer
-    
-    Dim Acc As String, x As String
-    Dim accWords() As String
-    
-' ----------- убираем все аббревиатуры ------------------------
-    If Client = "" Then GoTo NotFound
-    Acc = RemIgnored(Client)
-    If Acc = "" Then GoTo NotFound
-    accWords = split(Acc, " ")
-' ----- ищем совпадающие с именем Client слова в A_Dic ----------
-    For i = LBound(accWords) To UBound(accWords)
-        x = ""
-        On Error Resume Next
-        x = WorksheetFunction.VLookup(accWords(i), _
-                Sheets(A_Dic).Range("A:B"), 2, False)
-        On Error GoTo 0
-        If x <> "" Then
-            FindAcc = x
-            Exit Function
-        End If
-    Next i
-NotFound:
-    FindAcc = "*"
-End Function
 Function NewAcc(Client) As String
 '
 ' формирование новой Организации в SF по данным Справочника 1С
@@ -210,7 +183,7 @@ End If
     Dim SFwords() As String
     Dim SFname As String
     Dim i, j, k
-    Dim MSG, Respond
+    Dim Msg, Respond
     Dim AccId, id As String
     
     NewAcc = "": AccId = ""
@@ -265,7 +238,7 @@ End If
     If AccId = "" Then AccId = "*"
     NewAcc = AccId
 End Function
-Function Adr1c(Client) As String
+Function Adr1C(Client) As String
 '
 ' Adr1c(Client) - адрес клиента 1С или CSIS_MS - пока пустышка
 '
@@ -275,5 +248,24 @@ Function AdrSF(id)
 ' AdrSF(id) - адрес Организации по ее Id в SF
 '
 End Function
+Function IsAccSF(Str, iSFacc) As Boolean
+'
+' - IsAccSF(Str, iSFacc) - возвращает TRUE и номер строки в SFacc,
+'                      если найдена Огранизация в SF по строке Str
+'   19.6.12
 
+    Dim S() As String   '= строка Str разбитая на слова по пробелам
+    Dim i As Integer
+    
+    IsAccSF = False: iSFacc = 0
+    If Str = "" Then Exit Function
+    
+    S = split(RemIgnored(Str), " ")
+    
+    With Sheets(A_Dic)
+        For i = LBound(S) To UBound(S)
+            
+        Next i
+    End With
+End Function
 
