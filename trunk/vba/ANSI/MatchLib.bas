@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта MatchSF-1C
 '
-' П.Л.Храпкин, А.Пасс 17.6.2012
+' П.Л.Храпкин, А.Пасс 19.6.2012
 '
 ' - ModStart(SheetN, MSG)       - начало модуля работы с Листом SheetN
 ' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
@@ -114,9 +114,14 @@ Sub ModEnd(SheetN)
 ' подпрограмма завершения работы Модуля с листом SheetN
 '  15.2.2012
 '  19.4.12  - восстановление вывода Excel
+'  19.6.12  - текущие дата и время в самой правой колонке SheetN
 
     Dim i
+    Dim Col As Integer  '= всего колонок в SheetN
 
+    Col = Sheets(SheetN).UsedRange.Columns.count
+    Sheets(SheetN).Cells(1, Col + 1) = Now
+    
     i = AutoFilterReset(SheetN)
     ActiveSheet.Range("A" & i).Select
     ProgressForm.Hide
@@ -422,7 +427,6 @@ Sub SheetSort(SheetN, Col)
 
     Dim Name As String
 
-'    Sheets(SheetN).Select
     Call AutoFilterReset(SheetN)
 
     Name = ActiveSheet.Name
@@ -504,7 +508,7 @@ Sub DateCol(SheetN, Col)
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
 
-    Dim i, DD, MM, YY As Integer
+    Dim i, DD, MM, yy As Integer
     Dim Dat As Date
     Dim D() As String
     
@@ -515,8 +519,8 @@ Sub DateCol(SheetN, Col)
             If DD < 1 Or DD > 31 Then GoTo NXT
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo NXT
-            YY = D(2)
-            Dat = DD & "." & MM & "." & YY
+            yy = D(2)
+            Dat = DD & "." & MM & "." & yy
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
 NXT:
@@ -566,11 +570,11 @@ Sub Progress(Pct)
         .Repaint
     End With
     
-    Static T
+    Static t
     Dim R As String
-    If T = 0 Then T = Timer
-    If Timer - T > 20 Then
-        T = Timer
+    If t = 0 Then t = Timer
+    If Timer - t > 20 Then
+        t = Timer
         R = MsgBox("Дальше?", vbYesNo)
         If R = vbNo Then ExRespond = False
     End If
@@ -606,14 +610,14 @@ Function RemDelimiters(S)
     Next i
     RemDelimiters = S
 End Function
-Function Compressor(s1 As Variant)
+Function Compressor(S1 As Variant)
 '
 ' удаление лишних пробелов внутри строки
 '   7.3.12  из Интернет
 '   7.6.12 удаляем vbCcLf
 
     Dim S As Variant
-    S = Replace(s1, vbCrLf, " ")
+    S = Replace(S1, vbCrLf, " ")
     S = Trim(S)
     While InStr(1, S, "  ") <> 0
        S = Left(S, InStr(1, S, "  ") - 1) & Right(S, Len(S) - InStr(1, S, "  "))
