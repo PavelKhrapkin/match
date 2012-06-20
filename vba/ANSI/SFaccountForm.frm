@@ -15,8 +15,9 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 
+
 Private Sub accntChoice_Click()
-    SFaccountForm.TextBox1 = str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
+    SFaccountForm.TextBox1 = Str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
 End Sub
 
 Private Sub createbutton_Click()
@@ -25,6 +26,14 @@ Private Sub createbutton_Click()
 
 End Sub
 
+
+Private Sub Label3_Click()
+
+End Sub
+
+Private Sub Label4_Click()
+
+End Sub
 
 Private Sub OKButton_Click()
     SFaccountForm.Hide
@@ -44,7 +53,7 @@ Private Sub TextBox2_Change()
 End Sub
 
 Private Sub accntChoice_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
-    SFaccountForm.TextBox1 = str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
+    SFaccountForm.TextBox1 = Str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
     SFaccountForm.Hide
 End Sub
 
