@@ -16,6 +16,7 @@ Attribute VB_Exposed = False
 
 
 
+
 Option Explicit
 
 Private Sub CancelButton_Click()
@@ -64,7 +65,7 @@ Private Function checkAddr() As Boolean
     Dim i As Long
     checkAddr = checkIndex(Me.Index)
     If Not checkAddr Then
-        MsgBox "индекс должен состоять из 10 цифр"
+        MsgBox "индекс должен состоять из 6 цифр"
     End If
     If Trim(Me.Street) = "" Then
         MsgBox "не введено поле 'улица'"
@@ -76,7 +77,7 @@ Private Function checkAddr() As Boolean
     End If
     If Me.IndexD <> "" Or Me.StreetD <> "" Or Me.CityD <> "" Then
         If Not checkIndex(Me.IndexD) Then
-            MsgBox "индекс факт. адреса должен состоять из 10 цифр"
+            MsgBox "индекс факт. адреса должен состоять из 6 цифр"
         End If
         If Trim(Me.StreetD) = "" Then
             MsgBox "не введено поле 'улица' факт. адреса"
