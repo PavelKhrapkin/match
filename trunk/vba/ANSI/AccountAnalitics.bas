@@ -52,7 +52,7 @@ Sub SFaccDicBuild()
         Next j
     Next i
 
-    Call SheetDedup2(A_Dic, 1, 2)
+    Call SheetDedup2(A_Dic, 1, 2, 3)
     
     ModEnd A_Dic
 End Sub
@@ -114,9 +114,9 @@ Function RemIgnored(Client) As String
 '   21.5.12 - отладка
 
     Dim i As Long, j As Long, rLow As Long, rUp As Long
-    Dim S As String
+    Dim s As String
 
-    S = RemDelimiters(LCase$(Client))
+    s = RemDelimiters(LCase$(Client))
     
     Dim Swords() As String
     Dim pattern As String
@@ -128,7 +128,7 @@ Function RemIgnored(Client) As String
     Dim cmp As Integer
     
     RemIgnored = ""
-    Swords = split(Compressor(S), " ")
+    Swords = split(Compressor(s), " ")
       
     rLow = Sheets(We).Range("Glossary").Row - 1
     rUp = Sheets(We).Range("Glossary").End(xlDown).Row + 1
@@ -184,7 +184,7 @@ End If
     Dim SFname As String
     Dim i, j, k
     Dim Msg, Respond
-    Dim AccId, id As String
+    Dim AccId, Id As String
     
     NewAcc = "": AccId = ""
 ' ----------- убираем все аббревиатуры ------------------------
@@ -243,29 +243,75 @@ Function Adr1C(Client) As String
 ' Adr1c(Client) - адрес клиента 1С или CSIS_MS - пока пустышка
 '
 End Function
-Function AdrSF(id)
+Function AdrSF(Id)
 '
 ' AdrSF(id) - адрес Организации по ее Id в SF
 '
 End Function
+Sub testIsAccSF()
+    Dim i(10), A(10)
+'    A(1) = IsAccSF("abbyy", i(1))
+'    A(2) = IsAccSF("Акрон", i(2))
+'    A(3) = IsAccSF("Роспроект", i(3))
+    A(4) = IsAccSF("ООО «Газпром трансгаз Уфа»", i(4))
+    A(2) = IsAccSF("Гипротюменьнефтегаз", i(2))
+    A(3) = IsAccSF("Студия-44", i(3))
+End Sub
+
 Function IsAccSF(Str, iSFacc) As Boolean
 '
 ' - IsAccSF(Str, iSFacc) - возвращает TRUE и номер строки в SFacc,
 '                      если найдена Огранизация в SF по строке Str
 '   19.6.12
 
-    Dim S() As String   '= строка Str разбитая на слова по пробелам
-    Dim i As Integer
+    Dim s() As String   '= строка Str разбитая на слова по пробелам
+    Dim AccId As String '= Id Организации из A_Dic
+    Dim Id0 As String   '= Id по первому слову в Str
+    Dim i As Integer, j As Integer
+    Dim x() As String   '= массив Id по слову в Str
     
     IsAccSF = False: iSFacc = 0
     If Str = "" Then Exit Function
     
-    S = split(RemIgnored(Str), " ")
+    s = split(RemIgnored(Str), " ")
     
-    With Sheets(A_Dic)
-        For i = LBound(S) To UBound(S)
-            
-        Next i
-    End With
-End Function
+    For i = LBound(s) To UBound(s)
+        AccId = ""
+        On Error Resume Next
+        AccId = WorksheetFunction.VLookup(s(i), _
+            Sheets(A_Dic).Range("A:C"), 3, False)
+        On Error GoTo 0
+        
+        If i = LBound(s) Then
+            Id0 = AccId
+        Else
+            Id0 = xId(Id0, AccId)
+        End If
+    Next i
+    If Id0 = "" Then Exit Function
+    If InStr(Id0, "+") <> 0 Then
+        ErrMsg TYPE_ERR, "Необходим диалог для выбора Организации"
+    Stop
+    End If
 
+    iSFacc = WorksheetFunction.Match(Id0, _
+        Sheets(SFacc).Range("C:C"), 0)
+    IsAccSF = True
+End Function
+Function xId(Id1, Id2) As String
+'
+' - xId(Id1, Id2) - пересечение строк Id1 и Id2 разделенных "+"
+'   20.6.12
+
+    Dim s() As String
+    Dim i As Integer
+    
+    s = split(Id2, "+")
+    xId = ""
+    For i = LBound(s) To UBound(s)
+        If InStr(Id1, s(i)) <> 0 Then
+            If xId <> "" Then xId = xId & "+"
+            xId = xId & s(i)
+        End If
+    Next i
+End Function
