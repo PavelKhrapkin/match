@@ -2,10 +2,10 @@ Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
 '   Пасс А.     20.6.12
-' - CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
-' - CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
-' - PaymntCl1CAnlz()                            - обработка клиентов 1С по листу "лист новых Платежей"
-' - Client1CAnlz                                - обработка клиентов 1С по листу "Список клиентов 1C"
+'(?)CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
+'(?)CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
+'(*)PaymntCl1CAnlz()                            - обработка клиентов 1С по листу "лист новых Платежей"
+'(*)Client1CAnlz                                - обработка клиентов 1С по листу "Список клиентов 1C"
 ' - client1CProcess(ByVal accntName As String)  - обработка одного клиента 1С
 ' - SFPostAddr(indx As Long, SFacc As String)   - Стандартное представление почтового адреса
 ' - DlgAccChoice                                - вызов формы "выбор предприятия SF для связывания"
@@ -187,12 +187,12 @@ BreakForI:
 End Sub
 Sub PaymntCl1CAnlz()
 
-'   обработка клиентов 1С по листу "лист новых Платежей"
-'       19.06.12
+'   обработка клиентов 1С по листу "Платежей"
+'       22.06.12
 
     Dim i As Long, j As Long, k As Long
 
-    ModStart P_Paid, "Анализ лист новых Платежей"
+    ModStart PAY_SHEET, "Анализ лист новых Платежей"
     
     CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
     CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
@@ -200,7 +200,7 @@ Sub PaymntCl1CAnlz()
     ClearSheet A_Acc, Range("HDR_AdAcc")
     ClearSheet AccntUpd, Range("HDR_AccntUpd")
     
-    For i = 2 To EOL_Acc1C
+    For i = 2 To EOL_PaySheet
         If ExRespond = False Then GoTo ExitSub
         client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL)      ' параметр - имя клиента 1С
     Next i
