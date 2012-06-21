@@ -17,6 +17,7 @@ Attribute VB_Exposed = False
 
 
 
+
 Option Explicit
 
 Private Sub CancelButton_Click()
@@ -55,6 +56,10 @@ Private Sub Label12_Click()
 End Sub
 
 Private Sub Label2_Click()
+
+End Sub
+
+Private Sub Label3_Click()
 
 End Sub
 
