@@ -141,17 +141,17 @@ Sub MS(Msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
 '   11.6.12
-    ErrMsg TYPE_ERR, Msg
+    ErrMsg TYPE_ERR, Msg, False
 End Sub
 
-Sub ErrMsg(ErrMode, Msg)
+Sub ErrMsg(ErrMode, Msg, Optional ByVal contRequest As Boolean = True)
 '
 ' - ErrMsg(ErrMode, MSG) - вывод сообщения об ощибке в Log и на экран
 '                          Коды ErrMode определены в Declaration
 '   31.5.12
 
     Dim ErrType As String, Respond As String
-
+    
     Select Case ErrMode
     Case WARNING:
         LogWr "< WARNING > " & Msg
@@ -159,10 +159,15 @@ Sub ErrMsg(ErrMode, Msg)
         
     Case TYPE_ERR:
         LogWr "ВНИМАНИЕ:" & Msg
-        Respond = MsgBox(Msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
-        If Respond = vbNo Then
-            ExRespond = False
-            Stop
+        
+        If contRequest Then
+            Respond = MsgBox(Msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
+            If Respond = vbNo Then
+                ExRespond = False
+                Stop
+            End If
+        Else
+            MsgBox Msg
         End If
         Exit Sub
         
@@ -604,7 +609,8 @@ Function RemDelimiters(S)
                 Or (smb >= "А" And smb <= "Я") _
                 Or (smb >= "а" And smb <= "я") _
                 Or smb = "ъ" Or smb = "Ъ" _
-                Or smb = "ё" Or smb = "Ё") Then
+                Or smb = "ё" Or smb = "Ё" _
+                Or smb = "№") Then
             Mid(S, i, 1) = " "      ' символ недопустим, заменяем на пробел
         End If
     Next i

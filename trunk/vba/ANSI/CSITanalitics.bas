@@ -202,22 +202,25 @@ Sub PaymntCl1CAnlz()
     
     For i = 2 To EOL_PaySheet
         If ExRespond = False Then GoTo ExitSub
+'If InStr(LCase$(Sheets(PAY_SHEET).Cells(i, PAYACC_COL)), "томс") <> 0 Then
+'    i = i
+'End If
         client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL)      ' параметр - имя клиента 1С
     Next i
 ExitSub:
+    MS "ИТОГ: создано " + (Str(EOL_AdAcc - 1)) + "; связано " + (Str(EOL_AccntUpd - 1))
+    
     ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Account\"
     WriteCSV A_Acc, "AdAcc.txt"
     Shell "quota_Acc.bat"
     
     WriteCSV AccntUpd, "AccntUpd.txt"
     Shell "quotaAccUpd.bat"
-    
-    MS "ИТОГ: created " + Str(EOL_AdAcc) + " linked " + Str(EOL_AccntUpd)
 End Sub
 Sub Client1CAnlz()
 
 '   обработка клиентов 1С по листу "Список клиентов 1C"
-'       19.06.12
+'       22.06.12
 
     Dim i As Long, j As Long, k As Long
 
@@ -236,14 +239,14 @@ Sub Client1CAnlz()
         End If
     Next i
 ExitSub:
+    MS "ИТОГ: создано " + (Str(EOL_AdAcc - 1)) + "; связано " + (Str(EOL_AccntUpd - 1))
+    
     ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Account\"
     WriteCSV A_Acc, "AdAcc.txt"
     Shell "quota_Acc.bat"
     
     WriteCSV AccntUpd, "AccntUpd.txt"
     Shell "quotaAccUpd.bat"
-    
-    MS "ИТОГ: created " + Str(EOL_AdAcc) + " linked " + Str(EOL_AccntUpd)
 End Sub
 
 Sub client1CProcess(ByVal accntName As String)
@@ -252,7 +255,7 @@ Sub client1CProcess(ByVal accntName As String)
 '   accntName - имя клиента
 '       19.06.12
 
-    Dim s0 As String, s1() As String                    ' локальные переменные
+    Dim s0 As String, S1() As String                    ' локальные переменные
     Dim i As Long, j As Long, k As Long
     
     Static hashFlag As Boolean                              ' инициализировано в False
@@ -266,6 +269,9 @@ Sub client1CProcess(ByVal accntName As String)
     
         hashInit accSF, accSFind
         For i = 2 To EOL_SFacc
+'If InStr(LCase$(Sheets(SFacc).Cells(i, SFACC_ACC1C_COL)), "томс") <> 0 Then
+'    i = i
+'End If
             hashSet accSF, accSFind, Compressor(Sheets(SFacc).Cells(i, SFACC_ACC1C_COL)), CInt(i)
         Next i
     
@@ -275,15 +281,15 @@ Sub client1CProcess(ByVal accntName As String)
         
         hashInit accSFComps, accSFIndxs
         For i = 2 To EOL_SFacc
-            s1 = split(LCase$(RemIgnored(Trim$(Sheets(SFacc).Cells(i, SFACC_ACCNAME_COL)))))
-            For j = 0 To UBound(s1)
-                s0 = hashGet(accSFComps, accSFIndxs, s1(j))     ' допустимо несколько
+            S1 = split(LCase$(RemIgnored(Trim$(Sheets(SFacc).Cells(i, SFACC_ACCNAME_COL)))))
+            For j = 0 To UBound(S1)
+                s0 = hashGet(accSFComps, accSFIndxs, S1(j))     ' допустимо несколько
                 If s0 <> "$" Then                               ' индексов для одного account'a
                     s0 = s0 + "$"                               ' разделенных "$"
                 Else
                     s0 = ""
                 End If
-                hashSet accSFComps, accSFIndxs, s1(j), s0 + Str(i)
+                hashSet accSFComps, accSFIndxs, S1(j), s0 + Str(i)
             Next j
         Next i
         hashInit acc1CHashKey, acc1CHashVal                     ' инициализация хеша дедупликации
@@ -312,7 +318,8 @@ Sub client1CProcess(ByVal accntName As String)
 
     s0 = hashGet(acc1CHashKey, acc1CHashVal, LCase$(accntName))
     If s0 = "$" Then
-        ErrMsg TYPE_ERR, "client1CProcess: клиента '" + accntName + "' нет в справочнике клиентов 1С"
+                                                                    ' false - без stop'а и запроса "продолжить?"
+        ErrMsg TYPE_ERR, "client1CProcess: клиента '" + accntName + "' нет в справочнике клиентов 1С", False
         GoTo exitProc           ' выходим
     End If
     clIndx = CInt(s0)
@@ -337,13 +344,13 @@ Sub client1CProcess(ByVal accntName As String)
             For SFWordIndx = 0 To UBound(sfWrds)
                 wrSF = hashGet(accSFComps, accSFIndxs, sfWrds(SFWordIndx))
                 If wrSF <> "$" Then
-                    s1 = split(wrSF, "$")
-                    For j = 0 To UBound(s1)
-                        adrField = SFPostAddr(s1(j), SFacc)
+                    S1 = split(wrSF, "$")
+                    For j = 0 To UBound(S1)
+                        adrField = SFPostAddr(S1(j), SFacc)
                         If adrField <> "" Then    ' пропускаем строки без адреса
                             compNum = compNum + 1           ' считаем варианты
-                            CompSNums(compNum) = s1(j)       ' запоминаем номер строки SFacc
-                            namSF(compNum) = Sheets(SFacc).Cells(s1(j), SFACC_ACCNAME_COL)
+                            CompSNums(compNum) = S1(j)       ' запоминаем номер строки SFacc
+                            namSF(compNum) = Sheets(SFacc).Cells(S1(j), SFACC_ACCNAME_COL)
                             adrTxt(compNum) = adrField
                             
                             kword(compNum) = sfWrds(SFWordIndx)
@@ -601,10 +608,10 @@ Function switch(kword, j, k)
 
 ' 2 компоненты массива меняются местами
 ' 5.6.2012
-    Dim s As String
-    s = kword(j)
+    Dim S As String
+    S = kword(j)
     kword(j) = kword(k)
-    kword(k) = s
+    kword(k) = S
 End Function
 
 
