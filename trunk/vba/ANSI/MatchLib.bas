@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта MatchSF-1C
 '
-' П.Л.Храпкин, А.Пасс 19.6.2012
+' П.Л.Храпкин, А.Пасс 21.6.2012
 '
 ' - ModStart(SheetN, MSG)       - начало модуля работы с Листом SheetN
 ' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
@@ -140,7 +140,7 @@ End Sub
 Sub MS(Msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
-'   11.6.12
+'   21.6.12
     ErrMsg TYPE_ERR, Msg, False
 End Sub
 
@@ -148,7 +148,7 @@ Sub ErrMsg(ErrMode, Msg, Optional ByVal contRequest As Boolean = True)
 '
 ' - ErrMsg(ErrMode, MSG) - вывод сообщения об ощибке в Log и на экран
 '                          Коды ErrMode определены в Declaration
-'   31.5.12
+'   21.06.12
 
     Dim ErrType As String, Respond As String
     
