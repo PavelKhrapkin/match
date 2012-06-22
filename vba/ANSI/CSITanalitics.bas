@@ -404,57 +404,81 @@ Sub client1CProcess(ByVal accntName As String)
             End If
         Next j
 endLoopPrepTxt:
-    
-    
-            
+           
         ' Текст подготовлен. Запускаем диалог.
-        Dim Repeat As Boolean
+        Dim Repeat As Boolean               ' флаг повторной обработки accuont'a 1C
+        Dim setLink As Boolean              ' флаг связывания account'a 1C с конкретным account'ом SF.
+                                            ' может быть сброшен при отрцательном ответе оператора
+                                            ' на предупреждение "ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА В SF!"
         Do
-            Repeat = False
+            Repeat = False                  ' если не изменится, выйдем из цикла Do
             DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, Msg, namSF, adrTxt, kword)
             If IsNumeric(DlgRes) Then  ' SF account id  + 1C id
-        
-            ' Заполняем и вызываем форму
-                SFaccMergeWith1C.SFacc = accntName
-                SFaccMergeWith1C.name1C = namSF(CInt(DlgRes))
-                SFaccMergeWith1C.setInn Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INN_COL), _
-                                        Sheets(Acc1C).Cells(clIndx, A1C_INN_COL)
-                SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
-                                        Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
-        
-                ' заполнение адресных полей формы
-                AdrStruct.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_CITY_COL)
-                AdrStruct.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STREET_COL)
-                AdrStruct.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STATE_COL)
-                AdrStruct.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INDEX_COL)
-                AdrStruct.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_COUNTRY_COL)
-                AdrStruct1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_ADR_COL))
-                delAddrSF.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCITY_COL)
-                delAddrSF.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTREET_COL)
-                delAddrSF.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTATE_COL)
-                delAddrSF.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELINDEX_COL)
-                delAddrSF.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCOUNTRY_COL)
-                factAddr1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_FACTADR_COL))
-                SFaccMergeWith1C.setAddr AdrStruct, AdrStruct1C, delAddrSF, factAddr1C
-        
-                SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
-                                        Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
-        
-                SFaccMergeWith1C.Show                               ' ВЫЗОВ ФОРМЫ
-        
-                If SFaccMergeWith1C.result = "exit" Then            ' обработка заполненной формы
-                    ExRespond = False
-                ElseIf SFaccMergeWith1C.result = "save" Then
-                    EOL_AccntUpd = EOL_AccntUpd + 1
-                    With Sheets(AccntUpd)
-                        .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_IDACC_COL)
-                        .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
-                        .Cells(EOL_AccntUpd, ACCUPD_INN_COL) = SFaccMergeWith1C.innSF
-                        .Cells(EOL_AccntUpd, ACCUPD_TEL_COL) = SFaccMergeWith1C.telSF
-                    End With
-                ElseIf SFaccMergeWith1C.result = "back" Then
-                    Repeat = True       ' единственный случай повторного выполнения цикла do
-                End If  'если ни одно условие не выполнено - нажато "Пропустить'
+            
+                setLink = True
+                If Sheets(SFacc).Cells(CompSNums(DlgRes), SFACC_ACC1C_COL) <> "" Then
+                            ' ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА!
+                    If MsgBox("ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА В SF!" _
+                        + vbCrLf + "Вы действительно хотите изменить связь?", vbYesNo) <> vbYes Then
+                        setLink = False
+                        Repeat = True
+                    End If
+                End If
+                If setLink Then
+                ' Заполняем и вызываем форму
+                    SFaccMergeWith1C.SFacc = accntName
+                    SFaccMergeWith1C.name1C = namSF(CInt(DlgRes))
+                    SFaccMergeWith1C.setInn Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INN_COL), _
+                                            Sheets(Acc1C).Cells(clIndx, A1C_INN_COL)
+                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                                            Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
+            
+                    ' заполнение адресных полей формы
+                    AdrStruct.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_CITY_COL)
+                    AdrStruct.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STREET_COL)
+                    AdrStruct.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STATE_COL)
+                    AdrStruct.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INDEX_COL)
+                    AdrStruct.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_COUNTRY_COL)
+                    AdrStruct1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_ADR_COL))
+                    delAddrSF.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCITY_COL)
+                    delAddrSF.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTREET_COL)
+                    delAddrSF.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTATE_COL)
+                    delAddrSF.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELINDEX_COL)
+                    delAddrSF.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCOUNTRY_COL)
+                    factAddr1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_FACTADR_COL))
+                    SFaccMergeWith1C.setAddr AdrStruct, AdrStruct1C, delAddrSF, factAddr1C
+            
+                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                                            Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
+            
+                    SFaccMergeWith1C.Show                               ' ВЫЗОВ ФОРМЫ
+            
+                    If SFaccMergeWith1C.result = "exit" Then            ' обработка заполненной формы
+                        ExRespond = False
+                    ElseIf SFaccMergeWith1C.result = "save" Then
+                    
+                        EOL_AccntUpd = EOL_AccntUpd + 1
+                        With Sheets(AccntUpd)
+                            .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_IDACC_COL)
+                            .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
+                            .Cells(EOL_AccntUpd, ACCUPD_INN_COL) = SFaccMergeWith1C.innSF
+                            .Cells(EOL_AccntUpd, ACCUPD_TEL_COL) = SFaccMergeWith1C.telSF
+                            .Cells(EOL_AccntUpd, ACCUPD_CITY_COL) = SFaccMergeWith1C.CitySF
+                            .Cells(EOL_AccntUpd, ACCUPD_STREET_COL) = SFaccMergeWith1C.StreetSF
+                            .Cells(EOL_AccntUpd, ACCUPD_STATE_COL) = SFaccMergeWith1C.AreaSF
+                            .Cells(EOL_AccntUpd, ACCUPD_INDEX_COL) = SFaccMergeWith1C.IndexSF
+                            .Cells(EOL_AccntUpd, ACCUPD_STATE_COL) = SFaccMergeWith1C.CountrySF
+                            .Cells(EOL_AccntUpd, ACCUPD_COUNTRY_COL) = SFaccMergeWith1C.AreaSF
+                            .Cells(EOL_AccntUpd, ACCUPD_DELCITY_COL) = SFaccMergeWith1C.DelCitySF
+                            .Cells(EOL_AccntUpd, ACCUPD_DELSTREET_COL) = SFaccMergeWith1C.DelStreetSF
+                            .Cells(EOL_AccntUpd, ACCUPD_DELSTATE_COL) = SFaccMergeWith1C.DelAreaSF
+                            .Cells(EOL_AccntUpd, ACCUPD_DELINDEX_COL) = SFaccMergeWith1C.DelIndexSF
+                            .Cells(EOL_AccntUpd, ACCUPD_DELCOUNTRY_COL) = SFaccMergeWith1C.DelCountrySF
+                        End With
+                    ElseIf SFaccMergeWith1C.result = "back" Then
+                        Repeat = True       ' единственный случай повторного выполнения цикла do
+                    End If  'если ни одно условие не выполнено - нажато "Пропустить'
+                End If      'конец if setLink
             ElseIf DlgRes = "create" Then
                 ' заполняем поля формы: имя 1С, имя SF (сейчас они идентичны)
                 NewSFaccForm.Adr1C.Caption = Sheets(Acc1C).Cells(clIndx, A1C_NAME_COL)
@@ -558,19 +582,29 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     DlgAccChoice = "cont"       ' если связывать не будем - останется так
     SFaccountForm.accntChoice.ColumnCount = 3
     Do                          ' цикл по предпиятиям, которые можно связать
-        ' сделать listbox пустым
+        ' сделать listbox'ы пустыми
+        Do While SFaccountForm.warn.ListCount <> 0
+            SFaccountForm.warn.RemoveItem 0
+        Loop
         Do While SFaccountForm.accntChoice.ListCount <> 0
             SFaccountForm.accntChoice.RemoveItem 0
         Loop
-        ' заполнение listbox
+        
+        ' заполнение listbox'ов
         For i = 1 To count
             SFaccountForm.accntChoice.AddItem
             SFaccountForm.accntChoice.List(i - 1, 0) = namSF(i)
             SFaccountForm.accntChoice.List(i - 1, 1) = addrTxt(i)
             SFaccountForm.accntChoice.List(i - 1, 2) = kword(i)
+            
+            SFaccountForm.warn.AddItem
+            If Sheets(SFacc).Cells(CompSNums(i), SFACC_ACC1C_COL) = "" Then
+                SFaccountForm.warn.List(i - 1, 0) = ""
+            Else
+                SFaccountForm.warn.List(i - 1, 0) = "СВЯЗАНA"     ' ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА!
+            End If
         Next i
-                    
-        SFaccountForm.TextBox2 = Msg                        ' основной текст: имя SF, адрес SF
+             ' основной текст: имя SF, адрес SF
         If count = 1 Then
             SFaccountForm.TextBox1.value = "1"              ' если выбора нет, уставливаем default
             SFaccountForm.accntChoice.ListIndex = 0         ' listbox - выбрана единственная строка
@@ -580,8 +614,8 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
         End If
         
         ' textbox невидим, ОК ("Связать") - если есть возможность связать
-        SFaccountForm.OKButton.Visible = True
-        If count = 0 Then SFaccountForm.OKButton.Visible = False
+        SFaccountForm.OKbutton.Visible = True
+        If count = 0 Then SFaccountForm.OKbutton.Visible = False
         
         SFaccountForm.Show vbModal                      ' входим в диалог
         
