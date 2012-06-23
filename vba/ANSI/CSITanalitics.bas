@@ -576,8 +576,10 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     
     Dim i As Long
     
+    SFaccountForm.TextBox2 = Msg        ' имя и адрес предприятия 1С
+    
     If count = 0 Then
-        DlgAccChoice = "create"       ' the only possibility
+        DlgAccChoice = "create"         ' the only possibility
         Exit Function
     End If
     
@@ -655,7 +657,7 @@ Function telToFax(tel)
     Dim sym As String, rest As String
     Dim beg As Long
     Dim pref() As String
-    pref = split("fax.;fax;f.;f;факс.;факс;ф.;ф", ";")  ' ключевые слова
+    pref = split("fax.;fax;f.;f;факс.;факс;ф.;ф", ";")  ' ключевые слова (длинные вначале)
     
     
     telToFax = ""
