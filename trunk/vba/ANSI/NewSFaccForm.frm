@@ -42,29 +42,9 @@ End Sub
 Private Sub City_Change()
 '    MsgBox "city change"
 End Sub
-
-Private Sub Label10_Click()
-
-End Sub
-
-Private Sub Label11_Click()
-
-End Sub
-
-Private Sub Label12_Click()
-
-End Sub
-
-Private Sub Label2_Click()
-
-End Sub
-
-Private Sub Label3_Click()
-
-End Sub
-
-Private Sub Label6_Click()
-
+Private Sub phone_Change()
+'    MsgBox "phone change"
+    Me.fax = telToFax(Me.phone)
 End Sub
 Private Function checkAddr() As Boolean
     Dim i As Long
