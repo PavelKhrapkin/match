@@ -5,6 +5,7 @@ Attribute VB_Name = "Declarations"
 '   А.Пасс & П.Храпкин
 '   17.6.12 - А.Пасс
 '   18.6.12 - ПХ merge с версией АП от 17/6
+'   22.6.12 - А.Пасс definitions for fax support
 
 Option Explicit
     
@@ -255,7 +256,8 @@ Public Const ADACC_CITY_COL = 6         ' колонка "AccCity"
 Public Const ADACC_INDEX_COL = 7        ' колонка "AccIndex"
 Public Const ADACC_STATE_COL = 8        ' колонка "AccState"
 Public Const ADACC_COUNTRY_COL = 9      ' колонка "AccCountry"
-Public Const ADACC_TEL_COL = 14         ' колонка "Телефон"
+Public Const ADACC_TEL_COL = 14         ' колонка "Telephone"
+Public Const ADACC_FAX_COL = 15         ' колонка "fax"
 Public Const ADACC_FACTSTREET_COL = 17  ' колонка "FactStreet"
 Public Const ADACC_FACTCITY_COL = 18    ' колонка "FactCity"
 Public Const ADACC_FACTINDEX_COL = 19   ' колонка "FactIndex"
@@ -268,18 +270,19 @@ Public Const AccntUpd = "AccntUpd"      ' лист новых связей Организаций SF и 1С
 
 Public Const ACCUPD_SFID_COL = 1        ' колонка "SFaccId"
 Public Const ACCUPD_1CNAME_COL = 2      ' колонка "Acc1C"
-Public Const ACCUPD_INN_COL = 3         ' колонка "SFinn"
-Public Const ACCUPD_TEL_COL = 4         ' колонка "SFtel"
-Public Const ACCUPD_STREET_COL = 5      ' колонка "AccStreet"
-Public Const ACCUPD_CITY_COL = 6        ' колонка "AccCity"
-Public Const ACCUPD_INDEX_COL = 7       ' колонка "AccIndex"
-Public Const ACCUPD_STATE_COL = 8       ' колонка "AccState"
-Public Const ACCUPD_COUNTRY_COL = 9     ' колонка "AccCountry"
-Public Const ACCUPD_DELSTREET_COL = 10  ' колонка "fact Street"
-Public Const ACCUPD_DELCITY_COL = 11    ' колонка "fact City"
-Public Const ACCUPD_DELINDEX_COL = 12   ' колонка "fact Index"
-Public Const ACCUPD_DELSTATE_COL = 13   ' колонка "fact State"
-Public Const ACCUPD_DELCOUNTRY_COL = 14 ' колонка "fact Country"
+Public Const ACCUPD_INN_COL = 3         ' колонка "INN"
+Public Const ACCUPD_TEL_COL = 4         ' колонка "Telephone"
+Public Const ACCUPD_FAX_COL = 5         ' колонка "fax"
+Public Const ACCUPD_STREET_COL = 6      ' колонка "AccStreet"
+Public Const ACCUPD_CITY_COL = 7        ' колонка "AccCity"
+Public Const ACCUPD_INDEX_COL = 8       ' колонка "AccIndex"
+Public Const ACCUPD_STATE_COL = 9       ' колонка "AccState"
+Public Const ACCUPD_COUNTRY_COL = 10    ' колонка "AccCountry"
+Public Const ACCUPD_DELSTREET_COL = 11  ' колонка "factStreet"
+Public Const ACCUPD_DELCITY_COL = 12    ' колонка "factCity"
+Public Const ACCUPD_DELINDEX_COL = 13   ' колонка "factIndex"
+Public Const ACCUPD_DELSTATE_COL = 14   ' колонка "factState"
+Public Const ACCUPD_DELCOUNTRY_COL = 15 ' колонка "factCountry"
 
 '................ Лист новых Договоров C_Contr ..........................
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
@@ -414,7 +417,7 @@ Type SNatr                  'Атрибуты SN Autodesk
     SN      As String           ' Серийный номер
     Contr   As String           ' Контракт Autodesk / Agreement
     AccN    As String           ' Customer Account Number, CSN на PartnerCenter
-    AccName As String           ' Имя клиента на PartnerCenter
+    accName As String           ' Имя клиента на PartnerCenter
     C_Start As Date             ' Дата начала Контракта ADSK
     C_End   As Date             ' Дата окончания Контракта ADSK
     C_Status As String          ' Статус Контракта: Active, Expired, Inactive
