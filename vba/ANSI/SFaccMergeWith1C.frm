@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} SFaccMergeWith1C 
    Caption         =   "Модифицировать связываемое SF предприятие"
-   ClientHeight    =   7275
+   ClientHeight    =   8235
    ClientLeft      =   45
    ClientTop       =   375
    ClientWidth     =   20955
@@ -122,6 +122,15 @@ Sub chkDelAddr2_Change()
         Me.DelCountrySF = Me.FactCountry1C
     End If
 End Sub
+
+Private Sub inn1C_Click()
+
+End Sub
+
+Private Sub telSF_Change()
+'    MsgBox "phone change"
+    Me.faxSF = telToFax(Me.telSF)
+End Sub
 'Sub innSF_Change()
 '    innRes = Me.innSF              ' кнопки 'reset' удалены 16.06.12
 'End Sub
@@ -153,6 +162,10 @@ Private Sub AccSaveForSF_Click()
     Me.result = "save"
     INN = Me.inn1C
     Me.Hide
+End Sub
+
+Private Sub Label42_Click()
+
 End Sub
 
 Private Sub UserForm_Click()
