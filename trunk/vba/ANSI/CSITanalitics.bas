@@ -463,6 +463,7 @@ endLoopPrepTxt:
                             .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
                             .Cells(EOL_AccntUpd, ACCUPD_INN_COL) = SFaccMergeWith1C.innSF
                             .Cells(EOL_AccntUpd, ACCUPD_TEL_COL) = SFaccMergeWith1C.telSF
+                            .Cells(EOL_AccntUpd, ACCUPD_FAX_COL) = SFaccMergeWith1C.faxSF
                             .Cells(EOL_AccntUpd, ACCUPD_CITY_COL) = SFaccMergeWith1C.CitySF
                             .Cells(EOL_AccntUpd, ACCUPD_STREET_COL) = SFaccMergeWith1C.StreetSF
                             .Cells(EOL_AccntUpd, ACCUPD_STATE_COL) = SFaccMergeWith1C.AreaSF
@@ -529,19 +530,20 @@ endLoopPrepTxt:
                     With Sheets(A_Acc)
                         .Cells(EOL_AdAcc, ADACC_NAME_COL) = NewSFaccForm.SFacc
                         .Cells(EOL_AdAcc, ADACC_1CNAME_COL) = NewSFaccForm.Adr1C
-                        .Cells(EOL_AdAcc, ADACC_CITY_COL) = NewSFaccForm.City.value
-                        .Cells(EOL_AdAcc, ADACC_STATE_COL) = NewSFaccForm.Area.value
-                        .Cells(EOL_AdAcc, ADACC_STREET_COL) = NewSFaccForm.Street.value
-                        .Cells(EOL_AdAcc, ADACC_INDEX_COL) = NewSFaccForm.Index.value
-                        .Cells(EOL_AdAcc, ADACC_COUNTRY_COL) = NewSFaccForm.Country.value
-                        .Cells(EOL_AdAcc, ADACC_CONTACT1C_COL) = NewSFaccForm.contact.value
+                        .Cells(EOL_AdAcc, ADACC_CITY_COL) = NewSFaccForm.City
+                        .Cells(EOL_AdAcc, ADACC_STATE_COL) = NewSFaccForm.Area
+                        .Cells(EOL_AdAcc, ADACC_STREET_COL) = NewSFaccForm.Street
+                        .Cells(EOL_AdAcc, ADACC_INDEX_COL) = NewSFaccForm.Index
+                        .Cells(EOL_AdAcc, ADACC_COUNTRY_COL) = NewSFaccForm.Country
+                        .Cells(EOL_AdAcc, ADACC_CONTACT1C_COL) = NewSFaccForm.contact
                         .Cells(EOL_AdAcc, ADACC_INN_COL) = NewSFaccForm.INN
-                        .Cells(EOL_AdAcc, ADACC_TEL_COL) = NewSFaccForm.phone.value
-                        .Cells(EOL_AdAcc, ADACC_FACTCITY_COL) = NewSFaccForm.CityD.value
-                        .Cells(EOL_AdAcc, ADACC_FACTSTATE_COL) = NewSFaccForm.AreaD.value
-                        .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD.value
-                        .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD.value
-                        .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD.value
+                        .Cells(EOL_AdAcc, ADACC_TEL_COL) = NewSFaccForm.phone
+                        .Cells(EOL_AdAcc, ADACC_FAX_COL) = NewSFaccForm.fax
+                        .Cells(EOL_AdAcc, ADACC_FACTCITY_COL) = NewSFaccForm.CityD
+                        .Cells(EOL_AdAcc, ADACC_FACTSTATE_COL) = NewSFaccForm.AreaD
+                        .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD
+                        .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD
+                        .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD
                     End With
                 End If      ' Dlgres= 'exit'
             End If          ' isnumeric(dlgres)
@@ -614,8 +616,8 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
         End If
         
         ' textbox невидим, ОК ("Связать") - если есть возможность связать
-        SFaccountForm.OKbutton.Visible = True
-        If count = 0 Then SFaccountForm.OKbutton.Visible = False
+        SFaccountForm.OKButton.Visible = True
+        If count = 0 Then SFaccountForm.OKButton.Visible = False
         
         SFaccountForm.Show vbModal                      ' входим в диалог
         
@@ -638,6 +640,62 @@ endloop:
     If inpt = "exit" Then ExRespond = False
 
 End Function
+Sub testTelToFax()
+    Dim t1, t2, t3, t4, t5, t6, t7, t8, t9, t10
+    t1 = telToFax("1234 f c 1234-45(55)")
+    t2 = telToFax("1234 f  1234-45(55)")
+    t3 = telToFax("1234 fax1234-45(55)")
+    t4 = telToFax("1234 fax 1234-45(55)")
+    t5 = telToFax("1234 ф 1234-45(55)???????????????????  факс 7(33)444")
+    t6 = telToFax("1234 fax +1234-45(55)")
+    t7 = telToFax("1234 fax 1234-45(55)")
+End Sub
+Function telToFax(tel)
+    Dim i As Long, j As Long
+    Dim sym As String, rest As String
+    Dim beg As Long
+    Dim pref() As String
+    pref = split("fax.;fax;f.;f;факс.;факс;ф.;ф", ";")  ' ключевые слова
+    
+    
+    telToFax = ""
+        
+    For i = 0 To Len(tel)
+        beg = -1                            ' если не найдем ключевое слово - останется -1
+        For j = LBound(pref) To UBound(pref)
+            sym = LCase(Mid(tel, i + 1, Len(pref(j))))  ' нумерация символов с 1, а не с 0, поэтому i+1
+            If sym = pref(j) Then
+                beg = 0
+                i = i + Len(pref(j))            ' пропустить найденное
+                GoTo jBreak
+            End If
+        Next j
+jBreak:
+        If beg = 0 Then
+            For j = i To Len(tel)               ' нашли, ищем номер факса
+                sym = LCase(Mid(tel, j + 1, 1)) ' текущий символ
+                If sym <> " " And sym <> "+" Then   ' пропускаем " " & "+"
+                                                ' в начале номера допускаем цифры или скобки
+                    If IsNumeric(sym) Or sym = "(" Or sym = ")" _
+                            Or (beg <> 0 And sym = "-") Then    ' а середине - еще '-'
+                        If beg = 0 Then beg = j
+                    ElseIf beg = 0 Then
+                        GoTo endSub             ' недопустимый символ в начале
+                    Else                        ' недопустимый символ - терминатор
+                        telToFax = "факс " + Mid(tel, beg + 1, j - beg) ' формируем результат
+                        rest = telToFax(Mid(tel, j + 1, 999))           ' рекурсия - нет ли еще номеров факсов
+                        If rest <> "" Then
+                            telToFax = telToFax + "," + rest            ' есть - добавляем в результат через запятую
+                        End If
+                        GoTo endSub                                     ' все сделано
+                    End If
+                End If
+            Next j
+        End If
+    Next i
+endSub:
+End Function
+
 Function switch(kword, j, k)
 
 ' 2 компоненты массива меняются местами
