@@ -18,6 +18,8 @@ Attribute VB_Exposed = False
 
 Private Sub accntChoice_Click()
     SFaccountForm.TextBox1 = Str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
+'    Me.keyListBox.ListIndex = Me.accntChoice.ListIndex
+'    Me.warn.ListIndex = Me.accntChoice.ListIndex
 End Sub
 
 Private Sub createbutton_Click()
@@ -56,7 +58,17 @@ Private Sub accntChoice_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
     SFaccountForm.TextBox1 = Str(Me.accntChoice.ListIndex + 1)    ' items считаем нумерованными с 1
     SFaccountForm.Hide
 End Sub
+'
+'Private Sub keyListBox_Change()
+'    Me.accntChoice.ListIndex = Me.keyListBox.ListIndex
+'    Me.warn.ListIndex = Me.accntChoice.ListIndex
+'End Sub
+'Private Sub warn_Change()
+'    Me.accntChoice.ListIndex = Me.warn.ListIndex
+'    Me.keyListBox.ListIndex = Me.warn.ListIndex
+'End Sub
 
 Private Sub UserForm_Click()
 
 End Sub
+

@@ -9,6 +9,8 @@ Attribute VB_Name = "CSITanalitics"
 ' - client1CProcess(ByVal accntName As String)  - обработка одного клиента 1С
 ' - SFPostAddr(indx As Long, SFacc As String)   - Стандартное представление почтового адреса
 ' - DlgAccChoice                                - вызов формы "выбор предприятия SF для связывания"
+' T testTelToFax()                              - тест для telToFax
+' - telToFax(tel)                               - поиск номеров факсов в строке номеров телефонов
 
 Option Explicit
 
@@ -148,7 +150,7 @@ NextI:
 
                 If MSG2 <> "" Then
                     Do
-                        SFaccountForm.TextBox2.value = Msg + MSG2       ' основной текст
+                        SFaccountForm.TextBox2 = Msg + MSG2       ' основной текст
                         SFaccountForm.TextBox1.value = ""               ' исходное значение номера - пусто
                         SFaccountForm.Show vbModal
                         
@@ -302,7 +304,7 @@ Sub client1CProcess(ByVal accntName As String)
         hashFlag = True
     End If
     
-' обработка клиента 1С
+' --------- обработка клиента 1С -----------------
     Dim clIndx As Long              ' индекс клиента в таблице клиентов 1С
     Dim accntPostAddr As String     ' почтовый адрес клиента 1С
     Dim Msg As String               ' заголовок формы
@@ -316,7 +318,7 @@ Sub client1CProcess(ByVal accntName As String)
     Dim delAddrSF As PostAddr, factAddr1C As PostAddr
     Dim DlgRes As String                                            ' результат диалога DlgAccChoice
 
-    s0 = hashGet(acc1CHashKey, acc1CHashVal, LCase$(accntName))
+    s0 = hashGet(acc1CHashKey, acc1CHashVal, LCase$(accntName))     ' хеш дает индекс в словаре 1С
     If s0 = "$" Then
                                                                     ' false - без stop'а и запроса "продолжить?"
         ErrMsg TYPE_ERR, "client1CProcess: клиента '" + accntName + "' нет в справочнике клиентов 1С", False
@@ -335,8 +337,8 @@ Sub client1CProcess(ByVal accntName As String)
             hashSet acc1CHashKey, acc1CHashVal, LCase$(accntName), "-" + s0
             
         ' обрабатываем информацию по 1С и строим заголовок
-            Msg = s0 + ":  ИМЯ 1С:     " + accntName + vbCrLf _
-                + "АДРЕС:              " + .Cells(clIndx, A1C_ADR_COL)
+            Msg = "ИМЯ 1С:     " + accntName _
+                + vbCrLf + "АДРЕС:              " + .Cells(clIndx, A1C_ADR_COL)
 '                        MSG2 = ""
             compNum = 0
             ' Разбиваем 1С имя на слова и формируем запрос: ищем слова в хеше слов SF
@@ -347,13 +349,13 @@ Sub client1CProcess(ByVal accntName As String)
                     S1 = split(wrSF, "$")
                     For j = 0 To UBound(S1)
                         adrField = SFPostAddr(S1(j), SFacc)
-                        If adrField <> "" Then    ' пропускаем строки без адреса
-                            compNum = compNum + 1           ' считаем варианты
-                            CompSNums(compNum) = S1(j)       ' запоминаем номер строки SFacc
+                        If adrField <> "" Then                  ' пропускаем строки без адреса
+                            compNum = compNum + 1               ' считаем варианты
+                            CompSNums(compNum) = S1(j)          ' запоминаем номер строки SFacc
                             namSF(compNum) = Sheets(SFacc).Cells(S1(j), SFACC_ACCNAME_COL)
                             adrTxt(compNum) = adrField
                             
-                            kword(compNum) = sfWrds(SFWordIndx)
+                            kword(compNum) = sfWrds(SFWordIndx) 'ключевые слова
                        End If
                     Next j
                 End If
@@ -364,7 +366,7 @@ Sub client1CProcess(ByVal accntName As String)
         ' CompSNums - соответствующие номера строк в SFacc
         ' compNum - число элементов
         
-        ' дедупликация и сортировка по количеству совпадений.
+        ' дедупликация по SF account'ам и сортировка по количеству совпадений.
         ' чем больше совпадений, тем выше приоритет и тем ближе к началу.
     
         For j = 1 To compNum        ' иницализация счетчиков дупликатов
@@ -406,7 +408,7 @@ Sub client1CProcess(ByVal accntName As String)
 endLoopPrepTxt:
            
         ' Текст подготовлен. Запускаем диалог.
-        Dim Repeat As Boolean               ' флаг повторной обработки accuont'a 1C
+        Dim Repeat As Boolean               ' флаг повторной обработки account'a 1C
         Dim setLink As Boolean              ' флаг связывания account'a 1C с конкретным account'ом SF.
                                             ' может быть сброшен при отрцательном ответе оператора
                                             ' на предупреждение "ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА В SF!"
@@ -425,30 +427,35 @@ endLoopPrepTxt:
                     End If
                 End If
                 If setLink Then
-                ' Заполняем и вызываем форму
+                    ' Заполняем и вызываем форму
                     SFaccMergeWith1C.SFacc = accntName
                     SFaccMergeWith1C.name1C = namSF(CInt(DlgRes))
-                    SFaccMergeWith1C.setInn Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INN_COL), _
+                    j = CompSNums(CInt(DlgRes))
+                    SFaccMergeWith1C.setInn Sheets(SFacc).Cells(j, SFACC_INN_COL), _
                                             Sheets(Acc1C).Cells(clIndx, A1C_INN_COL)
-                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(j, SFACC_TEL_COL), _
                                             Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
             
                     ' заполнение адресных полей формы
-                    AdrStruct.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_CITY_COL)
-                    AdrStruct.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STREET_COL)
-                    AdrStruct.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_STATE_COL)
-                    AdrStruct.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_INDEX_COL)
-                    AdrStruct.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_COUNTRY_COL)
-                    AdrStruct1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_ADR_COL))
-                    delAddrSF.City = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCITY_COL)
-                    delAddrSF.Street = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTREET_COL)
-                    delAddrSF.State = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELSTATE_COL)
-                    delAddrSF.PostIndex = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELINDEX_COL)
-                    delAddrSF.Country = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_DELCOUNTRY_COL)
-                    factAddr1C = AdrParse(Sheets(Acc1C).Cells(clIndx, A1C_FACTADR_COL))
+                    With Sheets(SFacc)
+                        AdrStruct.City = .Cells(j, SFACC_CITY_COL)
+                        AdrStruct.Street = .Cells(j, SFACC_STREET_COL)
+                        AdrStruct.State = .Cells(j, SFACC_STATE_COL)
+                        AdrStruct.PostIndex = .Cells(j, SFACC_INDEX_COL)
+                        AdrStruct.Country = .Cells(j, SFACC_COUNTRY_COL)
+                        delAddrSF.City = .Cells(j, SFACC_DELCITY_COL)
+                        delAddrSF.Street = .Cells(j, SFACC_DELSTREET_COL)
+                        delAddrSF.State = .Cells(j, SFACC_DELSTATE_COL)
+                        delAddrSF.PostIndex = .Cells(j, SFACC_DELINDEX_COL)
+                        delAddrSF.Country = .Cells(j, SFACC_DELCOUNTRY_COL)
+                    End With
+                    With Sheets(Acc1C)
+                        AdrStruct1C = AdrParse(.Cells(clIndx, A1C_ADR_COL))
+                        factAddr1C = AdrParse(.Cells(clIndx, A1C_FACTADR_COL))
+                    End With
                     SFaccMergeWith1C.setAddr AdrStruct, AdrStruct1C, delAddrSF, factAddr1C
             
-                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_TEL_COL), _
+                    SFaccMergeWith1C.setTel Sheets(SFacc).Cells(j, SFACC_TEL_COL), _
                                             Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
             
                     SFaccMergeWith1C.Show                               ' ВЫЗОВ ФОРМЫ
@@ -459,7 +466,7 @@ endLoopPrepTxt:
                     
                         EOL_AccntUpd = EOL_AccntUpd + 1
                         With Sheets(AccntUpd)
-                            .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(CompSNums(CInt(DlgRes)), SFACC_IDACC_COL)
+                            .Cells(EOL_AccntUpd, ACCUPD_SFID_COL) = Sheets(SFacc).Cells(j, SFACC_IDACC_COL)
                             .Cells(EOL_AccntUpd, ACCUPD_1CNAME_COL) = accntName     ' имя из справочника 1С -> SF account
                             .Cells(EOL_AccntUpd, ACCUPD_INN_COL) = SFaccMergeWith1C.innSF
                             .Cells(EOL_AccntUpd, ACCUPD_TEL_COL) = SFaccMergeWith1C.telSF
@@ -487,20 +494,10 @@ endLoopPrepTxt:
         
                 ' почтовый адрес
                 s0 = Trim(Sheets(Acc1C).Cells(clIndx, A1C_ADR_COL))
-                AdrStruct = AdrParse(s0)
-                NewSFaccForm.Area.value = AdrStruct.State
-                NewSFaccForm.City.value = AdrStruct.City
-                NewSFaccForm.Street.value = AdrStruct.Street
-                NewSFaccForm.Index.value = AdrStruct.PostIndex
-                NewSFaccForm.Country.value = AdrStruct.Country
+                NewSFaccForm.setPostAddr AdrParse(s0)
                 ' фактический адрес(1С) / адрес доставки(SF)
                 s0 = Trim(Sheets(Acc1C).Cells(clIndx, A1C_FACTADR_COL))
-                AdrStruct = AdrParse(s0)
-                NewSFaccForm.AreaD.value = AdrStruct.State
-                NewSFaccForm.CityD.value = AdrStruct.City
-                NewSFaccForm.StreetD.value = AdrStruct.Street
-                NewSFaccForm.IndexD.value = AdrStruct.PostIndex
-                NewSFaccForm.CountryD.value = AdrStruct.Country
+                NewSFaccForm.setDelAddr AdrParse(s0)
         
                 NewSFaccForm.contact.value = Sheets(Acc1C).Cells(clIndx, A1C_CON_COL)
                 Dim INN
@@ -509,7 +506,7 @@ endLoopPrepTxt:
                 NewSFaccForm.INN = Trim(INN)
                 NewSFaccForm.phone.value = Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
         
-            ' справочные поля - не вводятся
+            ' справочные поля - не вводятся оператором
                 NewSFaccForm.invoice.Caption = Sheets(Acc1C).Cells(clIndx, A1C_INVOICE_COL)
                 NewSFaccForm.good.Caption = Sheets(Acc1C).Cells(clIndx, A1C_GOOD_COL)
         
@@ -545,6 +542,8 @@ endLoopPrepTxt:
                         .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD
                         .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD
                     End With
+                ElseIf DlgRes = "back" Then
+                    Repeat = True
                 End If      ' Dlgres= 'exit'
             End If          ' isnumeric(dlgres)
         Loop While Repeat
@@ -554,7 +553,7 @@ exitProc:
 End Sub
 
 Function SFPostAddr(ByVal indx As Long, SFacc As String)
-'   Стандартное представление почтового адреса
+'   Стандартное представление почтового адреса - поля через запятую (город, область, улица/дом, индекс, страна)
 ' 31.05.12
 
     With Sheets(SFacc)
@@ -578,18 +577,18 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     
     SFaccountForm.TextBox2 = Msg        ' имя и адрес предприятия 1С
     
+    
+    NewSFaccForm.BackButton.Enabled = True
     If count = 0 Then
+        NewSFaccForm.BackButton.Enabled = False ' здесь вернуться к выбору будет невозможно, кнопку запретить
         DlgAccChoice = "create"         ' the only possibility
         Exit Function
     End If
     
     DlgAccChoice = "cont"       ' если связывать не будем - останется так
-    SFaccountForm.accntChoice.ColumnCount = 3
+    SFaccountForm.accntChoice.ColumnCount = 4
     Do                          ' цикл по предпиятиям, которые можно связать
         ' сделать listbox'ы пустыми
-        Do While SFaccountForm.warn.ListCount <> 0
-            SFaccountForm.warn.RemoveItem 0
-        Loop
         Do While SFaccountForm.accntChoice.ListCount <> 0
             SFaccountForm.accntChoice.RemoveItem 0
         Loop
@@ -597,16 +596,13 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
         ' заполнение listbox'ов
         For i = 1 To count
             SFaccountForm.accntChoice.AddItem
-            SFaccountForm.accntChoice.List(i - 1, 0) = namSF(i)
-            SFaccountForm.accntChoice.List(i - 1, 1) = addrTxt(i)
-            SFaccountForm.accntChoice.List(i - 1, 2) = kword(i)
-            
-            SFaccountForm.warn.AddItem
-            If Sheets(SFacc).Cells(CompSNums(i), SFACC_ACC1C_COL) = "" Then
-                SFaccountForm.warn.List(i - 1, 0) = ""
-            Else
-                SFaccountForm.warn.List(i - 1, 0) = "СВЯЗАНA"     ' ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА!
+            SFaccountForm.accntChoice.List(i - 1, 0) = ""
+            If Sheets(SFacc).Cells(CompSNums(i), SFACC_ACC1C_COL) <> "" Then
+                SFaccountForm.accntChoice.List(i - 1, 0) = "СВЯЗАНО"     ' ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА!
             End If
+            SFaccountForm.accntChoice.List(i - 1, 1) = namSF(i)
+            SFaccountForm.accntChoice.List(i - 1, 2) = addrTxt(i)
+            SFaccountForm.accntChoice.List(i - 1, 3) = kword(i)
         Next i
              ' основной текст: имя SF, адрес SF
         If count = 1 Then
@@ -643,6 +639,7 @@ endloop:
 
 End Function
 Sub testTelToFax()
+' тест для telToFax
     Dim t1, t2, t3, t4, t5, t6, t7, t8, t9, t10
     t1 = telToFax("1234 f c 1234-45(55)")
     t2 = telToFax("1234 f  1234-45(55)")
@@ -650,9 +647,19 @@ Sub testTelToFax()
     t4 = telToFax("1234 fax 1234-45(55)")
     t5 = telToFax("1234 ф 1234-45(55)???????????????????  факс 7(33)444")
     t6 = telToFax("1234 fax +1234-45(55)")
-    t7 = telToFax("1234 fax 1234-45(55)")
+    t7 = telToFax("1234 fax 1234-45(556)")
+    
+    If t1 <> "" Or t2 <> "факс 1234-45(55)" Or t3 <> "факс 1234-45(55)" _
+            Or t4 <> "факс 1234-45(55)" Or t5 <> "факс 1234-45(55),факс 7(33)444" _
+            Or t6 <> "факс 1234-45(55)" Or t7 <> "факс 1234-45(556)" Then
+        Stop ' ошибка!
+    End If
+    ' если мы здесь - тест прошел
 End Sub
 Function telToFax(tel)
+' поиск номеров факсов в строке номеров телефонов
+'   22.06.12
+
     Dim i As Long, j As Long
     Dim sym As String, rest As String
     Dim beg As Long
@@ -665,7 +672,7 @@ Function telToFax(tel)
     For i = 0 To Len(tel)
         beg = -1                            ' если не найдем ключевое слово - останется -1
         For j = LBound(pref) To UBound(pref)
-            sym = LCase(Mid(tel, i + 1, Len(pref(j))))  ' нумерация символов с 1, а не с 0, поэтому i+1
+            sym = LCase(Mid(tel, i + 1, Len(pref(j))))  ' у Mid нумерация символов с 1, а не с 0, поэтому i+1
             If sym = pref(j) Then
                 beg = 0
                 i = i + Len(pref(j))            ' пропустить найденное
@@ -674,7 +681,7 @@ Function telToFax(tel)
         Next j
 jBreak:
         If beg = 0 Then
-            For j = i To Len(tel)               ' нашли, ищем номер факса
+            For j = i To Len(tel)               ' нашли ключевое слово, ищем номер факса
                 sym = LCase(Mid(tel, j + 1, 1)) ' текущий символ
                 If sym <> " " And sym <> "+" Then   ' пропускаем " " & "+"
                                                 ' в начале номера допускаем цифры или скобки
@@ -685,7 +692,7 @@ jBreak:
                         GoTo endSub             ' недопустимый символ в начале
                     Else                        ' недопустимый символ - терминатор
                         telToFax = "факс " + Mid(tel, beg + 1, j - beg) ' формируем результат
-                        rest = telToFax(Mid(tel, j + 1, 999))           ' рекурсия - нет ли еще номеров факсов
+                        rest = telToFax(Mid(tel, j + 1, 999))           ' рекурсия - ищем номера факсов в остатке строки
                         If rest <> "" Then
                             telToFax = telToFax + "," + rest            ' есть - добавляем в результат через запятую
                         End If

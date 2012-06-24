@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} NewSFaccForm 
    Caption         =   "Создание организации SF связанной с Клиентом 1С"
-   ClientHeight    =   9165
+   ClientHeight    =   9510
    ClientLeft      =   45
    ClientTop       =   375
    ClientWidth     =   10710
@@ -22,6 +22,10 @@ Option Explicit
 
 Private Sub CancelButton_Click()
     Me.result.value = "cancel"
+    Me.Hide
+End Sub
+Private Sub BackButton_Click()
+    Me.result.value = "back"
     Me.Hide
 End Sub
 
@@ -92,6 +96,20 @@ Function checkDigits(Index, ByVal lng As Long) As Boolean
 exitFunction:
 End Function
 
+Sub setPostAddr(addr As PostAddr)
+    Me.Area = addr.State
+    Me.City = addr.City
+    Me.Street = addr.Street
+    Me.Index = addr.PostIndex
+    Me.Country = addr.Country
+End Sub
+Sub setDelAddr(addr As PostAddr)
+    Me.AreaD = addr.State
+    Me.CityD = addr.City
+    Me.StreetD = addr.Street
+    Me.IndexD = addr.PostIndex
+    Me.CountryD = addr.Country
+End Sub
 Private Sub Label7_Click()
 
 End Sub
