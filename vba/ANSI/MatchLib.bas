@@ -579,11 +579,11 @@ Sub Progress(Pct)
     Dim R As String
     If t = 0 Then t = Timer
     If Timer - t > 20 Then
-        t = Timer
         R = MsgBox("Дальше?", vbYesNo)
         If R = vbNo Then ExRespond = False
+        t = Timer
     End If
-    
+        
 End Sub
 Sub StopSub()
 '
