@@ -263,7 +263,9 @@ Public Const ADACC_FACTCITY_COL = 18    ' колонка "FactCity"
 Public Const ADACC_FACTINDEX_COL = 19   ' колонка "FactIndex"
 Public Const ADACC_FACTSTATE_COL = 20   ' колонка "FactState"
 Public Const ADACC_FACTCOUNTRY_COL = 21 ' колонка "FactCountry"
-Public Const ADACC_CONTACT1C_COL = 22   ' колонка "Contact1C" - не загружать в DL!
+Public Const ADACC_URL_COL = 22         ' колонка "web-address"
+Public Const ADACC_EMAIL_COL = 23       ' колонка "email"
+Public Const ADACC_CONTACT1C_COL = 24   ' колонка "Contact1C" - не загружать в DL!
 
 '........ Лист новых связей Организаций существующих в SF и 1С ...........
 Public Const AccntUpd = "AccntUpd"      ' лист новых связей Организаций SF и 1С
@@ -283,6 +285,8 @@ Public Const ACCUPD_DELCITY_COL = 12    ' колонка "factCity"
 Public Const ACCUPD_DELINDEX_COL = 13   ' колонка "factIndex"
 Public Const ACCUPD_DELSTATE_COL = 14   ' колонка "factState"
 Public Const ACCUPD_DELCOUNTRY_COL = 15 ' колонка "factCountry"
+Public Const ACCUPD_URL_COL = 16        ' колонка "web-address"
+Public Const ACCUPD_EMAIL_COL = 17      ' колонка "email"
 
 '................ Лист новых Договоров C_Contr ..........................
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
@@ -400,7 +404,13 @@ Public Const CSIT_MS_IDSF_COL = 1           ' Колонка "IdSF" - Id соответсветвст
                                             '                    Организаций в SF
 Public Const CSIT_MS_NAME_COL = 2           ' Колонка "Название" - имя организации
 Public Const CSIT_MS_ADDR_COL = 5           ' Колонка "Адрес"
+Public Const CSIT_MS_TEL_COL = 8            ' Колонка "телефон"
+Public Const CSIT_MS_FAX_COL = 9            ' Колонка "Факс"
+Public Const CSIT_MS_URL_COL = 10           ' Колонка "Web-site"
+Public Const CSIT_MS_EMAIL_COL = 11         ' Колонка "E-mail"
+Public Const CSIT_MS_INN_COL = 19           ' Колонка "ИНН"
 Public Const CSIT_MS_STAMP = "Первое Независимое Рейтинговое Агентство"
+Public Const CSIT_MS_NAME = "Название"      ' заголовок колонки
 
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!! Типы данных !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
