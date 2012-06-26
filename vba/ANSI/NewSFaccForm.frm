@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} NewSFaccForm 
-   Caption         =   "Создание организации SF связанной с Клиентом 1С"
-   ClientHeight    =   9510
+   Caption         =   "Создание организации SF"
+   ClientHeight    =   10845
    ClientLeft      =   45
    ClientTop       =   375
    ClientWidth     =   10710
@@ -19,7 +19,10 @@ Attribute VB_Exposed = False
 
 
 Option Explicit
-
+Dim FaxFromTel As Boolean
+Sub setFaxfromTel(par)
+    FaxFromTel = par
+End Sub
 Private Sub CancelButton_Click()
     Me.result.value = "cancel"
     Me.Hide
@@ -46,9 +49,13 @@ End Sub
 Private Sub City_Change()
 '    MsgBox "city change"
 End Sub
+
+Private Sub Label19_Click()
+
+End Sub
+
 Private Sub phone_Change()
-'    MsgBox "phone change"
-    Me.fax = telToFax(Me.phone)
+    If FaxFromTel Then Me.fax = telToFax(Me.phone)
 End Sub
 Private Function checkAddr() As Boolean
     Dim i As Long
