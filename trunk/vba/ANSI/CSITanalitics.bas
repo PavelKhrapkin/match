@@ -1,9 +1,11 @@
 Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
-'   Пасс А.     20.6.12
+'   Пасс А.     25.6.12
 '(?)CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
 '(?)CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
+' - CSIT_MS_to_SFacc()                          - создание SF account'ов для предприятий из таблицы лидов MS, отмеченных '*' в 1-й колонке.
+' - Sub CSITLineProcess(line As Long)           - создание одного SF account'a по лиду MS
 '(*)PaymntCl1CAnlz()                            - обработка клиентов 1С по листу "лист новых Платежей"
 '(*)Client1CAnlz                                - обработка клиентов 1С по листу "Список клиентов 1C"
 ' - client1CProcess(ByVal accntName As String)  - обработка одного клиента 1С
@@ -29,7 +31,7 @@ End Sub
 Sub CSIT_MS_lead()
 '
 ' анализ имен организаций - лидов Microsoft CSIT
-'   31.05.12
+'   25.06.12
 
 ' процедура ставит * в строке предприятия, если не найдено соответствий SFacc,
 '                  "X", если найдено, но оператор не подтверждает ни одного,
@@ -47,8 +49,8 @@ Sub CSIT_MS_lead()
     EOL_CSIT_MS = EOL(CSIT_MS)
     EOL_SFacc = EOL(SFacc) - SFresLines
 
-    CheckSheet CSIT_MS, 4, 2, CSIT_MS_STAMP
-    CheckSheet Acc1C, 1, 5, "Название фирмы"
+    CheckSheet CSIT_MS, 1, CSIT_MS_NAME_COL, CSIT_MS_NAME
+    CheckSheet Acc1C, 1, A1C_NAME_COL, ACC1C_STAMP
     CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
 '---------- проход по CSIT_MS ------------------------
     Dim i As Long, j As Long, k As Long
@@ -84,7 +86,7 @@ Sub CSIT_MS_lead()
             For j = 0 To UBound(SeekWords)
                 curAcc = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
                 If curAcc <> "$" Then
-                    curAcc = curAcc + " "
+                    curAcc = curAcc + " "               ' значение уже не пусто - добавляем пробел как разделитель
                 Else
                     curAcc = ""
                 End If
@@ -101,8 +103,8 @@ NextI:
     
     ' ищем компоненты из MS имени в hash - таблице компонент SF - имен
     
-    For i = 7 To EOL_CSIT_MS                ' цикл по MS предприятиям
-        Progress (i - 7) / EOL_CSIT_MS
+    For i = 2 To EOL_CSIT_MS                ' цикл по MS предприятиям
+        Progress (i - 1) / EOL_CSIT_MS
         If ExRespond = False Then GoTo BreakForI
         AccId = "*"                         ' если ничего не найдем - поставим в таблицу
         With Sheets(CSIT_MS)
@@ -180,19 +182,176 @@ endloop:
                 .Cells(i, CSIT_MS_IDSF_COL) = AccId
                 
             End If
-            
         End With
     Next i
 BreakForI:
     ModEnd CSIT_MS
-    MsgBox "Найдено " & Fruitful & " (" & Format(Fruitful / (i - 7), "Percent") & ") лидов в SF"
+    MsgBox "Найдено " & Fruitful & " (" & Format(Fruitful / (i - 1), "Percent") & ") лидов в SF"
 End Sub
+
+Sub CSIT_MS_to_SFacc()
+'
+' процедура создает SF account'ы для предприятий из таблицы лидов MS, отмеченных '*' в 1-й колонке.
+' по каждой строке вызывается диалог
+'   25.06.12
+
+
+    Const Doing = "Анализ названий организаций - лидов MS_CSIT"
+    ModStart CSIT_MS, Doing
+    LogWr ""
+    LogWr Doing
+    ExRespond = True
+    
+    EOL_CSIT_MS = EOL(CSIT_MS)
+    EOL_SFacc = EOL(SFacc) - SFresLines
+
+    CheckSheet CSIT_MS, 1, CSIT_MS_NAME_COL, CSIT_MS_NAME
+    CheckSheet Acc1C, 1, A1C_NAME_COL, ACC1C_STAMP
+    CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
+    
+    ClearSheet A_Acc, Range("HDR_AdAcc")
+'---------- проход по CSIT_MS ------------------------
+    Dim i As Long, j As Long, k As Long, s0 As String
+    Fruitful = 0
+
+    Dim SFname As String, SeekWords() As String, SNumsS() As String, SNums As Long, AccId As String
+    
+    ' Hash таблица содержащая словa из названий предприятий и номер строки в SFacc (ключ - компонента имени, слово)
+    Dim SFAccKTbl(0 To 9999) As String, SFAccVTbl(0 To 9999) As String
+    hashInit SFAccKTbl, SFAccVTbl    ' делаем таблицу пустой
+    
+    Dim curAcc As String, SFAccNums As String, SFId As String
+    Dim Msg As String, MSG2 As String, Client As String, Respond As Long
+    
+    With Sheets(SFacc)
+        For i = 2 To EOL_SFacc
+            ' имя организации -> id
+'            If i = 4 Then
+'                i = i
+'            End If
+            SFname = RemIgnored(LCase$(.Cells(i, SFACC_ACCNAME_COL)))
+            If Trim(SFname) = "" Then
+                Msg = "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
+                LogWr Msg
+'                Respond = MsgBox(MSG & vbCrLf & vbCrLf & " Тем не менее включаем?", vbYesNo)
+'                If Respond <> vbYes Then GoTo NextI
+                GoTo NextI      'ВРЕМЕННО!!!
+                SeekWords = split(LCase$(.Cells(i, SFACC_ACCNAME_COL)), "$")        ' включаем как одно слово
+            Else
+                SeekWords = split(SFname, " ")                                      ' включаем слова по отдельности, без игнорируемых
+            End If
+            ' рассматриваем имя организации как слова и для каждого слова добавляем в таблицу номер строки SFacc
+            For j = 0 To UBound(SeekWords)
+                curAcc = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
+                If curAcc <> "$" Then
+                    curAcc = curAcc + " "               ' значение уже не пусто - добавляем пробел как разделитель
+                Else
+                    curAcc = ""
+                End If
+                hashSet SFAccKTbl, SFAccVTbl, SeekWords(j), curAcc + Trim(Str(i))     ' номер строки в таблице
+            Next j
+NextI:
+        Next i
+    End With
+    
+    Dim compNum As Long   ' компоненты имени предприятия в SF (array, index)
+    Dim MSName As String                    ' имя предприятия в MS
+    Dim SFnComps() As String, sfn As Long   ' компоненты имени предприятия в SF (array, index)
+    Dim CompSNums(1 To 100) As Long         ' номерa компонент имени
+    Dim err As Boolean
+        
+    k = startIndex("создание SF account'ов по таблице лидов MS", 2, EOL_CSIT_MS)
+    If k > 0 Then          ' 0 - cancel
+    
+        For i = k To EOL_CSIT_MS                ' цикл по MS предприятиям
+            If ExRespond = False Then GoTo BreakForI
+                
+            ' делаем попытку добавить предприятие в SFacc
+        
+            If Trim(Sheets(CSIT_MS).Cells(i, CSIT_MS_IDSF_COL)) = "*" Then     ' предприятия нет в SF. Пытаемся создать
+                CSITLineProcess i           ' параметр - строка CSIT
+            End If
+        Next i
+    End If
+BreakForI:
+    ModEnd CSIT_MS
+    MS "ИТОГ: создано " + (Str(EOL_AdAcc - 1))
+    
+    ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Account\"
+    WriteCSV A_Acc, "AdAcc.txt"
+    Shell "quota_Acc.bat"
+    
+    WriteCSV AccntUpd, "AccntUpd.txt"
+    Shell "quotaAccUpd.bat"
+End Sub
+
+Sub CSITLineProcess(line As Long)
+
+' обработка лидов, помеченных '*' - вставка в SF сответствующих account'ов
+
+    Dim DlgRes As String
+    
+    With Sheets(CSIT_MS)
+        ' заполняем поля формы: имя 1С, имя SF (сейчас они идентичны)
+        NewSFaccForm.SFacc = .Cells(line, CSIT_MS_NAME_COL)
+
+        NewSFaccForm.Adr1C.Caption = ""                                     ' связь с 1С не делаем. может потом?
+        NewSFaccForm.title1C.Visible = False
+        
+        NewSFaccForm.setPostAddr AdrParse(.Cells(line, CSIT_MS_ADDR_COL))   ' почтовый адрес
+        NewSFaccForm.setFaxfromTel (False)
+        NewSFaccForm.phone = .Cells(line, CSIT_MS_TEL_COL)                 ' телефон
+        NewSFaccForm.fax = .Cells(line, CSIT_MS_FAX_COL)                    ' факс
+        NewSFaccForm.url = .Cells(line, CSIT_MS_URL_COL)                    ' url
+        NewSFaccForm.email = .Cells(line, CSIT_MS_EMAIL_COL)                  ' e-mail
+        Dim INN
+        INN = Trim(.Cells(line, CSIT_MS_INN_COL))
+        If INN <> "" Then INN = split(INN, "/")(0)
+        NewSFaccForm.INN = Trim(INN)                                        ' ИНН
+        
+        NewSFaccForm.contact.value = ""                                     ' поля, оставляемые пустыми
+        NewSFaccForm.invoice.Caption = ""
+        NewSFaccForm.good.Caption = ""
+        
+    End With
+    
+    NewSFaccForm.BackButton.Visible = False                 ' здесь вернуться к выбору будет невозможно, кнопку запретить
+    NewSFaccForm.Show vbModal
+    DlgRes = NewSFaccForm.result
+    If DlgRes = "exit" Then
+        ExRespond = False
+    ElseIf DlgRes = "save" Then
+        EOL_AdAcc = EOL_AdAcc + 1
+        With Sheets(A_Acc)
+            .Cells(EOL_AdAcc, ADACC_NAME_COL) = NewSFaccForm.SFacc
+            .Cells(EOL_AdAcc, ADACC_1CNAME_COL) = NewSFaccForm.Adr1C
+            .Cells(EOL_AdAcc, ADACC_CITY_COL) = NewSFaccForm.City
+            .Cells(EOL_AdAcc, ADACC_STATE_COL) = NewSFaccForm.Area
+            .Cells(EOL_AdAcc, ADACC_STREET_COL) = NewSFaccForm.Street
+            .Cells(EOL_AdAcc, ADACC_INDEX_COL) = NewSFaccForm.Index
+            .Cells(EOL_AdAcc, ADACC_COUNTRY_COL) = NewSFaccForm.Country
+            .Cells(EOL_AdAcc, ADACC_CONTACT1C_COL) = NewSFaccForm.contact
+            .Cells(EOL_AdAcc, ADACC_INN_COL) = NewSFaccForm.INN
+            .Cells(EOL_AdAcc, ADACC_TEL_COL) = NewSFaccForm.phone
+            .Cells(EOL_AdAcc, ADACC_FAX_COL) = NewSFaccForm.fax
+            .Cells(EOL_AdAcc, ADACC_FACTCITY_COL) = NewSFaccForm.CityD
+            .Cells(EOL_AdAcc, ADACC_FACTSTATE_COL) = NewSFaccForm.AreaD
+            .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD
+            .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD
+            .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD
+            .Cells(EOL_AdAcc, ADACC_URL_COL) = NewSFaccForm.url
+            .Cells(EOL_AdAcc, ADACC_EMAIL_COL) = NewSFaccForm.email
+        End With
+    End If
+    
+End Sub
+
 Sub PaymntCl1CAnlz()
 
 '   обработка клиентов 1С по листу "Платежей"
 '       22.06.12
 
-    Dim i As Long, j As Long, k As Long
+    Dim i As Long, j As Long, k As Long, err As Boolean
 
     ModStart PAY_SHEET, "Анализ лист новых Платежей"
     
@@ -202,13 +361,17 @@ Sub PaymntCl1CAnlz()
     ClearSheet A_Acc, Range("HDR_AdAcc")
     ClearSheet AccntUpd, Range("HDR_AccntUpd")
     
-    For i = 2 To EOL_PaySheet
-        If ExRespond = False Then GoTo ExitSub
-'If InStr(LCase$(Sheets(PAY_SHEET).Cells(i, PAYACC_COL)), "томс") <> 0 Then
-'    i = i
-'End If
-        client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL)      ' параметр - имя клиента 1С
-    Next i
+    k = startIndex("обработка клиентов 1С по листу ""Платежей""", 2, EOL_PaySheet)
+    If k > 0 Then          ' 0 - cancel
+    
+        For i = k To EOL_PaySheet
+            If ExRespond = False Then GoTo ExitSub
+    'If InStr(LCase$(Sheets(PAY_SHEET).Cells(i, PAYACC_COL)), "томс") <> 0 Then
+    '    i = i
+    'End If
+            client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL)      ' параметр - имя клиента 1С
+        Next i
+    End If
 ExitSub:
     MS "ИТОГ: создано " + (Str(EOL_AdAcc - 1)) + "; связано " + (Str(EOL_AccntUpd - 1))
     
@@ -234,12 +397,16 @@ Sub Client1CAnlz()
     ClearSheet A_Acc, Range("HDR_AdAcc")
     ClearSheet AccntUpd, Range("HDR_AccntUpd")
     
-    For i = 2 To EOL_Acc1C
-        If ExRespond = False Then GoTo ExitSub
-        If Trim(Sheets(Acc1C).Cells(i, A1C_ADR_COL)) <> "" Then     ' игнорируем строки без адреса (напр. "банки")
-            client1CProcess Sheets(Acc1C).Cells(i, A1C_NAME_COL)    ' параметр - имя клиента 1С
-        End If
-    Next i
+    k = startIndex("обработка клиентов 1С по листу ""Платежей""", 2, EOL_Acc1C)
+    If k > 0 Then          ' 0 - cancel
+        
+        For i = k To EOL_Acc1C
+            If ExRespond = False Then GoTo ExitSub
+            If Trim(Sheets(Acc1C).Cells(i, A1C_ADR_COL)) <> "" Then     ' игнорируем строки без адреса (напр. "банки")
+                client1CProcess Sheets(Acc1C).Cells(i, A1C_NAME_COL)    ' параметр - имя клиента 1С
+            End If
+        Next i
+    End If
 ExitSub:
     MS "ИТОГ: создано " + (Str(EOL_AdAcc - 1)) + "; связано " + (Str(EOL_AccntUpd - 1))
     
@@ -482,6 +649,8 @@ endLoopPrepTxt:
                             .Cells(EOL_AccntUpd, ACCUPD_DELSTATE_COL) = SFaccMergeWith1C.DelAreaSF
                             .Cells(EOL_AccntUpd, ACCUPD_DELINDEX_COL) = SFaccMergeWith1C.DelIndexSF
                             .Cells(EOL_AccntUpd, ACCUPD_DELCOUNTRY_COL) = SFaccMergeWith1C.DelCountrySF
+                            .Cells(EOL_AccntUpd, ACCUPD_URL_COL) = NewSFaccForm.url
+                            .Cells(EOL_AccntUpd, ACCUPD_EMAIL_COL) = NewSFaccForm.email
                         End With
                     ElseIf SFaccMergeWith1C.result = "back" Then
                         Repeat = True       ' единственный случай повторного выполнения цикла do
@@ -504,6 +673,7 @@ endLoopPrepTxt:
                 INN = Trim(Sheets(Acc1C).Cells(clIndx, A1C_INN_COL))
                 If INN <> "" Then INN = split(INN, "/")(0)
                 NewSFaccForm.INN = Trim(INN)
+                NewSFaccForm.setFaxfromTel (True)       ' не имеем отдельной установки факса, берется из телефона
                 NewSFaccForm.phone.value = Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
         
             ' справочные поля - не вводятся оператором
@@ -541,6 +711,8 @@ endLoopPrepTxt:
                         .Cells(EOL_AdAcc, ADACC_FACTSTREET_COL) = NewSFaccForm.StreetD
                         .Cells(EOL_AdAcc, ADACC_FACTINDEX_COL) = NewSFaccForm.IndexD
                         .Cells(EOL_AdAcc, ADACC_FACTCOUNTRY_COL) = NewSFaccForm.CountryD
+                        .Cells(EOL_AdAcc, ADACC_URL_COL) = NewSFaccForm.url
+                        .Cells(EOL_AdAcc, ADACC_EMAIL_COL) = NewSFaccForm.email
                     End With
                 ElseIf DlgRes = "back" Then
                     Repeat = True
@@ -575,13 +747,14 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     
     Dim i As Long
     
+    NewSFaccForm.title1C.Visible = True ' на случай, если была вызвана программа CSITLineProcess, делающая поле invisible
     SFaccountForm.TextBox2 = Msg        ' имя и адрес предприятия 1С
     
     
-    NewSFaccForm.BackButton.Enabled = True
+    NewSFaccForm.BackButton.Visible = True
     If count = 0 Then
-        NewSFaccForm.BackButton.Enabled = False ' здесь вернуться к выбору будет невозможно, кнопку запретить
-        DlgAccChoice = "create"         ' the only possibility
+        NewSFaccForm.BackButton.Visible = False ' здесь вернуться к выбору будет невозможно, кнопку спрятать
+        DlgAccChoice = "create"         ' единственная возможность
         Exit Function
     End If
     
@@ -713,6 +886,28 @@ Function switch(kword, j, k)
     S = kword(j)
     kword(j) = kword(k)
     kword(k) = S
+End Function
+    
+Function startIndex(ByVal title, ByVal startIndx, ByVal maxIndx)
+
+' диалог по определению стартового индекса
+'   21.06.12
+    
+    Dim i As Long, err As Boolean
+    
+    startIndex = -1         ' на случай 'Cancel'
+    Do
+        err = False
+        i = Application.InputBox("Начальный номер строки:", title, startIndx, , , , , 1) ' целое
+        If i <> 0 Then            ' 0 - это 'cancel'
+            If i < startIndx Or i > maxIndx Then
+                MsgBox "ОШИБКА ВВОДА"
+                err = True
+            Else
+                startIndex = i
+            End If
+        End If
+    Loop While err
 End Function
 
 
