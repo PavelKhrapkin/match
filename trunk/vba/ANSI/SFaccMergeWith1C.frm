@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' 27.06.12
 
 Option Explicit
 Dim INN As String
@@ -41,6 +42,13 @@ Function setInn(pSF As String, p1C As String)
     Me.inn1C = split(p1C, "/")(0)
     Me.chkInn1 = False              ' привести chekboxes в исходное состояние
     Me.chkInn2 = False
+    
+    ' если целевой инн отсуствует - взять из 1С
+    If Me.innSF = "" And p1C <> "" Then
+        Me.innSF = p1C
+        Me.chkInn2 = True
+    End If
+    
 End Function
 Function setAddr(adSF As PostAddr, ad1C As PostAddr, delAddrSF As PostAddr, factAddr1C As PostAddr)
 
