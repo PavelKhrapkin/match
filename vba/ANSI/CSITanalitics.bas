@@ -1,14 +1,16 @@
 Attribute VB_Name = "CSITanalitics"
 '----------------------------------------------------------
 ' Модуль анализа информации из CSIT
-'   Пасс А.     25.6.12
-'(?)CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
-'(?)CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
+'   Пасс А.     26.6.12
+'(*)CSIT_MS_Clear()                             - очистка состояния лидов MS_CSIT
+'(*)CSIT_MS_lead()                              - анализ имен организаций - лидов Microsoft CSIT
 ' - CSIT_MS_to_SFacc()                          - создание SF account'ов для предприятий из таблицы лидов MS, отмеченных '*' в 1-й колонке.
 ' - Sub CSITLineProcess(line As Long)           - создание одного SF account'a по лиду MS
 '(*)PaymntCl1CAnlz()                            - обработка клиентов 1С по листу "лист новых Платежей"
 '(*)Client1CAnlz                                - обработка клиентов 1С по листу "Список клиентов 1C"
 ' - client1CProcess(ByVal accntName As String)  - обработка одного клиента 1С
+' T testGetSFacc                                - тест getSFaccFromHash
+' - getSFaccFromHash(ByVal compWord)            - доступ к Hash таблице содержащей словa из названий предприятий и номера строки в SFacc
 ' - SFPostAddr(indx As Long, SFacc As String)   - Стандартное представление почтового адреса
 ' - DlgAccChoice                                - вызов формы "выбор предприятия SF для связывания"
 ' T testTelToFax()                              - тест для telToFax
@@ -22,7 +24,7 @@ Sub CSIT_MS_Clear()
 
     Dim i As Long
     EOL_CSIT_MS = EOL(CSIT_MS)
-    For i = 7 To EOL_CSIT_MS                ' цикл по MS предприятиям
+    For i = 2 To EOL_CSIT_MS                ' цикл по MS предприятиям
         Sheets(CSIT_MS).Cells(i, CSIT_MS_IDSF_COL) = ""
     Next i
 
@@ -58,43 +60,9 @@ Sub CSIT_MS_lead()
 
     Dim SFname As String, SeekWords() As String, SNumsS() As String, SNums As Long, AccId As String
     
-    ' Hash таблица содержащая словa из названий предприятий и номер строки в SFacc (ключ - компонента имени, слово)
-    Dim SFAccKTbl(0 To 9999) As String, SFAccVTbl(0 To 9999) As String
-    hashInit SFAccKTbl, SFAccVTbl    ' делаем таблицу пустой
-    
-    Dim curAcc As String, SFAccNums As String, SFId As String
+    Dim SFAccNums As String
     Dim Msg As String, MSG2 As String, Client As String, Respond As Long
-    
-    With Sheets(SFacc)
-        For i = 2 To EOL_SFacc
-            ' имя организации -> id
-'            If i = 4 Then
-'                i = i
-'            End If
-            SFname = RemIgnored(LCase$(.Cells(i, SFACC_ACCNAME_COL)))
-            If Trim(SFname) = "" Then
-                Msg = "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
-                LogWr Msg
-'                Respond = MsgBox(MSG & vbCrLf & vbCrLf & " Тем не менее включаем?", vbYesNo)
-'                If Respond <> vbYes Then GoTo NextI
-                GoTo NextI      'ВРЕМЕННО!!!
-                SeekWords = split(LCase$(.Cells(i, SFACC_ACCNAME_COL)), "$")        ' включаем как одно слово
-            Else
-                SeekWords = split(SFname, " ")                                      ' включаем слова по отдельности, без игнорируемых
-            End If
-            ' рассматриваем имя организации как слова и для каждого слова добавляем в таблицу номер строки SFacc
-            For j = 0 To UBound(SeekWords)
-                curAcc = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
-                If curAcc <> "$" Then
-                    curAcc = curAcc + " "               ' значение уже не пусто - добавляем пробел как разделитель
-                Else
-                    curAcc = ""
-                End If
-                hashSet SFAccKTbl, SFAccVTbl, SeekWords(j), curAcc + Trim(Str(i))     ' номер строки в таблице
-            Next j
-NextI:
-        Next i
-    End With
+    getSFaccFromHash "$$$"          ' инициализовать Hash слов из названий предприятий
     
     Dim compNum As Long   ' компоненты имени предприятия в SF (array, index)
     Dim MSName As String                    ' имя предприятия в MS
@@ -123,7 +91,7 @@ NextI:
                 For j = 0 To UBound(SeekWords)
                 
                         ' строка SF номеров из hash извлеченная по компоненте MS-имени (разделитель - пробел)
-                    SFAccNums = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
+                    SFAccNums = getSFaccFromHash(SeekWords(j))
                     If SFAccNums <> "$" Then                                        ' в hash что-то есть (номера в таблице SFacc, таблице SF - accounts)?
                 
                         MSG2 = MSG2 + vbCrLf + vbCrLf + "       КЛЮЧЕВОЕ СЛОВО: " + SeekWords(j)
@@ -195,7 +163,6 @@ Sub CSIT_MS_to_SFacc()
 ' по каждой строке вызывается диалог
 '   25.06.12
 
-
     Const Doing = "Анализ названий организаций - лидов MS_CSIT"
     ModStart CSIT_MS, Doing
     LogWr ""
@@ -212,54 +179,7 @@ Sub CSIT_MS_to_SFacc()
     ClearSheet A_Acc, Range("HDR_AdAcc")
 '---------- проход по CSIT_MS ------------------------
     Dim i As Long, j As Long, k As Long, s0 As String
-    Fruitful = 0
 
-    Dim SFname As String, SeekWords() As String, SNumsS() As String, SNums As Long, AccId As String
-    
-    ' Hash таблица содержащая словa из названий предприятий и номер строки в SFacc (ключ - компонента имени, слово)
-    Dim SFAccKTbl(0 To 9999) As String, SFAccVTbl(0 To 9999) As String
-    hashInit SFAccKTbl, SFAccVTbl    ' делаем таблицу пустой
-    
-    Dim curAcc As String, SFAccNums As String, SFId As String
-    Dim Msg As String, MSG2 As String, Client As String, Respond As Long
-    
-    With Sheets(SFacc)
-        For i = 2 To EOL_SFacc
-            ' имя организации -> id
-'            If i = 4 Then
-'                i = i
-'            End If
-            SFname = RemIgnored(LCase$(.Cells(i, SFACC_ACCNAME_COL)))
-            If Trim(SFname) = "" Then
-                Msg = "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
-                LogWr Msg
-'                Respond = MsgBox(MSG & vbCrLf & vbCrLf & " Тем не менее включаем?", vbYesNo)
-'                If Respond <> vbYes Then GoTo NextI
-                GoTo NextI      'ВРЕМЕННО!!!
-                SeekWords = split(LCase$(.Cells(i, SFACC_ACCNAME_COL)), "$")        ' включаем как одно слово
-            Else
-                SeekWords = split(SFname, " ")                                      ' включаем слова по отдельности, без игнорируемых
-            End If
-            ' рассматриваем имя организации как слова и для каждого слова добавляем в таблицу номер строки SFacc
-            For j = 0 To UBound(SeekWords)
-                curAcc = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
-                If curAcc <> "$" Then
-                    curAcc = curAcc + " "               ' значение уже не пусто - добавляем пробел как разделитель
-                Else
-                    curAcc = ""
-                End If
-                hashSet SFAccKTbl, SFAccVTbl, SeekWords(j), curAcc + Trim(Str(i))     ' номер строки в таблице
-            Next j
-NextI:
-        Next i
-    End With
-    
-    Dim compNum As Long   ' компоненты имени предприятия в SF (array, index)
-    Dim MSName As String                    ' имя предприятия в MS
-    Dim SFnComps() As String, sfn As Long   ' компоненты имени предприятия в SF (array, index)
-    Dim CompSNums(1 To 100) As Long         ' номерa компонент имени
-    Dim err As Boolean
-        
     k = startIndex("создание SF account'ов по таблице лидов MS", 2, EOL_CSIT_MS)
     If k > 0 Then          ' 0 - cancel
     
@@ -288,6 +208,7 @@ End Sub
 Sub CSITLineProcess(line As Long)
 
 ' обработка лидов, помеченных '*' - вставка в SF сответствующих account'ов
+'   26.06.12
 
     Dim DlgRes As String
     
@@ -300,10 +221,10 @@ Sub CSITLineProcess(line As Long)
         
         NewSFaccForm.setPostAddr AdrParse(.Cells(line, CSIT_MS_ADDR_COL))   ' почтовый адрес
         NewSFaccForm.setFaxfromTel (False)
-        NewSFaccForm.phone = .Cells(line, CSIT_MS_TEL_COL)                 ' телефон
+        NewSFaccForm.phone = .Cells(line, CSIT_MS_TEL_COL)                  ' телефон
         NewSFaccForm.fax = .Cells(line, CSIT_MS_FAX_COL)                    ' факс
         NewSFaccForm.url = .Cells(line, CSIT_MS_URL_COL)                    ' url
-        NewSFaccForm.email = .Cells(line, CSIT_MS_EMAIL_COL)                  ' e-mail
+        NewSFaccForm.email = .Cells(line, CSIT_MS_EMAIL_COL)                ' e-mail
         Dim INN
         INN = Trim(.Cells(line, CSIT_MS_INN_COL))
         If INN <> "" Then INN = split(INN, "/")(0)
@@ -346,12 +267,77 @@ Sub CSITLineProcess(line As Long)
     
 End Sub
 
+Sub testGetSFacc()
+' тест getSFaccFromHash
+'   25.06.12
+    Dim t1, t2, t3, t4, t5
+    EOL_SFacc = EOL(SFacc) - SFresLines
+    CheckSheet SFacc, EOL_SFacc + 2, 1, SFaccRepName
+    getSFaccFromHash "$$$"
+    t1 = getSFaccFromHash("Энергосервис")
+    t2 = getSFaccFromHash("Хасконинг")
+    t3 = getSFaccFromHash("")
+    t4 = getSFaccFromHash("ffff")
+End Sub
+
+Function getSFaccFromHash(ByVal compWord)
+    
+' доступ к Hash таблице содержащей словa из названий предприятий и номера строки в SFacc (ключ - компонента имени, слово)
+' акронимы удалены и ключи приведены к lower case.
+' таблица инициализируется и заполняется вызовом getSFaccFromHash("$$$")
+'   25.06.12
+    
+    Static SFAccKTbl(0 To 9999) As String, SFAccVTbl(0 To 9999) As String
+    Static initFlg As Boolean
+    
+    Dim i As Long, j As Long
+    Dim SFname As String, SeekWords() As String, curAcc As String
+    
+    If compWord = "$$$" Then initFlg = False
+    
+    If (Not initFlg) Then
+        hashInit SFAccKTbl, SFAccVTbl    ' делаем таблицу пустой
+        
+        With Sheets(SFacc)
+            For i = 2 To EOL_SFacc
+                ' имя организации -> id
+                SFname = RemIgnored(LCase$(.Cells(i, SFACC_ACCNAME_COL)))
+                If Trim(SFname) = "" Then
+                    LogWr "Только игнорируемые слова в имени: '" & .Cells(i, SFACC_ACCNAME_COL) & "'. "
+    '                Respond = MsgBox(MSG & vbCrLf & vbCrLf & " Тем не менее включаем?", vbYesNo)
+    '                If Respond <> vbYes Then GoTo NextI
+                    GoTo NextI
+                    SeekWords = split(LCase$(.Cells(i, SFACC_ACCNAME_COL)), "$")        ' включаем как одно слово (символа '$' там нет)
+                Else
+                    SeekWords = split(SFname, " ")                                      ' включаем слова по отдельности, без игнорируемых
+                End If
+                ' рассматриваем имя организации как слова и для каждого слова добавляем в таблицу номер строки SFacc
+                For j = 0 To UBound(SeekWords)
+                    curAcc = hashGet(SFAccKTbl, SFAccVTbl, SeekWords(j))
+                    If curAcc <> "$" Then
+                        curAcc = curAcc + " "               ' значение уже не пусто - добавляем пробел как разделитель
+                    Else
+                        curAcc = ""
+                    End If
+                    hashSet SFAccKTbl, SFAccVTbl, SeekWords(j), curAcc + Trim(Str(i))     ' номер строки в таблице
+                Next j
+NextI:
+            Next i
+        End With
+        initFlg = True
+    End If      ' end if initFlg
+    
+    ' собственно извлечение из таблицы. при инициализации (запрос '$$$') будет неудача, т.е. будет возвращен '$'
+    
+    getSFaccFromHash = hashGet(SFAccKTbl, SFAccVTbl, LCase$(compWord))
+    
+End Function
 Sub PaymntCl1CAnlz()
 
 '   обработка клиентов 1С по листу "Платежей"
 '       22.06.12
 
-    Dim i As Long, j As Long, k As Long, err As Boolean
+    Dim i As Long, j As Long, k As Long, err As Boolean, hashInitFlg As Boolean
 
     ModStart PAY_SHEET, "Анализ лист новых Платежей"
     
@@ -364,12 +350,10 @@ Sub PaymntCl1CAnlz()
     k = startIndex("обработка клиентов 1С по листу ""Платежей""", 2, EOL_PaySheet)
     If k > 0 Then          ' 0 - cancel
     
+        hashInitFlg = True
         For i = k To EOL_PaySheet
             If ExRespond = False Then GoTo ExitSub
-    'If InStr(LCase$(Sheets(PAY_SHEET).Cells(i, PAYACC_COL)), "томс") <> 0 Then
-    '    i = i
-    'End If
-            client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL)      ' параметр - имя клиента 1С
+            client1CProcess Sheets(PAY_SHEET).Cells(i, PAYACC_COL), hashInitFlg     ' параметр - имя клиента 1С
         Next i
     End If
 ExitSub:
@@ -387,7 +371,7 @@ Sub Client1CAnlz()
 '   обработка клиентов 1С по листу "Список клиентов 1C"
 '       22.06.12
 
-    Dim i As Long, j As Long, k As Long
+    Dim i As Long, j As Long, k As Long, hashInitFlg As Boolean
 
     ModStart Acc1C, "Анализ справочника клиентов 1С"
     
@@ -400,10 +384,12 @@ Sub Client1CAnlz()
     k = startIndex("обработка клиентов 1С по листу ""Платежей""", 2, EOL_Acc1C)
     If k > 0 Then          ' 0 - cancel
         
+        hashInitFlg = True
         For i = k To EOL_Acc1C
             If ExRespond = False Then GoTo ExitSub
             If Trim(Sheets(Acc1C).Cells(i, A1C_ADR_COL)) <> "" Then     ' игнорируем строки без адреса (напр. "банки")
-                client1CProcess Sheets(Acc1C).Cells(i, A1C_NAME_COL)    ' параметр - имя клиента 1С
+                ' параметр - имя клиента 1С. hashInitFlg сбрасывается внутри.
+                client1CProcess Sheets(Acc1C).Cells(i, A1C_NAME_COL), hashInitFlg
             End If
         Next i
     End If
@@ -418,7 +404,7 @@ ExitSub:
     Shell "quotaAccUpd.bat"
 End Sub
 
-Sub client1CProcess(ByVal accntName As String)
+Sub client1CProcess(ByVal accntName As String, hashInitFlg As Boolean)
 
 '   обработка одного клиента 1С
 '   accntName - имя клиента
@@ -427,11 +413,10 @@ Sub client1CProcess(ByVal accntName As String)
     Dim s0 As String, S1() As String                    ' локальные переменные
     Dim i As Long, j As Long, k As Long
     
-    Static hashFlag As Boolean                              ' инициализировано в False
     Static accSF(0 To 9999) As String, accSFind(0 To 9999) As String
     Static accSFComps(0 To 9999) As String, accSFIndxs(0 To 9999) As String
     Static acc1CHashKey(0 To 4999) As String, acc1CHashVal(0 To 4999) As String
-    If (Not hashFlag) Then
+    If (hashInitFlg) Then
     
     '---------- Подготовка хеш-таблиц --------------------------------------
     '   1. Таблица SFacc (ключ - SF имена целиком, значение - индекс в таблице SFacc)
@@ -447,20 +432,8 @@ Sub client1CProcess(ByVal accntName As String)
     '   2. Таблица SFacc (ключ - слово из имени предприятия SF,
     '                     значение - номера в SFacc, разделеленные символом '$'
     
+        getSFaccFromHash "$$$"                                  ' инициализация покомпонентного hash SFacc
         
-        hashInit accSFComps, accSFIndxs
-        For i = 2 To EOL_SFacc
-            S1 = split(LCase$(RemIgnored(Trim$(Sheets(SFacc).Cells(i, SFACC_ACCNAME_COL)))))
-            For j = 0 To UBound(S1)
-                s0 = hashGet(accSFComps, accSFIndxs, S1(j))     ' допустимо несколько
-                If s0 <> "$" Then                               ' индексов для одного account'a
-                    s0 = s0 + "$"                               ' разделенных "$"
-                Else
-                    s0 = ""
-                End If
-                hashSet accSFComps, accSFIndxs, S1(j), s0 + Str(i)
-            Next j
-        Next i
         hashInit acc1CHashKey, acc1CHashVal                     ' инициализация хеша дедупликации
         For i = 2 To EOL_Acc1C
         
@@ -468,7 +441,7 @@ Sub client1CProcess(ByVal accntName As String)
                 hashSet acc1CHashKey, acc1CHashVal, LCase$(Sheets(Acc1C).Cells(i, A1C_NAME_COL)), Str(i)
             End If
         Next i
-        hashFlag = True
+        hashInitFlg = False
     End If
     
 ' --------- обработка клиента 1С -----------------
@@ -511,9 +484,9 @@ Sub client1CProcess(ByVal accntName As String)
             ' Разбиваем 1С имя на слова и формируем запрос: ищем слова в хеше слов SF
             sfWrds = split(LCase$(RemIgnored(accntName)))
             For SFWordIndx = 0 To UBound(sfWrds)
-                wrSF = hashGet(accSFComps, accSFIndxs, sfWrds(SFWordIndx))
+                wrSF = getSFaccFromHash(sfWrds(SFWordIndx))
                 If wrSF <> "$" Then
-                    S1 = split(wrSF, "$")
+                    S1 = split(wrSF, " ")
                     For j = 0 To UBound(S1)
                         adrField = SFPostAddr(S1(j), SFacc)
                         If adrField <> "" Then                  ' пропускаем строки без адреса
@@ -736,6 +709,7 @@ Function SFPostAddr(ByVal indx As Long, SFacc As String)
                 + "," + .Cells(indx, SFACC_COUNTRY_COL)), ",,", ",")
     End With
 End Function
+
 Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     ' CompSNums - массив номеров строк в таблице
     ' count     - actual possibility count
@@ -744,12 +718,12 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     ' namSF     - имена предприятий
     ' addrTxt   - адреса предприятий
     ' kword     - ключевые слова по которым предприятия выбраны
+    ' 25.06.12
     
     Dim i As Long
     
     NewSFaccForm.title1C.Visible = True ' на случай, если была вызвана программа CSITLineProcess, делающая поле invisible
     SFaccountForm.TextBox2 = Msg        ' имя и адрес предприятия 1С
-    
     
     NewSFaccForm.BackButton.Visible = True
     If count = 0 Then
