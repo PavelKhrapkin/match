@@ -381,7 +381,7 @@ Sub Client1CAnlz()
     ClearSheet A_Acc, Range("HDR_AdAcc")
     ClearSheet AccntUpd, Range("HDR_AccntUpd")
     
-    k = startIndex("обработка клиентов 1С по листу ""Платежей""", 2, EOL_Acc1C)
+    k = startIndex("обработка клиентов 1С по листу ""Список клиентов 1C""", 2, EOL_Acc1C)
     If k > 0 Then          ' 0 - cancel
         
         hashInitFlg = True
@@ -554,7 +554,7 @@ endLoopPrepTxt:
                                             ' на предупреждение "ЭТА ОРГАНИЗАЦИЯ УЖЕ СВЯЗАНА В SF!"
         Do
             Repeat = False                  ' если не изменится, выйдем из цикла Do
-            DlgRes = DlgAccChoice(CompSNums, compNum, A1C_NAME_COL, Msg, namSF, adrTxt, kword)
+            DlgRes = DlgAccChoice(clIndx, CompSNums, compNum, A1C_NAME_COL, Msg, namSF, adrTxt, kword)
             If IsNumeric(DlgRes) Then  ' SF account id  + 1C id
             
                 setLink = True
@@ -598,6 +598,9 @@ endLoopPrepTxt:
                     SFaccMergeWith1C.setTel Sheets(SFacc).Cells(j, SFACC_TEL_COL), _
                                             Sheets(Acc1C).Cells(clIndx, A1C_TEL_COL)
             
+                    SFaccMergeWith1C.indxSF = j                         ' номер строки в листе SFacc
+                    SFaccMergeWith1C.indx1C = clIndx                    ' номер строки в листе клиентов 1С
+                    
                     SFaccMergeWith1C.Show                               ' ВЫЗОВ ФОРМЫ
             
                     If SFaccMergeWith1C.result = "exit" Then            ' обработка заполненной формы
@@ -622,8 +625,8 @@ endLoopPrepTxt:
                             .Cells(EOL_AccntUpd, ACCUPD_DELSTATE_COL) = SFaccMergeWith1C.DelAreaSF
                             .Cells(EOL_AccntUpd, ACCUPD_DELINDEX_COL) = SFaccMergeWith1C.DelIndexSF
                             .Cells(EOL_AccntUpd, ACCUPD_DELCOUNTRY_COL) = SFaccMergeWith1C.DelCountrySF
-                            .Cells(EOL_AccntUpd, ACCUPD_URL_COL) = NewSFaccForm.url
-                            .Cells(EOL_AccntUpd, ACCUPD_EMAIL_COL) = NewSFaccForm.email
+'                            .Cells(EOL_AccntUpd, ACCUPD_URL_COL) = SFaccMergeWith1C.url
+'                            .Cells(EOL_AccntUpd, ACCUPD_EMAIL_COL) = SFaccMergeWith1C.email
                         End With
                     ElseIf SFaccMergeWith1C.result = "back" Then
                         Repeat = True       ' единственный случай повторного выполнения цикла do
@@ -652,6 +655,8 @@ endLoopPrepTxt:
             ' справочные поля - не вводятся оператором
                 NewSFaccForm.invoice.Caption = Sheets(Acc1C).Cells(clIndx, A1C_INVOICE_COL)
                 NewSFaccForm.good.Caption = Sheets(Acc1C).Cells(clIndx, A1C_GOOD_COL)
+                
+                NewSFaccForm.indx1C = clIndx
         
                 NewSFaccForm.Show vbModal
         
@@ -710,8 +715,12 @@ Function SFPostAddr(ByVal indx As Long, SFacc As String)
     End With
 End Function
 
-Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
-    ' CompSNums - массив номеров строк в таблице
+Function DlgAccChoice(clIndx, CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
+
+    ' вызов диалога SFaccountForm
+
+    ' clIndx    - индекс в листе "Список клиентов 1С"
+    ' CompSNums - массив номеров строк в таблице SFacc
     ' count     - actual possibility count
     ' idCol     - номер колонки в таблице
     ' MSG       - заголовок запроса к оператору, часть, не зависящая от выбора
@@ -722,7 +731,6 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
     
     Dim i As Long
     
-    NewSFaccForm.title1C.Visible = True ' на случай, если была вызвана программа CSITLineProcess, делающая поле invisible
     SFaccountForm.TextBox2 = Msg        ' имя и адрес предприятия 1С
     
     NewSFaccForm.BackButton.Visible = True
@@ -763,6 +771,8 @@ Function DlgAccChoice(CompSNums, count, idCol, Msg, namSF, addrTxt, kword)
         ' textbox невидим, ОК ("Связать") - если есть возможность связать
         SFaccountForm.OKButton.Visible = True
         If count = 0 Then SFaccountForm.OKButton.Visible = False
+        
+        SFaccountForm.indx1C = clIndx                   ' номер строки в листе клиентов 1С
         
         SFaccountForm.Show vbModal                      ' входим в диалог
         

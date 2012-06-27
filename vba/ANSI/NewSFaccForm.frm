@@ -13,7 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
+' 27.06.12
 
 
 
@@ -126,6 +126,10 @@ Private Sub Label9_Click()
 End Sub
 
 Private Sub TextBox1_Change()
+
+End Sub
+
+Private Sub title1C_Click()
 
 End Sub
 
