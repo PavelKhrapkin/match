@@ -2,12 +2,15 @@ Attribute VB_Name = "From1C"
 '---------------------------------------------------------------------------
 ' Макросы для загрузки отчетов из 1С
 '
-' From1Cpayment  - заменяет лист отчета из 1С "Приход денег на счета"
-' From1Cdogovor  - заменяет лист отчета 1С "Договоры" новым из 1С
-' From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
-' FromStock      - замена Складской Книги в листе Stock
+'<*> From1Cpayment  - заменяет лист отчета из 1С "Приход денег на счета"
+' -  SFmatchFill(SheetN)  - заполнение связей листа SheetN по SFDC
+' -  CSmatch(Val,Col,[SheetN],[DB]) - Case Sensitive match возвращает номер строки
+'           с Val в колонке Col листа SheetN в DB. Если Val не найден- возвращает 0.
+'<*> From1Cdogovor  - заменяет лист отчета 1С "Договоры" новым из 1С
+'<*> From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
+'(*) FromStock      - замена Складской Книги в листе Stock
 '
-' 29.6.2012 П.Л.Храпкин match 2.0
+' 1.7.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
 Sub From1Cpayment()
@@ -80,20 +83,25 @@ Sub From1Cpayment()
     End With
     
     Doing = "Отчет платежей " & Sheets(1).Name
-    ModEnd 1
+    ModEnd
+End Sub
+Sub testSFmatchFill()
+    ModStart REP_1C_P_PAINT
+    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
+    SFmatchFill PAY_SHEET
+    ModEnd
 End Sub
 Sub SFmatchFill(SheetN)
 '
-' - SFmatchFill SheetN
-'       заполнение колонок PAYINSF_COL и PAYSFLN_COL листа PAY_SHEET
-'       в зависимости от наличия значения в колонке SF_COD_COL листа SF
-' 30.6.12
+' - SFmatchFill(SheetN)  - заполнение связей листа SheetN по SFDC
+' 8.7.12
 
     Dim L As Integer        '= EOL заполняемого отчета
+    Dim Acc As String       'поле Клиент 1С с нормализацией
+    Dim SFid As String      'поле IdSF - Id Платежа в SF
     Dim iPaid As Integer    '= номер "сшитой" строки в SF
     Dim AccCol As Integer   '= номер "сшиваемой" колонки
     Dim i As Integer        '= номер текущей строки заполняемого отчета
-    Dim j As Integer        '= номер строки SF_PA
     
 '    SFaccColFill PAY_SHEET  ' в колонке 1 если Организация есть в SF
 '    SFaccCol PAY_SHEET, PAY_RESLINES    ' раскрашиваем колонку A
@@ -113,47 +121,78 @@ Sub SFmatchFill(SheetN)
             Stop
     End Select
         
-        
-    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
+    DB_SFDC.Sheets(SFacc).Select
     With ThisWorkbook.Sheets(PAY_SHEET)
         For i = 2 To L
-            Progress i / L
+            Progress i / L / 3
                 '-- "нормализуем" имя Организации  и "сшиваем" его с SFacc --
-            .Cells(i, AccCol) = Replace(Compressor(.Cells(i, AccCol)), vbCrLf, "")
-            
-            If IsMatch(.Cells(i, AccCol), SFACC_ACC1C_COL, , SFacc, DB_SFDC) Then
+            Acc = Replace(Compressor(.Cells(i, AccCol)), vbCrLf, "")
+            .Cells(i, AccCol) = Acc
+            If CSmatch(Acc, SFACC_ACC1C_COL) <> 0 Then
                 .Cells(i, PAYISACC_COL) = "1"
             Else
                 .Cells(i, PAYISACC_COL) = ""
             End If
+        Next i
                         
+        DB_SFDC.Sheets(SF).Select
+        For i = 2 To L
+            Progress 1 / 3 + i / L / 3
                 '-- "сшиваем" с Платежом в SF --
-            If IsMatch(.Cells(i, PAYCODE_COL), SF_COD_COL, iPaid, SF, DB_SFDC) Then
+            iPaid = CSmatch(.Cells(i, PAYCODE_COL), SF_COD_COL)
+            If iPaid <> 0 Then
                 .Cells(i, PAYINSF_COL) = "1"
-                .Cells(i, PAYSFLN_COL) = iPaid
                 SFid = DB_SFDC.Sheets(SF).Cells(iPaid, SF_PAYID_COL)
+                .Cells(i, PAYIDSF_COL) = SFid
             Else
                 .Cells(i, PAYINSF_COL) = ""
-                .Cells(i, PAYSFLN_COL) = ""
+                .Cells(i, PAYIDSF_COL) = ""
                 SFid = ""
             End If
-            
-                '-- "сшиваем" с Контрактами ADSK в SF_PA --
-    '..... потом здесь можно поместить ВСЕ Контракты ADSK по номерам с "+"
-            If IsMatch(SFid, SFPA_PAYID_COL, , SF_PA, DB_SFDC) Then
-                .Cells(i, PAYADSK_COL) = "1"
-            Else
-                .Cells(i, PAYADSK_COL) = ""
-            End If
         Next i
+'''
+'''                '-- "сшиваем" с Контрактами ADSK в SF_PA --
+'''    '..... потом здесь можно поместить ВСЕ Контракты ADSK по номерам с "+"
+'''            If CSmatch(SFid, SFPA_PAYID_COL, SF_PA, DB_SFDC) <> 0 Then
+'''                 .Cells(i, PAYADSK_COL) = "1"
+'''            Else
+'''                .Cells(i, PAYADSK_COL) = ""
+'''            End If
     End With
-    DB_SFDC.Close SaveChanges:=False
 End Sub
-Sub testSFmatchFill()
-    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-    SFmatchFill PAY_SHEET
+Sub testCSmatch()
+    If "G" = "g" Then Stop
+    Dim A
+    ThisWorkbook.Sheets("Sheet1").Select
+    A = CSmatch("g12", 1)
+    A = CSmatch("g121", 1)
+    
+    ModStart REP_1C_P_PAINT
+    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
+    DB_SFDC.Sheets(SFacc).Select
+    A = CSmatch("ОАО ""ЭХО""", 2)
+    ModEnd
 End Sub
+Function CSmatch(Val, Col)
+'
+' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
+'                   Если Val не найден- возвращает 0. Лист для поиска Val должен быть Selected.
+' 8/7/12
 
+    Const Big = 77777
+    Dim CheckCS
+    Dim N As Long
+    N = 1
+    Do
+        CSmatch = 0
+        On Error Resume Next
+        CSmatch = Application.Match(Val, Range(Cells(N, Col), Cells(Big, Col)), 0) + N - 1
+        CheckCS = Cells(CSmatch, Col)
+        On Error GoTo 0
+        If IsEmpty(CSmatch) Or Not IsNumeric(CSmatch) Or CSmatch <= 0 Then Exit Function
+        N = CSmatch + 1
+    Loop While Val <> CheckCS
+End Function
 Sub From1Cdogovor()
 '
 ' Заменяет лист отчета 1С "Договоры" новым Листом на первом месте
