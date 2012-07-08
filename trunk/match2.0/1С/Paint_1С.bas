@@ -176,6 +176,7 @@ Sub SFaccColFill(SheetN)
 '  1.5.12 - проверка на пустое поле Клиент в Договоре
 '  3.5.12 - использование Hash таблиц А.Пасс
 ' 25.6.12 - match 2.0
+'  2.7.12 - CSmatch(Acc, SFACC_ACC1C_COL, SFacc, DB_SFDC)
 
 '    Dim SFDC As workbook
      
@@ -224,7 +225,8 @@ Sub SFaccColFill(SheetN)
                 .Cells(i, 1) = ""
                 If Acc <> "" Then
                     For j = 2 To EOL_SFacc
-                        If Acc = Replace(DB_SFDC.Sheets(SFacc).Cells(j, SFACC_ACC1C_COL), "" & vbCrLf, "") Then
+'                        If Acc = Replace(DB_SFDC.Sheets(SFacc).Cells(j, SFACC_ACC1C_COL), "" & vbCrLf, "") Then
+                        If CSmatch(Acc, SFACC_ACC1C_COL, SFacc, DB_SFDC) Then
                             .Cells(i, 1) = "1"
                             Exit For
                         End If
@@ -242,7 +244,7 @@ Sub SFaccColFill(SheetN)
     t1 = Timer - t0
     LogWr "[SFaccColFill] Time =" & t1
 
-    ModEnd SheetN
+    ModEnd
 End Sub
 Function IsMatch(Val, Col, Optional iRow As Integer, Optional SheetN = Null, Optional DB = Null) As Boolean
 '
@@ -251,7 +253,6 @@ Function IsMatch(Val, Col, Optional iRow As Integer, Optional SheetN = Null, Opt
 
     IsMatch = False
     iRow = 0
-    On Error Resume Next
     If IsNull(DB) Then
         If IsNull(SheetN) Then
             iRow = WorksheetFunction.Match(Val, Columns(Col), 0)
