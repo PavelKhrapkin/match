@@ -2,20 +2,22 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   25.6.12
+'   12.7.12
 
 Option Explicit
 
-'==================== Обрабатываемые Отчеты =============================
 Public Const F_Folder = "C:\work\Match\match2.0\DBs\"
+Public Const F_MATCH = F_Folder & "match.xlsm"
 Public Const F_1C = F_Folder & "1C.xlsm"
 Public Const F_SFDC = F_Folder & "SFDC.xlsm"
 Public Const F_ADSK = F_Folder & "ADSK.xlsm"
 Public Const F_STOCK = F_Folder & "Stock.xlsm"
 
+Public DB_MATCH As Workbook 'отчеты и таблицы match
+Public DB_1C As Workbook    'отчеты 1C
 Public DB_SFDC As Workbook  'отчеты Salesforce
 
-
+'==================== Обрабатываемые Отчеты =============================
 '-- загрузка и препроцессинг базы 1C.xlsm
 Public Const REP_1C_P_LOAD = "Загрузка Платежей из 1С"
 Public Const REP_1C_P_PAINT = "Раскраска Платежей 1С"
@@ -27,13 +29,94 @@ Public Const REP_1C_A_LOAD = "Загрузка Справочника клиентов из 1С"
 
 '-- загрузка и препроцессинг отчетов из SalesForce в базу SDFC.xlsm
 Public Const REP_SFDC_SF_LOAD = "Загрузка Платежей из Salesforce - SF"
+Public Const REP_SFDC_SFcont_LOAD = "Загрузка Контактов из Salesforce - SFcont"
     
 '-- глобальные переменные, общие для всех отчетов
 Public AllCol As Integer    ' Количество колонок в таблице отчета
 Public Doing As String      ' строка в Application.StatusBar - что делает модуль
+Public Lines As Integer     ' количество строк текущего/нового отчета
+Public LinesOld As Integer  ' количество строк старого отчета
+
+Public Fruitful As Integer  ' счетчик полезных результатов
+
+Public ExRespond As Boolean ' если False - завершение работы
+
+'=============== База DB_MATCH - файл match.xlsm ==============
+Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
+Public Const P_Paid = "P_Paid"              ' лист новых Платежей
+Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
+Public Const C_Contr = "C_Contr"            ' лист новых Договоров
+Public Const C_ContrLnk = "C_ContrLnk"      ' лист связок Договоров с Проектами
+Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
+Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
+
+Public EOL_PaySheet     ' последняя строка отчета 1С по Платежам без пятки
+Public EOL_DogSheet     ' последняя строка отчета 1С по Договорам без пятки
+Public EOL_SF           ' последняя строка отчета по Платежам SF без пятки
+Public EOL_SFD          ' последняя строка отчета по Договорам SFD без пятки
+Public EOL_SFopp        ' последняя строка отчета по Проектам в SFopp без пятки
+Public EOL_SFacc        ' последняя строка SFacc по Организациям без пятки
+Public EOL_SForders     ' последняя строка отчета по Заказам SForders без пятки
+Public EOL_ADSKfrSF     ' последняя строка отчета Autodesk из SF
+Public EOL_Acc1C        ' последняя строка Справочника Организаций 1С
+Public EOL_NewOpp       ' последняя строка листа новых Проектов
+Public EOL_NewPay       ' последняя строка листа новых Платежей
+Public EOL_NewContr     ' последняя строка листа новых Договоров
+Public EOL_NewSN        ' последняя строка листа новых SN Autodesk
+Public EOL_ContrLnk     ' последняя строка листа новых или обновленных Договоров
+Public EOL_PaymentUpd   ' EOL листа изменений Платежей - связка Платежа с Договором
+Public EOL_DIC          ' последняя строка листа Словаря Организаций
+Public EOL_AdAcc        ' последняя строка листа новых Организаций для внесения в SF
+Public EOL_AccntUpd     ' последняя строка листа новых связей Организаций Sf и 1С для внесения в SF
+Public EOL_ADSKlnkPay   ' последняя строка листа новых связок Платежи-Контакт ADSK
+Public EOL_SFlnkADSK    ' последняя строка листа связок Платежи-Контакт ADSK
+Public EOL_ADSK         ' последняя строка листа отчета из ADSK.xlsx
+Public EOL_Stock        ' последняя значащая строка листа по Складу
+Public EOL_BTO          ' последняя значащая строка листа BTOlog
+Public EOL_OrderList    ' последняя значащая строка листа Заказов
+
+Public Const DATE_BULKY = "1.1.20"  ' дата окончания для Bulky Проектов
+Public Const BIG = 9999             ' большое число для границ поиска
+
+'------------- match TOC - Оглавление отчетов в базе данных ----------
+Public Const TOC = "ТОСmatch"           ' Оглавление листов всех файлов - баз данных
+
+Public Const TOC_LOAD_COL = 1           ' дата и время загрузки отчета
+Public Const TOC_HANDLE_COL = 2         ' дата и время обработки отчета
+Public Const TOC_REPNAME_COL = 3        ' имя отчета в базе данных
+Public Const TOC_EOL_COL = 4            ' EOL отчета без пятки
+Public Const TOC_STAMP_COL = 10         ' Штамп
+Public Const TOC_STAMP_TYPE_COL = 11    ' Тип Штампа: строка (=) или подстрока (I)
+Public Const TOC_STAMP_R_COL = 12       ' строка Штампа: (+EOL)
+Public Const TOC_STAMP_C_COL = 13       ' колонка Штампа: (+MyCol)
+Public Const TOC_PAR_1_COL = 15         ' колонка Штампа Параметр 1
+Public Const TOC_PAR_2_COL = 16         ' колонка Штампа Параметр 2
+Public Const TOC_PAR_3_COL = 17         ' колонка Штампа Параметр 3
+
+'=============== База DB_SFDC - файл SFDC.xlsm ==============
+Public Const SF = "SF"              ' лист отчета по Платежам
+Public Const SFD = "SFD"            ' лист отчета по Договорам
+Public Const SFacc = "SFacc"        ' лист - список Организаций
+Public Const SFcont = "SFcont"      ' лист отчета по Контактам
+Public Const SFopp = "SFopp"        ' лист отчета по Проектам
+Public Const SForders = "SForders"  ' лист отчета по Заказам
+Public Const ADSKfrSF = "ADSKfrSF"  ' лист отчета по Autodesk
+
+' имена отчетов SF - используются как штампы
+Public Const SFstamp = "CSoft"
+
+Public Const SFpayRepName = "Платежи: Сверка SF с 1С"
+Public Const SFcontrRepName = "Match: SFD"          ' Договоры - Contracts
+Public Const SFaccRepName = "SFacc"                 ' Организации - Accounts
+Public Const SFcontactRepName = "SFcont"            ' Контакты - Contacts
+Public Const SFoppRepName = "Match SFopp"           ' Проекты - Opportunities
+Public Const SFadskRepName = "Match ADSK from SF"   ' Autodesk - ADSK
+
+Public Const SFresLines = 6 'размер пятки отчетов SalesForce
 
 '------------- SF - отчет Saleforce по Платежам --------------------
 Public Const SF_COD_COL = 2        ' колонка-код Платежа в SF
+Public Const SF_ACC1C_COL = 3      ' колонка-"Имя плательщика в 1С"
 Public Const SF_PAYID_COL = 18     ' колонка- Id Платежа в SF
     
 '------------- SFD - отчет Saleforce по Договорам ------------------
@@ -108,8 +191,8 @@ Public Const SFpaRepName = "Match: Связка Платеж-Контракт Autodesk"
 '. . . .  структура листа типа SNatr  - лист, загруженный из ADSK.xlsx . . . .
 '----- Оглавление базы ADSK.xlsx --------------------
 Public Const TOC_ADSK = "TOC_ADSK"
-Public Const TOC_REPNAME_COL = 3      'поле - Имя/тип отчета
-Public Const TOC_REPRANGE_COL = 5     'поле - Лист (Range)
+Public Const TOCADSK_REPNAME_COL = 3      'поле - Имя/тип отчета
+Public Const TOCADSK_REPRANGE_COL = 5     'поле - Лист (Range)
 
 Public ADSKrep                      ' имя отчета из ADSK.xlsx
 Public Const ADSK_HdrMapSize = 20           ' размер ADSK_RepMap
@@ -336,61 +419,6 @@ Public Const WE_GOODS_ISSBSCOL = 8      ' Товар - Есть подписка
 Public Const WE_GOODS_NOSBSCOL = 9      ' Товар - Нет подписки
 
 Public Const WE_GOODS_ADSK = "Autodesk" ' Товар - Autodesk
-
-'=============== названия листов MatchSF-1C.xlsx ========================
-Public Const SF = "SF"              ' лист отчета по Платежам
-Public Const SFD = "SFD"            ' лист отчета по Договорам
-Public Const SFacc = "SFacc"        ' лист - список Организаций
-Public Const SFopp = "SFopp"        ' лист отчета по Проектам
-Public Const SForders = "SForders"  ' лист отчета по Заказам
-Public Const ADSKfrSF = "ADSKfrSF"  ' лист отчета по Autodesk
-    
-Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
-Public Const P_Paid = "P_Paid"              ' лист новых Платежей
-Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
-Public Const C_Contr = "C_Contr"            ' лист новых Договоров
-Public Const C_ContrLnk = "C_ContrLnk"      ' лист связок Договоров с Проектами
-Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
-Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
-
-' имена отчетов SF - используются как штампы
-Public Const SFpayRepName = "Платежи: Сверка SF с 1С"
-Public Const SFcontrRepName = "Match: SFD"          ' Договоры - Contracts
-Public Const SFaccRepName = "SFacc"                 ' Организации - Accounts
-Public Const SFoppRepName = "Match SFopp"           ' Проекты - Opportunities
-Public Const SFadskRepName = "Match ADSK from SF"   ' Autodesk - ADSK
-
-Public EOL_PaySheet     ' последняя строка отчета 1С по Платежам без пятки
-Public EOL_DogSheet     ' последняя строка отчета 1С по Договорам без пятки
-Public EOL_SF           ' последняя строка отчета по Платежам SF без пятки
-Public EOL_SFD          ' последняя строка отчета по Договорам SFD без пятки
-Public EOL_SFopp        ' последняя строка отчета по Проектам в SFopp без пятки
-Public EOL_SFacc        ' последняя строка SFacc по Организациям без пятки
-Public EOL_SForders     ' последняя строка отчета по Заказам SForders без пятки
-Public EOL_ADSKfrSF     ' последняя строка отчета Autodesk из SF
-Public EOL_Acc1C        ' последняя строка Справочника Организаций 1С
-Public EOL_NewOpp       ' последняя строка листа новых Проектов
-Public EOL_NewPay       ' последняя строка листа новых Платежей
-Public EOL_NewContr     ' последняя строка листа новых Договоров
-Public EOL_NewSN        ' последняя строка листа новых SN Autodesk
-Public EOL_ContrLnk     ' последняя строка листа новых или обновленных Договоров
-Public EOL_PaymentUpd   ' EOL листа изменений Платежей - связка Платежа с Договором
-Public EOL_DIC          ' последняя строка листа Словаря Организаций
-Public EOL_AdAcc        ' последняя строка листа новых Организаций для внесения в SF
-Public EOL_AccntUpd     ' последняя строка листа новых связей Организаций Sf и 1С для внесения в SF
-Public EOL_ADSKlnkPay   ' последняя строка листа новых связок Платежи-Контакт ADSK
-Public EOL_SFlnkADSK    ' последняя строка листа связок Платежи-Контакт ADSK
-Public EOL_ADSK         ' последняя строка листа отчета из ADSK.xlsx
-Public EOL_Stock        ' последняя значащая строка листа по Складу
-Public EOL_BTO          ' последняя значащая строка листа BTOlog
-Public EOL_OrderList    ' последняя значащая строка листа Заказов
-
-Public Const SFresLines = 7 'размер пятки отчетов SalesForce
-
-Public Const DATE_BULKY = "1.1.20"   ' дата окончания для Bulky Проектов
-Public Fruitful         ' счетчик полезных результатов
-
-Public ExRespond As Boolean ' если False - завершение работы
 
 '########################## лист лидов MS CSIT ###########################
 Public Const CSIT_MS = "CSIT_MS"            ' лист Лидов CSIT по Microsoft
