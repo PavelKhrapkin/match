@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   12.7.12
+'   15.7.12
 
 Option Explicit
 
@@ -28,12 +28,13 @@ Public Const REP_1C_С_PAINT = "Раскраска Договоров 1С"
 Public Const REP_1C_A_LOAD = "Загрузка Справочника клиентов из 1С"
 
 '-- загрузка и препроцессинг отчетов из SalesForce в базу SDFC.xlsm
-Public Const REP_SFDC_SF_LOAD = "Загрузка Платежей из Salesforce - SF"
-Public Const REP_SFDC_SFcont_LOAD = "Загрузка Контактов из Salesforce - SFcont"
+Public Const REP_SF_LOAD = "Загрузка Платежей из Salesforce - SF"
+Public Const REP_SFD_LOAD = "Загрузка Договоров из Salesforce - SFD"
     
 '-- глобальные переменные, общие для всех отчетов
-Public AllCol As Integer    ' Количество колонок в таблице отчета
+Public RepName As String    ' имя обрабатываемого отчета
 Public Doing As String      ' строка в Application.StatusBar - что делает модуль
+Public AllCol As Integer    ' Количество колонок в таблице отчета
 Public Lines As Integer     ' количество строк текущего/нового отчета
 Public LinesOld As Integer  ' количество строк старого отчета
 
@@ -76,22 +77,35 @@ Public EOL_BTO          ' последняя значащая строка листа BTOlog
 Public EOL_OrderList    ' последняя значащая строка листа Заказов
 
 Public Const DATE_BULKY = "1.1.20"  ' дата окончания для Bulky Проектов
-Public Const BIG = 9999             ' большое число для границ поиска
+Public Const BIG = 77777            ' большое число для границ поиска
 
 '------------- match TOC - Оглавление отчетов в базе данных ----------
 Public Const TOC = "ТОСmatch"           ' Оглавление листов всех файлов - баз данных
 
-Public Const TOC_LOAD_COL = 1           ' дата и время загрузки отчета
-Public Const TOC_HANDLE_COL = 2         ' дата и время обработки отчета
-Public Const TOC_REPNAME_COL = 3        ' имя отчета в базе данных
+Public Const TOC_DATE_COL = 1           ' дата и время загрузки отчета
+Public Const TOC_REPNAME_COL = 2        ' имя отчета в базе данных
 Public Const TOC_EOL_COL = 4            ' EOL отчета без пятки
+Public Const TOC_MYCOL_COL = 5          ' MyCol - число доп.колонок слева
+Public Const TOC_REPDIR_COL = 7         ' католог файла - базы данных
+Public Const TOC_REPFILE_COL = 8        ' имя файла, содержащего отчет
+Public Const TOC_SHEETN_COL = 9         ' имя листа, содержащего отчет
 Public Const TOC_STAMP_COL = 10         ' Штамп
 Public Const TOC_STAMP_TYPE_COL = 11    ' Тип Штампа: строка (=) или подстрока (I)
 Public Const TOC_STAMP_R_COL = 12       ' строка Штампа: (+EOL)
 Public Const TOC_STAMP_C_COL = 13       ' колонка Штампа: (+MyCol)
+Public Const TOC_HANDLE_COL = 14        ' дата и время обработки отчета
 Public Const TOC_PAR_1_COL = 15         ' колонка Штампа Параметр 1
 Public Const TOC_PAR_2_COL = 16         ' колонка Штампа Параметр 2
 Public Const TOC_PAR_3_COL = 17         ' колонка Штампа Параметр 3
+Public Const TOC_PAR_4_COL = 18         ' колонка Штампа Параметр 4
+Public Const TOC_PAR_5_COL = 19         ' колонка Штампа Параметр 5
+Public Const TOC_PAR_6_COL = 20         ' колонка Штампа Параметр 6
+
+Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
+Public Const TOC_FRTOC_COL = TOC_PAR_2_COL      ' нач.строка Штампов
+Public Const TOC_TOTOC_COL = TOC_PAR_3_COL      ' кон.строка Штампов
+Public Const TOC_RESLINES_COL = TOC_PAR_4_COL   ' колонка Штампа ResLines
+Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
 '=============== База DB_SFDC - файл SFDC.xlsm ==============
 Public Const SF = "SF"              ' лист отчета по Платежам

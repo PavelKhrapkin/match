@@ -13,25 +13,6 @@ Attribute VB_Name = "match2_0"
 
     Option Explicit    ' Force explicit variable declaration
     
-''''    Public Const DownloadDir = "C:\Users\Пользователь\Downloads\"
-''''
-''''' Названия листов - отчетов. Перечислено по порядку в Match.xlsm слева направо
-'''''   !!! после заверщения параметризации можно этот список деклараций    !!!
-'''''   !!! ... разнести по модулям                                         !!!
-''''    Public PaidSheet As String  ' обычно отчет 1С по Договорам на первом месте,
-''''                                    ' !!! но это надо параметризовать!!!
-''''    Public DogSheet As String   ' обычно отчет 1С по Договорам на втором месте,
-''''                                    ' !!! но это надо параметризовать!!!
-''''    Public Const DogHeader = "DogovorHeader" ' шаблоны для DL Dogovor_Insert
-''''
-'''''    Public Const PartnerCenter = "PartnerCenter"    ' имя листа отчета из
-''''                                '                  PartnerCenter.Autodesk.com
-''''    Public Const PaidContract = "P_PaidContract" ' рабочий лист- список новых
-''''                                '                   .. оплаченных контрактов
-''''    Public Const PaidNoContract = "P_PaidNoContract" ' список новых платежей
-''''                                '               без контрактов - времянка!!!
-'''''    Public Const PaidUpdate = "P_Update"    ' рабочий лист - список новых
-''''                                '               платежей для DL - времянка!!!
 Sub MoveToMatch()
 Attribute MoveToMatch.VB_Description = "8.2.2012 - перемещение входного отчета на первый лист MatchSF-1C.xlsb,  распознавание его по штампу и запуск макроса по его замене "
 Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "M\n14"
@@ -45,141 +26,78 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "M\n14"
 ' 11.7.12 - match2.0 - распознавание отчета, перенос его в один из файлов базы и запуск обработки
 
     Dim NewRep As String            ' имя файла с новым отчетом
-    Dim RepName As String           ' имя нового отчета
+    Dim i As Integer
     
     NewRep = ActiveWorkbook.Name
     Lines = EOL(1, Workbooks(NewRep))
 
     Set DB_MATCH = Workbooks.Open(F_MATCH, UpdateLinks:=False)
     
-    Dim iDBs As Integer         'параметр TOCmatch - количество баз данных
-    iDBs = DB_MATCH.Sheets(1).Cells(4, TOC_PAR_1_COL)
-    
-'------ распознавание Штампа NewRep по таблице TOCmatch -------------
+'------ распознавание Штампа файла NewRep по таблице TOCmatch -------------
     Dim TOCline As Range        '= строка TOC match
+                    'в строке 4 TOCmatch - TOCmatch количество баз данных
+    For i = 5 To 5 + DB_MATCH.Sheets(TOC).Cells(4, TOC_PAR_1_COL)
+        Set TOCline = DB_MATCH.Sheets(TOC).Rows(i)
+        If IsRightStamp(TOCline, NewRep, 1, True) Then Exit For
+    Next i
+  
+'------ распознавание RepName по таблице TOCmatch -------------
     With TOCline
-        For Each TOCline In Range(Cells(5, 1), Cells(5 + iDBs, BIG)).Rows
-            If IsRightStamp(TOCline, NewRep) Then GoTo RepNameCheck
-        Next TOCline
-        GoTo FatalNewRep
-RepNameCheck:
         Dim FrTOC As Integer, ToTOC As Integer  'строки поиска RepName в TOC
-        FrTOC = .Cells(1, TOC_PAR_2_COL)
-        ToTOC = .Cells(1, TOC_PAR_3_COL)
-        For Each TOCline In Range(Cells(FrTOC, 1), Cells(ToTOC, TOC_PAR_3_COL)).Rows
-            If IsRightStamp(TOCline, NewRep) Then GoTo RepNameHandle
-        Next TOCline
+        FrTOC = .Cells(1, TOC_FRTOC_COL)
+        ToTOC = .Cells(1, TOC_TOTOC_COL) + FrTOC - 1
+        For i = FrTOC To ToTOC
+            Set TOCline = DB_MATCH.Sheets(TOC).Rows(i)
+            If IsRightStamp(TOCline, NewRep, 1, True) Then GoTo RepNameHandle
+        Next i
         GoTo FatalNewRep
+        
+'----- новый отчет распознаван. Заменяем прежний отчет новым -----
 RepNameHandle:
+        Dim RepFile As String
+        Dim RepLoader As String
+        Dim MyDB As Workbook
+                
+        Lines = Lines - Val(.Cells(1, TOC_RESLINES_COL))  '= EOL - пятка
+        RepFile = .Cells(1, TOC_REPDIR_COL) & .Cells(1, TOC_REPFILE_COL)
+        Set MyDB = Workbooks.Open(RepFile, UpdateLinks:=False)
         
+        With Workbooks(NewRep).Sheets(1)
+            .UsedRange.Rows.RowHeight = 15
+            .Name = "TMP"
+            .Move Before:=MyDB.Sheets(RepName)
+        End With
+        With MyDB
+            .Activate
+            .Sheets(RepName).Delete
+            .Sheets("TMP").Name = RepName
+            .Sheets(RepName).Tab.Color = rgbViolet
+        End With
+        
+'--- Запускаем Loader - процедуру обработки нового отчета ---
+        RepLoader = TOCline.Cells(1, TOC_REPLOADER_COL)
+        If RepLoader <> "" Then
+            Application.Run ("'" & RepFile & "'!" & RepLoader)
+        End If
     End With
-        
-    If InStr(LCase$(Cells(Lines + 3, 1)), "salesforce.com") <> 0 _
-            And Cells(Lines + SFresLines, 1) = SFstamp Then
-            
-        Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False)
-        Workbooks(NewRep).Sheets(1).Move Before:=DB_SFDC.Sheets(1)
-        RepName = Cells(Lines + 2, 1)
-        Lines = Lines - SFresLines
-        
-        Select Case RepName
-            Case SFpayRepName:
-                Application.Run ("SFDC.xlsm!Match1C_SF")    ' отчет SF по Платежам
-            Case SFcontrRepName:
-                Application.Run ("SFDC.xlsm!SFDreport")     ' отчет SFcontr - Договоры
-            Case SFaccRepName:
-                Application.Run ("SFDC.xlsm!SFaccRep")      ' отчет SFacc - Организации
-            Case SFcontactRepName:
-                Application.Run ("SFDC.xlsm!SFcontactRep")  ' отчет SFcont по Контактам
-            Case SFoppRepName:
-                Application.Run ("SFDC.xlsm!SFoppRep")      ' отчет SFopp по Проектам
-            Case SFadskRepName:
-                Application.Run ("SFDC.xlsm!ADSKfromSFrep") ' отчет SF по Autodesk
-            Case SFpaRepName:
-                Application.Run ("SFDC.xlsm!SF_PA_Rep")     ' отчет по связкам Платежей с ADSK
-            Case Else:
-                ErrMsg FATAL_ERR, "Не распознан отчет Salesforce.com"
-        End Select
-
-        
-        '** отчеты 1С и Autodesk **
-    ElseIf Cells(1, 1) = Stamp1Cpay1 And Cells(1, 2) = Stamp1Cpay2 Then
-        Application.Run ("1C.xlsm!From1Cpayment")    ' отчет 1С по Платежам
-    ElseIf Cells(1, 2) = Stamp1Cdog1 And Cells(1, 4) = Stamp1Cdog2 Then
-        Application.Run ("1C.xlsm!From1Cdogovor")    ' отчет 1С по Договорам
-    ElseIf Cells(1, 5) = Stamp1Cacc1 And Cells(1, 6) = Stamp1Cacc2 Then
-        Application.Run ("1C.xlsm!From1Caccount")    ' отчет 1С по Клиентам
-'''    ElseIf Cells(1, 40) = StampADSKp1 And Cells(1, 42) = StampADSKp2 Then
-'''        FrPartnerCenter
-    Else: GoTo FatalNewRep
-        End
-    End If
-        
-    ActiveWorkbook.Save
-    ActiveWorkbook.Close
-    Workbooks(NewRep).Close
-
-'------------- match TOC write -------------------------
-    
-'''    With DB_MATCH
-'''            If TOCline.Cells(1, TOC_REPNAME_COL) = RepName Then
-'''                With TOCline
-'''                    .Cells(1, TOC_LOAD_COL) = Now
-'''                    .Cells(1, TOC_HANDLE_COL) = ""
-'''                    .Cells(1, TOC_EOL_COL) = Lines
-'''                End With
-'''                Exit For
-'''            End If
-'''        .Cells(1, 1) = Now
-'''        .Save
-'''    End With
+    LogWr "Загружен новый отчет " & RepName
+    MyDB.Save
+    MyDB.Close
+'------------- match TOC и Log write и Save --------------
+    With DB_MATCH.Sheets(TOC)
+        .Activate
+        .Cells(i, TOC_DATE_COL) = Now
+        .Cells(i, TOC_HANDLE_COL) = ""
+        .Cells(i, TOC_EOL_COL) = Lines
+        .Cells(1, 1) = Now
+    End With
+    LogWr "Новый отчет '" & RepName & "' загружен в " & RepFile
+    DB_MATCH.Save
+    DB_MATCH.Close
     Exit Sub
 FatalNewRep:
     ErrMsg FATAL_ERR, "Входной отчет '" & NewRep & "' не распознан"
 End Sub
-Function IsRightStamp(TOCline, NewRep) As Boolean
-'
-' - IsRightStamp(TOCline) - проверка правильности штампа в NewRep по строке TOCline
-' 12.7.2012
-
-    Dim NewRepStamp As String       ' штамп нового отчета
-    
-    Dim Stamp As String         '= строка - штамп
-    Dim StampType As String     'тип штампа: строка (=) или подстрока
-    Dim Stamp_R As Integer      'номер строки, где штамп
-    Dim Stamp_C As Integer      'номер колонки, где штамп
-    Dim ParCheck As Integer     'параметр TOCmatch - строка дополнительной проверки штампа
-    
-    IsRightStamp = False
-        
-    With TOCline
-        Do
-            Stamp = .Cells(1, TOC_STAMP_COL)
-            If Stamp = "" Then Exit Function        ' отсутствует штамп - не годится!
-            StampType = .Cells(1, TOC_STAMP_TYPE_COL)
-            Stamp_R = .Cells(1, TOC_STAMP_R_COL)
-            If .Cells(1, TOC_EOL_COL) = "EOL" Then Stamp_R = Stamp_R + Lines
-            Stamp_C = .Cells(1, TOC_STAMP_C_COL)
-            NewRepStamp = Workbooks(NewRep).Sheets(1).Cells(Stamp_R, Stamp_C)
-            
-            If StampType = "=" And NewRepStamp <> Stamp Then
-                Exit Function
-            ElseIf StampType = "I" And InStr(LCase$(NewRepStamp), LCase$(Stamp)) = 0 Then
-                Exit Function
-            Else: If StampType <> "=" And StampType <> "I" Then _
-                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & StampType
-            End If
-        
-            ParCheck = .Cells(1, TOC_PAR_1_COL)
-            If IsNumeric(ParCheck) And ParCheck > 0 Then
-                Set TOCline = Range(Cells(ParCheck, 1), Cells(ParCheck, BIG))
-            End If
-        Loop While ParCheck <> 0
-    End With
-
-    IsRightStamp = True
-
-End Function
 Sub TriggerOptionsFormulaStyle()
 '
 ' * Trigger Options-Formula Style A1/R1C1
