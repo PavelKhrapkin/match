@@ -2,12 +2,12 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 15.7.2012
+' П.Л.Храпкин, А.Пасс 20.7.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
 ' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
-' - MS(Msg)                     - вывод сообщения на экран и в LogWr
+' - NextRep(RepName, MadeStep, NextStep) - записывает в ТОС состояние RepName
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
 '(*)LogReset()                  - сброс и очистка Log листа
@@ -25,7 +25,8 @@ Attribute VB_Name = "MatchLib"
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
-' - CheckSheet(RepName)         - возвращает номер строки в ТОС по отчету RepName
+' - CheckRep(RepName)           - возвращает номер строки в ТОС по отчету RepName
+' - CheckSheet(SheetN)          - проверяет штамп и возвращает EOL SheetN
 ' - IsRightStamp(TOCline, RepFile, SheetN, [IsNew]) - проверка наличия штампа в RepFile,SheetN
 '                                 по строке TOCline. Если IsNew = True - не учитывается MyCol.
 ' - ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
@@ -61,50 +62,35 @@ Sub ModStart(Report)
 '
 ' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
 '
-'  15.7.12  - переписано для match 2.0
+'  20.7.12  - переписано для match 2.0
 
-    Set DB_MATCH = Workbooks.Open(F_MATCH, UpdateLinks:=False)
-    CheckSheet Match
+    Set DB_MATCH = Workbooks.Open(F_DIR & F_MATCH, UpdateLinks:=False)
+    Call CheckSheet("match", DB_MATCH)
     
-    Dim P As Boolean    '=TRUE если Progress включен
-
-    P = False
     Select Case Report
     Case REP_1C_P_LOAD:
         Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
-            '--- проверяем штампы нового и старого отчетов ---
-''        CheckSheet 1, 1, PAYDOC_COL - PAY_MYCOLS, Stamp1Cpay1
-''        CheckSheet 1, 1, PAYDATE_COL - PAY_MYCOLS, Stamp1Cpay2
-''        CheckSheet 2, 1, PAYDOC_COL, Stamp1Cpay1
-''        CheckSheet 2, 1, PAYDATE_COL, Stamp1Cpay2
-        EOL_PaySheet = EOL(PAY_SHEET)       'PAY_RESLINES учтем позже, пока их нет
-        P = True
-        
+        CheckSheet PAY_SHEET
+        EOL_PaySheet = RepTOC.EOL
     Case REP_1C_P_PAINT:
         Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
-''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
-''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
-        
-        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-        P = True
-        
     Case REP_1C_SFACCFIL:
         Doing = "Заполнение колонки 1 для листа Платежей"
-''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
-''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
-        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-        P = True
+        CheckSheet PAY_SHEET
+        EOL_PaySheet = RepTOC.EOL
+''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
     Case REP_SF_LOAD:
-        RepName = SF
         Doing = "Загрузка Платежей из Salesforce - SF"
-        EOL_SF = EOL(SF) - SFresLines
+        Set DB_1C = Workbooks.Open(F_DIR & F_1C, UpdateLinks:=False, ReadOnly:=True)
+        CheckSheet PAY_SHEET, DB_1C
+        EOL_PaySheet = RepTOC.EOL
         CheckSheet SF
+        EOL_SF = RepTOC.EOL
 ''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
 ''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
 ''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
 ''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-        P = True
+'''        P = True
 '    Case REP_1C_С_LOAD:
 '    Case Acc1C:
     Case Else:
@@ -152,12 +138,10 @@ Sub ModStart(Report)
     ExRespond = True
 
 '    Range("A1:A" & ModStart).EntireRow.Hidden = False
-    If P Then
-        With ProgressForm
-            .Show vbModeless
-            .ProgressLabel.Caption = Doing
-        End With
-    End If
+    With ProgressForm
+        .Show vbModeless
+        .ProgressLabel.Caption = Doing
+    End With
     LogWr ""
     LogWr (Doing)
 End Sub
@@ -167,16 +151,10 @@ Sub ModEnd()
 '  15.2.2012
 '  19.4.12  - восстановление вывода Excel
 '  2.7.12  - match 2.0
-' 14.7.12 - закрываем файлы по Public RepName
+' 20.7.12 - переписываем TOCmatch to RepTOC
 
-    On Error Resume Next
-    DB_MATCH.Close
-    Select Case RepName
-    Case SF:    DB_1C.Close SaveChanges:=False
-    Case Else:  DB_SFDC.Close SaveChanges:=False
-    End Select
-    On Error GoTo 0
-'    Dim i
+    WrTOC
+    Close
 
 '    i = AutoFilterReset(SheetN)
 '    ActiveSheet.Range("A" & i).Select
@@ -192,6 +170,58 @@ Sub ModEnd()
     End With
     ActiveSheet.DisplayPageBreaks = True
     LogWr (Doing & " - ГОТОВО!")
+End Sub
+Sub WrTOC()
+'
+' - WrTOC() - записывает Publoc RepTOC в оглавление match.Sheets(1)
+'   20.7.2012
+
+    Dim i As Long
+    
+    For i = 4 To BIG
+        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.SheetN Then GoTo FoundRep
+    Next i
+    GoTo FatalRepTOC
+
+FoundRep:
+    With DB_MATCH.Sheets(1)
+        .Cells(i, TOC_DATE_COL) = RepTOC.Dat
+        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
+        .Cells(i, TOC_EOL_COL) = RepTOC.EOL
+        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
+        .Cells(i, TOC_MADE_COL) = RepTOC.Made
+        .Cells(i, TOC_NEXTREP_COL) = RepTOC.NextStep
+        .Cells(i, TOC_REPDIR_COL) = RepTOC.Dir
+        .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
+        .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
+        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
+        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
+        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
+        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
+        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
+        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
+        .Cells(i, TOC_FRTOC_COL) = RepTOC.FrTOC
+        .Cells(i, TOC_TOTOC_COL) = RepTOC.N_TOC
+        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
+        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
+    End With
+    Exit Sub
+    
+FatalRepTOC:
+    ErrMsg FATAL_ERR, "WrTOC: Нарушена структура RepТОС для отчета " & RepTOC.SheetN
+    Stop
+    End
+
+End Sub
+Sub NextRep(RepName, MadeStep, NextStep)
+'
+' - NextRep(RepName, MadeStep, NextStep) - записывает в ТОС состояние RepName
+'   20.7.12
+
+    RepTOC.Dat = Now
+    RepTOC.Made = MadeStep
+    RepTOC.NextStep = NextStep
+    WrTOC
 End Sub
 Sub MS(Msg)
 '
@@ -279,7 +309,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -300,7 +330,7 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 ' если Mode = 0 или не указан - окрашиваем весь ряд, иначе только Col
 '   26.1.2011
 
-    AllCol = ActiveSheet.UsedRange.Columns.count
+    AllCol = ActiveSheet.UsedRange.Columns.Count
     Range(Cells(1, 1), Cells(Lines, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
@@ -399,8 +429,8 @@ Function EOL(SheetN, Optional F = Null)
     End If
     
     With F.Sheets(SheetN)
-        EOL = .UsedRange.Rows.count
-        AllCol = .UsedRange.Columns.count
+        EOL = .UsedRange.Rows.Count
+        AllCol = .UsedRange.Columns.Count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -435,89 +465,74 @@ Function CSmatch(Val, Col) As Double
         N = CSmatch + 1
     Loop While Val <> CheckCS
 End Function
-
-Function CheckSheet(RepName) As Integer
+Sub CheckSheet(SheetN, Optional F = Null)
 '
-' - CheckSheet(RepName) - возвращает номер строки в ТОС по отчету RepName
-'                         Проверка происходит по наличию штампа как в ТОС
-'   13.7.2012
-'!!' НЕ ЗАБЫТЬ НАПИСАТЬ ДЛЯ ПЛАТЕЖЕЙ И ДОГОВОРОВ!!
-
-    Dim TOCline As Range
-    Dim i As Long
-        
-    CheckSheet = 0
+' - CheckSheet(SheetN, [F]) - проверяет наличие штампа в листе SheetN файла F
+'                             Заполняется структура Public RepTOC
+'   20.7.12
     
-    For i = 9 To BIG
-        Set TOCline = DB_MATCH.Sheets(TOC).Rows(i)
-        If TOCline.Cells(1, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
+    Dim TestedStamp As String
+    Dim StR As Long, StC As Long
+    Dim i As Long
+    
+    Select Case SheetN
+    Case PAY_SHEET: SheetN = "Платежи"
+    Case DOG_SHEET: SheetN = "Договоры"
+    End Select
+    
+    For i = 4 To BIG
+        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = SheetN Then GoTo FoundRep
     Next i
-    ErrMsg FATAL_ERR, "CheckSheet: Нет отчета '" & RepName
+    GoTo FatalRep
     
 FoundRep:
-    Dim RepFile As String
-    Dim SheetN As String
-    
-    CheckSheet = i
-    RepFile = TOCline.Cells(1, TOC_REPFILE_COL)
-    If TOCline.Cells(1, TOC_SHEETN_COL) = "" Then GoTo FatalRep
-    SheetN = TOCline.Cells(1, TOC_SHEETN_COL)
-    Lines = EOL(SheetN) - TOCline.Cells(1, TOC_RESLINES_COL)
-
-    If IsRightStamp(TOCline, RepFile, SheetN) Then Exit Function
-
-FatalRep:
-    ErrMsg FATAL_ERR, "CheckSheet: Нарушена структура ТОС для отчета " & RepName
-End Function
-Function IsRightStamp(ByRef TOCline, RepFile, SheetN, Optional IsNew As Boolean = False) As Boolean
-'
-' - IsRightStamp(TOCline, RepFile, SheetN, [IsNew]) - проверка наличия штампа в RepFile,
-'               SheetN по строке TOCline. Если указан IsNew = True - не учитывается MyCol.
-' 13.7.2012
-
-    Dim NewRepStamp As String       ' штамп нового отчета
-    
-    Dim Stamp As String         '= строка - штамп
-    Dim StampType As String     'тип штампа: строка (=) или подстрока
-    Dim Stamp_R As Integer      'номер строки, где штамп
-    Dim Stamp_C As Integer      'номер колонки, где штамп
-    Dim reslines As Integer     'число строк пятки
-    Dim ParCheck As Integer     'параметр TOCmatch - строка дополнительной проверки штампа
-    
-    IsRightStamp = False
-    RepName = ""
-        
-    With TOCline
-        Do
-            Stamp = .Cells(1, TOC_STAMP_COL)
-            If Stamp = "" Then Exit Function        ' отсутствует штамп - не годится!
-            StampType = .Cells(1, TOC_STAMP_TYPE_COL)
-            Stamp_R = .Cells(1, TOC_STAMP_R_COL)
-            reslines = .Cells(1, TOC_RESLINES_COL)
-            If .Cells(1, TOC_EOL_COL) <> "" Then Stamp_R = Stamp_R + Lines - reslines
-            Stamp_C = .Cells(1, TOC_STAMP_C_COL)
-            If Not IsNew Then Stamp_C = Stamp_C + .Cells(1, TOC_MYCOL_COL)
-            NewRepStamp = Workbooks(RepFile).Sheets(SheetN).Cells(Stamp_R, Stamp_C)
-            
-            If StampType = "=" And NewRepStamp <> Stamp Then
-                Exit Function
-            ElseIf StampType = "I" And InStr(LCase$(NewRepStamp), LCase$(Stamp)) = 0 Then
-                Exit Function
-            Else: If StampType <> "=" And StampType <> "I" Then _
-                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & StampType
-            End If
-        
-            ParCheck = .Cells(1, TOC_PARCHECK_COL)
-            If IsNumeric(ParCheck) And ParCheck > 0 Then
-                Set TOCline = Range(Cells(ParCheck, 1), Cells(ParCheck, BIG))
-            End If
-        Loop While ParCheck <> 0
-        RepName = .Cells(1, TOC_REPNAME_COL)
+    With DB_MATCH.Sheets(1)
+        RepTOC.Dat = .Cells(i, TOC_DATE_COL)
+        RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
+        RepTOC.EOL = .Cells(i, TOC_EOL_COL)
+        RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
+        RepTOC.Made = .Cells(i, TOC_MADE_COL)
+        RepTOC.NextStep = .Cells(i, TOC_NEXTREP_COL)
+        RepTOC.Dir = .Cells(i, TOC_REPDIR_COL)
+        RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
+        RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
+        RepTOC.Stamp = .Cells(i, TOC_STAMP_COL)
+        RepTOC.StampType = .Cells(i, TOC_STAMP_TYPE_COL)
+        RepTOC.StampR = .Cells(i, TOC_STAMP_R_COL)
+        RepTOC.StampC = .Cells(i, TOC_STAMP_C_COL)
+        RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
+        RepTOC.ParChech = .Cells(i, TOC_PARCHECK_COL)
+        RepTOC.FrTOC = .Cells(i, TOC_FRTOC_COL)
+        RepTOC.N_TOC = .Cells(i, TOC_TOTOC_COL)
+        RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
+        RepTOC.Loader = .Cells(i, TOC_REPLOADER_COL)
     End With
-
-    IsRightStamp = True
-
-End Function
+    
+    If IsNull(F) Then
+        Set F = ThisWorkbook
+    End If
+    
+    With RepTOC
+        StR = .StampR
+        If .RepFile = F_SFDC Then StR = StR + .EOL
+        StC = .StampC
+        If .Made <> REP_LOADED Then StC = StC + .MyCol
+        TestedStamp = F.Sheets(.SheetN).Cells(StR, StC)
+        If .StampType = "=" Then
+            If .Stamp <> TestedStamp Then GoTo FatalRep
+        ElseIf .StampType = "I" Then
+            If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo FatalRep
+        Else
+            ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
+        End If
+    End With
+    Exit Sub
+    
+FatalRep:
+    ErrMsg FATAL_ERR, "CheckSheet: Нарушена структура ТОС для отчета " & RepTOC.SheetN
+    Stop
+    End
+End Sub
 Sub ClearSheet(SheetN, HDR_Range As Range)
 '
 ' Полная очистка SheetN и перенос в него заголовка из листа Нeader.HDR_Range
@@ -542,7 +557,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
+    Sheets.add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    

@@ -2,16 +2,16 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   15.7.12
+'   20.7.12
 
 Option Explicit
 
-Public Const F_Folder = "C:\work\Match\match2.0\DBs\"
-Public Const F_MATCH = F_Folder & "match.xlsm"
-Public Const F_1C = F_Folder & "1C.xlsm"
-Public Const F_SFDC = F_Folder & "SFDC.xlsm"
-Public Const F_ADSK = F_Folder & "ADSK.xlsm"
-Public Const F_STOCK = F_Folder & "Stock.xlsm"
+Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
+Public Const F_MATCH = "match.xlsm"
+Public Const F_1C = "1C.xlsm"
+Public Const F_SFDC = "SFDC.xlsm"
+Public Const F_ADSK = "ADSK.xlsm"
+Public Const F_STOCK = "Stock.xlsm"
 
 Public DB_MATCH As Workbook 'отчеты и таблицы match
 Public DB_1C As Workbook    'отчеты 1C
@@ -41,6 +41,7 @@ Public LinesOld As Integer  ' количество строк старого отчета
 Public Fruitful As Integer  ' счетчик полезных результатов
 
 Public ExRespond As Boolean ' если False - завершение работы
+Public Silent As Boolean    ' если True - не выводить сообщений об ошибках
 
 '=============== База DB_MATCH - файл match.xlsm ==============
 Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
@@ -80,12 +81,14 @@ Public Const DATE_BULKY = "1.1.20"  ' дата окончания для Bulky Проектов
 Public Const BIG = 77777            ' большое число для границ поиска
 
 '------------- match TOC - Оглавление отчетов в базе данных ----------
-Public Const TOC = "ТОСmatch"           ' Оглавление листов всех файлов - баз данных
+Public Const TOC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
 
 Public Const TOC_DATE_COL = 1           ' дата и время загрузки отчета
 Public Const TOC_REPNAME_COL = 2        ' имя отчета в базе данных
 Public Const TOC_EOL_COL = 4            ' EOL отчета без пятки
 Public Const TOC_MYCOL_COL = 5          ' MyCol - число доп.колонок слева
+Public Const TOC_MADE_COL = 6           ' Made - завершенный шаг по листу
+Public Const TOC_NEXTREP_COL = 21       ' NextRep - следующий шаг по листу
 Public Const TOC_REPDIR_COL = 7         ' католог файла - базы данных
 Public Const TOC_REPFILE_COL = 8        ' имя файла, содержащего отчет
 Public Const TOC_SHEETN_COL = 9         ' имя листа, содержащего отчет
@@ -93,7 +96,7 @@ Public Const TOC_STAMP_COL = 10         ' Штамп
 Public Const TOC_STAMP_TYPE_COL = 11    ' Тип Штампа: строка (=) или подстрока (I)
 Public Const TOC_STAMP_R_COL = 12       ' строка Штампа: (+EOL)
 Public Const TOC_STAMP_C_COL = 13       ' колонка Штампа: (+MyCol)
-Public Const TOC_HANDLE_COL = 14        ' дата и время обработки отчета
+Public Const TOC_CREATED_COL = 14       ' дата и время создания отчета
 Public Const TOC_PAR_1_COL = 15         ' колонка Штампа Параметр 1
 Public Const TOC_PAR_2_COL = 16         ' колонка Штампа Параметр 2
 Public Const TOC_PAR_3_COL = 17         ' колонка Штампа Параметр 3
@@ -107,6 +110,33 @@ Public Const TOC_TOTOC_COL = TOC_PAR_3_COL      ' кон.строка Штампов
 Public Const TOC_RESLINES_COL = TOC_PAR_4_COL   ' колонка Штампа ResLines
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
+Type TOCmatch
+    Dat As Date         ' дата и время загрузки отчета
+    Name As String      ' имя отчета в базе данных
+    EOL  As Long        ' EOL отчета без пятки
+    MyCol As Long       ' MyCol - число доп.колонок слева
+    Made As String      ' Made - завершенный шаг по листу
+    NextStep As String  ' NextRep - следующий шаг по листу
+    Dir As String       ' каталог, где лежит файл базы с отчетом
+    RepFile As String   ' файл DB с отчетом
+    SheetN As String    ' имя листа, содержащего отчет
+    Stamp As String     ' Штамп
+    StampType As String ' Тип Штампа: строка (=) или подстрока (I)
+    StampR As Long      ' строка Штампа: (+EOL)
+    StampC As Long      ' колонка Штампа: (+MyCol)
+    CreateDat As Date   ' дата и время обработки отчета
+    ParChech As Long    ' строка доп.Штампа
+    FrTOC As Long       ' ссылка на строку ТОС - начало группы Отчетов
+    N_TOC As Long       ' количество Отчетов в группе ТОС
+    ResLines As Long    ' колонка Штампа ResLines
+    Loader As String    ' колонка- Loader отчета
+End Type
+
+Public RepTOC As TOCmatch   ' строка TOCmatch
+
+Public Const REP_LOADED = "Loaded"              ' MoveToMatch: отчет загружен в файл DB
+Public Const REP_INSMYCOL = "MyCol inserted"    ' MyCol слева вставлены и заполнены
+
 '=============== База DB_SFDC - файл SFDC.xlsm ==============
 Public Const SF = "SF"              ' лист отчета по Платежам
 Public Const SFD = "SFD"            ' лист отчета по Договорам
@@ -115,16 +145,6 @@ Public Const SFcont = "SFcont"      ' лист отчета по Контактам
 Public Const SFopp = "SFopp"        ' лист отчета по Проектам
 Public Const SForders = "SForders"  ' лист отчета по Заказам
 Public Const ADSKfrSF = "ADSKfrSF"  ' лист отчета по Autodesk
-
-' имена отчетов SF - используются как штампы
-Public Const SFstamp = "CSoft"
-
-Public Const SFpayRepName = "Платежи: Сверка SF с 1С"
-Public Const SFcontrRepName = "Match: SFD"          ' Договоры - Contracts
-Public Const SFaccRepName = "SFacc"                 ' Организации - Accounts
-Public Const SFcontactRepName = "SFcont"            ' Контакты - Contacts
-Public Const SFoppRepName = "Match SFopp"           ' Проекты - Opportunities
-Public Const SFadskRepName = "Match ADSK from SF"   ' Autodesk - ADSK
 
 Public Const SFresLines = 6 'размер пятки отчетов SalesForce
 
@@ -190,8 +210,6 @@ Public Const SFADSK_CM_MAIL_COL = 25    ' колонка "CM мейл"
 Public Const SFADSK_CM_TEL_COL = 26     ' колонка "CM телефон"
 Public Const SFADSK_DEPLOYMENT_COL = 27 ' колонка "Deployment"
 
-Public Const ADSKfrSFstamp = "Match ADSK from SF"   ' штамп - имя Отчета SF в пятке
-
 Public Const SFADSK_SN_REGISTERED = "Registered"   ' "Статус SN" Registered
 
 '- - - - - - - - SF_PA = "SF_P_ADSK_LINK" - - - - - - - - - - - - - -
@@ -199,8 +217,6 @@ Public Const SF_PA = "SF_PA"        ' лист Связей Платеж-Контракт ADSK
 
 Public Const SFPA_PAYID_COL = 2     ' колонка "Платеж: Код Платеж"
 Public Const SFPA_ADSKID_COL = 3    ' колонка "Код Контракта ADSK"
-
-Public Const SFpaRepName = "Match: Связка Платеж-Контракт Autodesk"
 
 '. . . .  структура листа типа SNatr  - лист, загруженный из ADSK.xlsx . . . .
 '----- Оглавление базы ADSK.xlsx --------------------
@@ -266,7 +282,7 @@ Public Const PAYSALE_COL = 22       ' колонка Продавец
 Public Const PAYDOGOVOR_COL = 25    ' колонка Договор
 Public Const PAYOSNDOGOVOR_COL = 26 ' колонка Осн.Договор
 
-Public Const Stamp1Cpay1 = "Плат. док.", Stamp1Cpay2 = "Дата прих. денег"
+'''Public Const Stamp1Cpay1 = "Плат. док.", Stamp1Cpay2 = "Дата прих. денег"
 '-------------- Договоры - отчет из 1С ---------------------------------
 Public Const DOG_SHEET = 3         ' лист Договоров для модуля ConctAnalitics
 
@@ -295,9 +311,6 @@ Public Const DOG_STAT_CLOSED = "Закрыт"
 Public Const DOG_STAT_CANCEL = "Не состоялся"
 Public Const DOG_STAT_NOTINSF = "Нет в SF"
 
-Public Const Stamp1Cdog1 = "Номер договора", Stamp1Cdog2 = "Дата подписания"
-Public Const Stamp1Cacc1 = "Название фирмы", Stamp1Cacc2 = "Контакт"
-
 '-------------- Справочник Организаций - отчет из 1С -------------------
 Public Const Acc1C = "Список клиентов 1C"   ' Справочник клиентов 1С
 
@@ -311,9 +324,6 @@ Public Const A1C_FACTADR_COL = 9 ' колонка "Факт. адрес" в 1С
 Public Const A1C_INN_COL = 10   ' колонка "ИНН" в 1С
 Public Const A1C_INVOICE_COL = 17  ' колонка "Список счетов с оплатой" в 1С
 Public Const A1C_GOOD_COL = 18  ' колонка "Товар последнего счета" в 1С
-
-
-Public Const ACC1C_STAMP = "Название фирмы" ' Название фирмы используется как штамп
 
 '~~~~~~~~~~~~~~~~~~~~~~~~ Склад ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Public Const STOCK_SHEET = "Склад"  ' Лист проводок по Складу
