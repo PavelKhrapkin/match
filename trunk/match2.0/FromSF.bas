@@ -18,7 +18,7 @@ Attribute VB_Name = "FromSF"
 '  30.4.12 - SFaccColFill
 '  12.5.12 - bug fix
 '  16.5.12 - новый отчет по свзкам Платежей с Контрактами ADSK SF_PA
-'  14.7.12 - match2.0 - все неспецифические действия выполняет MoveToMatch
+'  15.7.12 - match2.0 - все неспецифические действия выполняет MoveToMatch
 
     Option Explicit    ' Force explicit variable declaration
         
@@ -26,7 +26,7 @@ Sub ShowControlPanel()
 Attribute ShowControlPanel.VB_Description = "8.2.2012 Запуск ShowDBGpanel "
 Attribute ShowControlPanel.VB_ProcData.VB_Invoke_Func = "Q\n14"
 '
-' Вывод отладочной управляющей панели с командными кнопками по всем отдельным листам
+' Вывод управляющей панели с командными кнопками по всем отдельным листам
 '
 ' Ctrl/Shift/Q
 '
@@ -46,17 +46,14 @@ Sub Match1C_SF()
 '   9.1.12 - корректное копирование сводки по SF
 '  26.1.12 - проверка, что на входе действительно отчет Платежи, сортировка SF
 '  28.1.12 - параметризация по именам листов
-'  14.8.12 - match2.0
-
+'  14.8.12 - match2.0 - полностью переписано
+   
     ModStart REP_SF_LOAD
-'''    CheckSheet SF
-    EOL_SF = EOL(SF) - SFresLines
     
     InsMyCol "SF_MyCol", EOL_SF
     InsSummary "SF_Summary", EOL_SF + SFresLines
 
 '---- заполняем Match - связку с Платежами 1С
-    Set DB_1C = Workbooks.Open(F_1C, UpdateLinks:=False, ReadOnly:=True)
     DB_1C.Sheets(PAY_SHEET).Select
 
     Dim i
@@ -66,33 +63,37 @@ Sub Match1C_SF()
             .Cells(i, 1) = CSmatch(.Cells(i, SF_COD_COL), PAYCODE_COL)
         Next i
     End With
+    NextRep SF, "InsMyCol", "PaymentPaint"
 '********************
 '    PaymentPaint   '*
 '********************
 
-    DB_1C.Close
     ModEnd
  End Sub
  Sub InsMyCol(F, EL)
  '
  ' - InsMyCol(SheetN, F) - вставляем колонки формул F в SheetN
- '  14.7.12
+ '  20.7.12
  
     Dim i As Integer
-    For i = 1 To Range(F).Columns.count
+    If RepTOC.Made <> REP_LOADED Then Exit Sub
+    For i = 1 To Range(F).Columns.Count
         ActiveSheet.Cells(1, 1).EntireColumn.Insert
         ActiveSheet.Columns(i).ColumnWidth = Range(F).Cells(3, i)
     Next i
     Sheets("Forms").Range(F).Copy Destination:=ActiveSheet.Cells(1, 1)
     ActiveSheet.Range("A2:B" & EL).FillDown
+    RepTOC.Made = REP_INSMYCOL
+    WrTOC
 End Sub
  Sub InsSummary(F, EL)
  '
  ' - InsSummary(SheetN, F) - вставляем сводку F в ряд EL от конца вверх
- '  14.7.12
+ '  20.7.12
  
+    If RepTOC.Made <> REP_INSMYCOL Then Exit Sub
     Sheets("Forms").Range(F).Copy _
-        Destination:=ActiveSheet.Cells(EL - Range(F).Rows.count + 1, 1)
+        Destination:=ActiveSheet.Cells(EL - Range(F).Rows.Count + 1, 1)
  End Sub
 '''''''''''    LinesOld = ModStart("SF", _
 '''''''''''        "MatchSF_1C - обновляем лист SF по отчету Salesforce <Платежи из 1С>")
@@ -231,8 +232,8 @@ Sub SFaccRep()
     
     ModStart SFacc, "Обновление листа отчета Salesforce по Организациям SFacc"
 
-    LinesOld = Sheets(SFacc).UsedRange.Rows.count ' кол-во строк в старом отчете
-    Lines = Sheets(1).UsedRange.Rows.count        ' кол-во строк в новом отчете
+    LinesOld = Sheets(SFacc).UsedRange.Rows.Count ' кол-во строк в старом отчете
+    Lines = Sheets(1).UsedRange.Rows.Count        ' кол-во строк в новом отчете
     LO = LinesOld - SFresLines
     Ln = Lines - SFresLines
     
