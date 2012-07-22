@@ -10,7 +10,7 @@ Attribute VB_Name = "match2_0"
 '    5.2.2012 - в MoveToMatch - распознавание входного отчета по штампу
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
-'   20.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
+'   23.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -25,54 +25,48 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 '
 'Pavel Khrapkin 23-Dec-2011
 ' 8.2.2012 - распознаем новый отчет, запускаем его обработку
-' 20.7.12 - match2.0 - распознавание отчета, перенос его в один из файлов базы и запуск обработки
+' 23.7.12 - match2.0 - распознавание отчета по ТОС
 
-    Dim NewRep As String            ' имя файла с новым отчетом
+    Dim NewRep As String        ' имя файла с новым отчетом
+    Static DirDBs As String     ' католог файлов DBs из 'match.xlsm'!We
     Dim i As Integer
     
     NewRep = ActiveWorkbook.Name
     Lines = EOL(1, Workbooks(NewRep))
     
-    Set DB_MATCH = Workbooks.Open(F_MATCH, UpdateLinks:=False)
+    Call GetMatch
     
-'------ распознавание Штампа файла NewRep по таблице TOCmatch -------------
-                'в (4, TOC_HANDLE_COL) TOCmatch - число баз данных
-                '.. в одну из которых перепишем новый отчет
-    For i = 5 To 5 + DB_MATCH.Sheets(TOC).Cells(4, TOC_CREATED_COL)
-        If IsThisStamp(i, NewRep) Then Exit For
-    Next i
-  
-'------ распознавание RepName по таблице TOCmatch -------------
-    Dim FrTOC As Integer, ToTOC As Integer  'строки поиска RepName в TOC
-    With DB_MATCH.Sheets(TOC)
-        FrTOC = .Cells(i, TOC_FRTOC_COL)
-        ToTOC = .Cells(i, TOC_TOTOC_COL) + FrTOC - 1
-    End With
-    For i = FrTOC To ToTOC
+    For i = 4 To EOL(1, DB_MATCH)
         If IsThisStamp(i, NewRep) Then GoTo RepNameHandle
     Next i
     GoTo FatalNewRep
         
-'----- новый отчет распознаван. Заменяем прежний отчет новым -----
+'----- новый отчет распознан. Заменяем прежний отчет новым -----
 RepNameHandle:
     Dim RepFile As String
     Dim RepLoader As String
     Dim Created As Date
     Dim MyDB As Workbook
+    Dim TabColor
     
     With DB_MATCH.Sheets(TOC)
         Lines = Lines - .Cells(i, TOC_RESLINES_COL) '= EOL - пятка
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
-        RepFile = .Cells(i, TOC_REPDIR_COL) & .Cells(i, TOC_REPFILE_COL)
+        DirDBs = .Cells(1, TOC_F_DIR_COL)
+        RepFile = .Cells(i, TOC_REPFILE_COL)
         RepName = .Cells(i, TOC_REPNAME_COL)
+        TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
     End With
     
-'    Set MyDB = Workbooks.Open(RepFile, UpdateLinks:=False)
-    Set MyDB = Workbooks.Open(RepFile)
+    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
     
     With Workbooks(NewRep).Sheets(1)
         If RepFile = F_SFDC Then
             Created = Mid(.Cells(Lines + 5, 1), 24)
+        ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
+            Created = Right$(.Name, 8)
+        ElseIf RepName = Acc1C Then
+            Created = Right$(.Cells(1, 1), 8)
         Else
             Created = "1.1.1900"
         End If
@@ -87,7 +81,7 @@ RepNameHandle:
         .Sheets(RepName).Delete
         Application.DisplayAlerts = True
         .Sheets("TMP").Name = RepName
-        .Sheets(RepName).Tab.Color = rgbViolet
+        .Sheets(RepName).Tab.Color = TabColor
     End With
     
     LogWr "MoveToMatch: Загружен новый отчет " & RepName _
@@ -103,13 +97,14 @@ RepNameHandle:
         .Cells(i, TOC_CREATED_COL) = Created
         .Cells(i, TOC_NEXTREP_COL) = ""
         .Cells(1, 1) = Now
+        .Cells(1, TOC_F_DIR_COL) = DirDBs
     End With
     LogWr "Новый отчет '" & RepName & "' загружен в " & RepFile
     DB_MATCH.Save
     DB_MATCH.Close
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
-        Application.Run ("'" & RepFile & "'!" & RepLoader)
+        Application.Run ("'" & DirDBs & RepFile & "'!" & RepLoader)
     End If
     MyDB.Save
     Close
@@ -120,42 +115,46 @@ End Sub
 Function IsThisStamp(iTOC, NewRep) As Boolean
 '
 ' - IsThisStamp(iTOC) - проверка соответствия нового отчета штампу в строке iTOC.
-' 19.7.2012
+'                       если штамп не последний - рекурсивная проверка с iTOC + 1
+' 23.7.2012
 
     Dim NewRepStamp As String       ' штамп нового отчета
-    
+    Dim RepFile As String
     Dim Stamp As String         '= строка - штамп
     Dim StampType As String     'тип штампа: строка (=) или подстрока
     Dim Stamp_R As Integer      'номер строки, где штамп
     Dim Stamp_C As Integer      'номер колонки, где штамп
-    Dim ParCheck As Integer     'параметр TOCmatch - строка дополнительной проверки штампа
     
     IsThisStamp = False
-    RepName = ""
-        
-    With DB_MATCH.Sheets(TOC)
-        Do
-            Stamp = .Cells(iTOC, TOC_STAMP_COL)
-            If Stamp = "" Then Exit Function        ' отсутствует штамп - не годится!
-            StampType = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-            Stamp_R = .Cells(iTOC, TOC_STAMP_R_COL)
-            Stamp_R = Stamp_R + Lines - .Cells(iTOC, TOC_RESLINES_COL)
-            Stamp_C = .Cells(iTOC, TOC_STAMP_C_COL)
-            NewRepStamp = Workbooks(NewRep).Sheets(1).Cells(Stamp_R, Stamp_C)
             
-            If StampType = "=" And NewRepStamp <> Stamp Then
-                Exit Function
-            ElseIf StampType = "I" And InStr(LCase$(NewRepStamp), LCase$(Stamp)) = 0 Then
-                Exit Function
-            Else: If StampType <> "=" And StampType <> "I" Then _
-                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & StampType
-            End If
-        
-            ParCheck = .Cells(iTOC, TOC_PARCHECK_COL)
-            If IsNumeric(ParCheck) And ParCheck > 0 Then iTOC = ParCheck
-        Loop While ParCheck <> 0
-        RepName = .Cells(1, TOC_REPNAME_COL)
+    With DB_MATCH.Sheets(TOC)
+        Stamp = .Cells(iTOC, TOC_STAMP_COL)
+        RepFile = .Cells(iTOC, TOC_REPFILE_COL)
+        If Stamp = "" Then Exit Function        ' отсутствует штамп - не годится!
+        StampType = .Cells(iTOC, TOC_STAMP_TYPE_COL)
+        Stamp_R = .Cells(iTOC, TOC_STAMP_R_COL)
+        If RepFile = F_SFDC Then        ' только у отчетов SFDC штамп в пятке
+            Stamp_R = Stamp_R + Lines - .Cells(iTOC, TOC_RESLINES_COL)
+        End If
+        Stamp_C = .Cells(iTOC, TOC_STAMP_C_COL)
+        NewRepStamp = Workbooks(NewRep).Sheets(1).Cells(Stamp_R, Stamp_C)
+
+        If StampType = "=" Then
+            If NewRepStamp <> Stamp Then Exit Function
+        ElseIf StampType = "I" Then
+            If InStr(LCase$(NewRepStamp), LCase$(Stamp)) = 0 Then Exit Function
+        Else:
+            ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & StampType
+        End If
+
+        If .Cells(iTOC, TOC_PARCHECK_COL) <> "" Then    ' если ParCheck не пустой -
+            IsThisStamp = IsThisStamp(iTOC + 1, NewRep) ' .. рекурсивная проверка
+        End If
     End With
+    
+    If RepFile = F_SFDC Then
+        IsThisStamp = IsThisStamp(5, NewRep)   'доп.проверка общих штампов SFDC
+    End If
 
     IsThisStamp = True
 

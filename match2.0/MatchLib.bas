@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 20.7.2012
+' П.Л.Храпкин, А.Пасс 22.7.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -25,10 +25,8 @@ Attribute VB_Name = "MatchLib"
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
-' - CheckRep(RepName)           - возвращает номер строки в ТОС по отчету RepName
+' - GetMatch()                  - открывает файл match.xlsm из каталога DirDBs
 ' - CheckSheet(SheetN)          - проверяет штамп и возвращает EOL SheetN
-' - IsRightStamp(TOCline, RepFile, SheetN, [IsNew]) - проверка наличия штампа в RepFile,SheetN
-'                                 по строке TOCline. Если IsNew = True - не учитывается MyCol.
 ' - ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
 ' - SheetSort(SheetN, Col)      - сортировка листа SheetN по колонке Col
 ' - SheetDedup(SheetN, Col)     - cортировка и дедупликация SheetN по колонке Col
@@ -62,10 +60,11 @@ Sub ModStart(Report)
 '
 ' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
 '
-'  20.7.12  - переписано для match 2.0
+'  22.7.12  - переписано для match 2.0
 
-    Set DB_MATCH = Workbooks.Open(F_DIR & F_MATCH, UpdateLinks:=False)
-    Call CheckSheet("match", DB_MATCH)
+''    Set DB_MATCH = Workbooks.Open(F_DIR & F_MATCH, UpdateLinks:=False)
+''    Call CheckSheet("match", DB_MATCH)
+    GetMatch
     
     Select Case Report
     Case REP_1C_P_LOAD:
@@ -465,11 +464,58 @@ Function CSmatch(Val, Col) As Double
         N = CSmatch + 1
     Loop While Val <> CheckCS
 End Function
+Sub GetMatch()
+'
+' - GetMatch    - открывает файл match.xlsm из каталога DirDBs
+'       * если файл match.xlsm уже открыт - активирует его
+'       * если нет - каталог DirDBs есть в файле C:\match_environment.xlsx
+'       * если в DirDBs в TOCmatch отличается от match_environment - переписываем
+'   22.7.12
+        
+    Dim W As Workbook
+    Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
+    Dim DirDBs As String
+
+    For Each W In Application.Workbooks
+        If W.Name = F_MATCH Then
+            Set DB_MATCH = W
+            W.Activate
+            DirDBs = W.Path & "\"
+            If Cells(1, TOC_F_DIR_COL) <> DirDBs Then
+                Dim Respond As Integer
+                Respond = MsgBox("Файл <match.xlsx> загружен из необычного места!" _
+                    & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
+                If Respond <> vbYes Then End
+                Cells(1, TOC_F_DIR_COL) = DirDBs    ' новый DirDBs запишем в TOCmatch
+                                                    '.. и во вспомогательный файл
+
+''' вообще- то здесь надо бы проверить, что в новом DirDBs есть все файлы - но не сейчас!
+''' это можно сделать с пом. Dir(DirDBs) а потом просмотрев весь TOCmatch выдать MsgBox
+''' если не все из TOCmatch найдено
+'''                Workbooks.Open (F_1C)
+'''                Workbooks.Open (F_SFDC)
+'''                Workbooks.Open (F_ADSK)
+                
+                Set F_match_env = Workbooks.Open(F_match_environment)
+                Cells(1, 1) = Now
+                Cells(1, 2) = DirDBs
+                F_match_env.Close
+            End If
+            If DB_MATCH Is Nothing Then Set DB_MATCH = W
+            Exit Sub                    ' match.xlsm открыт
+        End If
+    Next W
+    Set F_match_env = Workbooks.Open(F_match_environment)
+    DirDBs = F_match_env.Sheets(1).Cells(2, 1)
+    F_match_env.Close
+    Set DB_MATCH = Workbooks.Open(DirDBs & F_MATCH, UpdateLinks:=False)
+    CheckSheet TOC, DB_MATCH
+End Sub
 Sub CheckSheet(SheetN, Optional F = Null)
 '
 ' - CheckSheet(SheetN, [F]) - проверяет наличие штампа в листе SheetN файла F
 '                             Заполняется структура Public RepTOC
-'   20.7.12
+'   22.7.12
     
     Dim TestedStamp As String
     Dim StR As Long, StC As Long
@@ -480,7 +526,7 @@ Sub CheckSheet(SheetN, Optional F = Null)
     Case DOG_SHEET: SheetN = "Договоры"
     End Select
     
-    For i = 4 To BIG
+    For i = 4 To EOL(TOC, DB_MATCH)
         If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = SheetN Then GoTo FoundRep
     Next i
     GoTo FatalRep
@@ -491,9 +537,9 @@ FoundRep:
         RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
         RepTOC.EOL = .Cells(i, TOC_EOL_COL)
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
+        RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
         RepTOC.NextStep = .Cells(i, TOC_NEXTREP_COL)
-        RepTOC.Dir = .Cells(i, TOC_REPDIR_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
         RepTOC.Stamp = .Cells(i, TOC_STAMP_COL)
@@ -502,9 +548,6 @@ FoundRep:
         RepTOC.StampC = .Cells(i, TOC_STAMP_C_COL)
         RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
         RepTOC.ParChech = .Cells(i, TOC_PARCHECK_COL)
-        RepTOC.FrTOC = .Cells(i, TOC_FRTOC_COL)
-        RepTOC.N_TOC = .Cells(i, TOC_TOTOC_COL)
-        RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
         RepTOC.Loader = .Cells(i, TOC_REPLOADER_COL)
     End With
     
@@ -751,6 +794,7 @@ Sub StopSub()
 '
 ' StopSub() аварийное завершение процесса - вызывается по Событию FATAL ERROR
 '
+    
     MsgBox "Аварийная остановка StopSub", , "FATAL ERROR"
     Stop
 End Sub
