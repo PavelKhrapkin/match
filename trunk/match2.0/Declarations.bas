@@ -2,11 +2,13 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   20.7.12
+'   22.7.12
 
 Option Explicit
 
-Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
+'============================ файлы DBs ===============================
+''Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
+Public Const F_match_environment = "C:\match_environment.xlsx"
 Public Const F_MATCH = "match.xlsm"
 Public Const F_1C = "1C.xlsm"
 Public Const F_SFDC = "SFDC.xlsm"
@@ -82,20 +84,21 @@ Public Const BIG = 77777            ' большое число для границ поиска
 
 '------------- match TOC - Оглавление отчетов в базе данных ----------
 Public Const TOC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
+Public Const TOC_F_DIR_COL = 10         ' в TOCmatch записан Path файлов DBs - DirDBs
 
 Public Const TOC_DATE_COL = 1           ' дата и время загрузки отчета
 Public Const TOC_REPNAME_COL = 2        ' имя отчета в базе данных
-Public Const TOC_EOL_COL = 4            ' EOL отчета без пятки
-Public Const TOC_MYCOL_COL = 5          ' MyCol - число доп.колонок слева
+Public Const TOC_EOL_COL = 3            ' EOL отчета без пятки
+Public Const TOC_MYCOL_COL = 4          ' MyCol - число доп.колонок слева
+Public Const TOC_RESLINES_COL = 5       ' число строк пятки ResLines
 Public Const TOC_MADE_COL = 6           ' Made - завершенный шаг по листу
-Public Const TOC_NEXTREP_COL = 21       ' NextRep - следующий шаг по листу
-Public Const TOC_REPDIR_COL = 7         ' католог файла - базы данных
+Public Const TOC_NEXTREP_COL = 7        ' NextRep - следующий шаг по листу
 Public Const TOC_REPFILE_COL = 8        ' имя файла, содержащего отчет
-Public Const TOC_SHEETN_COL = 9         ' имя листа, содержащего отчет
+Public Const TOC_SHEETN_COL = 9         ' имя листа, содержащего отчет (окрашено)
 Public Const TOC_STAMP_COL = 10         ' Штамп
 Public Const TOC_STAMP_TYPE_COL = 11    ' Тип Штампа: строка (=) или подстрока (I)
-Public Const TOC_STAMP_R_COL = 12       ' строка Штампа: (+EOL)
-Public Const TOC_STAMP_C_COL = 13       ' колонка Штампа: (+MyCol)
+Public Const TOC_STAMP_R_COL = 12       ' строка Штампа: (возможно, +EOL)
+Public Const TOC_STAMP_C_COL = 13       ' колонка Штампа: (возможно, +MyCol)
 Public Const TOC_CREATED_COL = 14       ' дата и время создания отчета
 Public Const TOC_PAR_1_COL = 15         ' колонка Штампа Параметр 1
 Public Const TOC_PAR_2_COL = 16         ' колонка Штампа Параметр 2
@@ -107,35 +110,31 @@ Public Const TOC_PAR_6_COL = 20         ' колонка Штампа Параметр 6
 Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_FRTOC_COL = TOC_PAR_2_COL      ' нач.строка Штампов
 Public Const TOC_TOTOC_COL = TOC_PAR_3_COL      ' кон.строка Штампов
-Public Const TOC_RESLINES_COL = TOC_PAR_4_COL   ' колонка Штампа ResLines
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
 Type TOCmatch
-    Dat As Date         ' дата и время загрузки отчета
-    Name As String      ' имя отчета в базе данных
-    EOL  As Long        ' EOL отчета без пятки
-    MyCol As Long       ' MyCol - число доп.колонок слева
-    Made As String      ' Made - завершенный шаг по листу
-    NextStep As String  ' NextRep - следующий шаг по листу
-    Dir As String       ' каталог, где лежит файл базы с отчетом
-    RepFile As String   ' файл DB с отчетом
-    SheetN As String    ' имя листа, содержащего отчет
-    Stamp As String     ' Штамп
-    StampType As String ' Тип Штампа: строка (=) или подстрока (I)
-    StampR As Long      ' строка Штампа: (+EOL)
-    StampC As Long      ' колонка Штампа: (+MyCol)
-    CreateDat As Date   ' дата и время обработки отчета
-    ParChech As Long    ' строка доп.Штампа
-    FrTOC As Long       ' ссылка на строку ТОС - начало группы Отчетов
-    N_TOC As Long       ' количество Отчетов в группе ТОС
-    ResLines As Long    ' колонка Штампа ResLines
-    Loader As String    ' колонка- Loader отчета
+    Dat As Date         '=Now   - дата и время загрузки отчета
+    Name As String      'не изм.- имя отчета в базе данных
+    EOL  As Long        '=изм.только MoveToMatch - EOL отчета без пятки
+    MyCol As Long       '=изм.InsMyCol   - MyCol - число доп.колонок слева
+    ResLines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
+    Made As String      '=изм.каждый шаг - Made    - завершенный шаг по листу
+    NextStep As String  '=изм.каждый шаг - NextRep - следующий шаг по листу
+    RepFile As String   'не изм.-  файл DB с отчетом
+    SheetN As String    'не изм.-  имя листа, содержащего отчет
+    Stamp As String     'не изм.-  строка - Штамп
+    StampType As String 'не изм.-  Тип Штампа: строка (=) или подстрока (I)
+    StampR As Long      'не изм.-  строка Штампа: (+EOL)
+    StampC As Long      'не изм.-  колонка Штампа: (+MyCol)
+    CreateDat As Date   '=изм.только MoveToMatch -  дата и время создания отчета
+    ParChech As String  'не изм.-   <>"" - след.строка - доп.Штамп
+    Loader As String    'не изм.-   Loader отчета
 End Type
 
 Public RepTOC As TOCmatch   ' строка TOCmatch
 
-Public Const REP_LOADED = "Loaded"              ' MoveToMatch: отчет загружен в файл DB
-Public Const REP_INSMYCOL = "MyCol inserted"    ' MyCol слева вставлены и заполнены
+Public Const REP_LOADED = "Loaded"            ' MoveToMatch: отчет загружен в файл DB
+Public Const REP_INSMYCOL = "MyCol inserted"  ' MyCol слева вставлены и заполнены
 
 '=============== База DB_SFDC - файл SFDC.xlsm ==============
 Public Const SF = "SF"              ' лист отчета по Платежам
@@ -262,7 +261,7 @@ Public Const ADSK_C_ENDDATE_COL = 3 ' колонка "Contract End Date"
 Public Const ADSK_C_ACCN_COL = 11   ' колонка "End Customer CSN"
 
 '-------------- Платежи - отчет из 1С ---------------------------------
-Public Const PAY_SHEET = 1          ' лист Платежей
+Public Const PAY_SHEET = "Платежи"  ' лист Платежей
 
 Public Const PAY_RESLINES = 3       ' кол-во строк пятки отчета по Платежам
 Public Const PAY_MYCOLS = 5         ' количество моих колонок слева
@@ -284,7 +283,7 @@ Public Const PAYOSNDOGOVOR_COL = 26 ' колонка Осн.Договор
 
 '''Public Const Stamp1Cpay1 = "Плат. док.", Stamp1Cpay2 = "Дата прих. денег"
 '-------------- Договоры - отчет из 1С ---------------------------------
-Public Const DOG_SHEET = 3         ' лист Договоров для модуля ConctAnalitics
+Public Const DOG_SHEET = "Договоры" ' лист Договоров для модуля ConctAnalitics
 
 Public Const DOGRES = 7             ' кол-во строк пятки отчета по Договорам
 
