@@ -10,7 +10,7 @@ Attribute VB_Name = "match2_0"
 '    5.2.2012 - в MoveToMatch - распознавание входного отчета по штампу
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
-'   23.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
+'   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -25,7 +25,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 '
 'Pavel Khrapkin 23-Dec-2011
 ' 8.2.2012 - распознаем новый отчет, запускаем его обработку
-' 23.7.12 - match2.0 - распознавание отчета по ТОС
+' 26.7.12 - match2.0 - распознавание отчета по ТОС
 
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Integer
@@ -33,7 +33,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     NewRep = ActiveWorkbook.Name
     Lines = EOL(1, Workbooks(NewRep))
     
-    Call GetMatch
+    GetRep TOC
     
     For i = 4 To EOL(1, DB_MATCH)
         If IsThisStamp(i, NewRep) Then GoTo RepNameHandle

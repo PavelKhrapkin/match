@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   24.7.12
+'   26.7.12
 
 Option Explicit
 
@@ -21,6 +21,8 @@ Public Const F_STOCK = "Stock.xlsm"
 Public DB_MATCH As Workbook 'отчеты и таблицы match
 Public DB_1C As Workbook    'отчеты 1C
 Public DB_SFDC As Workbook  'отчеты Salesforce
+Public DB_ADSK As Workbook  'отчеты Autodesk
+Public DB_STOCK As Workbook 'отчеты по Складу и Заказам
 
 '==================== Обрабатываемые Отчеты =============================
 '-- загрузка и препроцессинг базы 1C.xlsm
@@ -120,7 +122,7 @@ Type TOCmatch
     Name As String      'не изм.- имя отчета в базе данных
     EOL  As Long        '=изм.только MoveToMatch - EOL отчета без пятки
     MyCol As Long       '=изм.InsMyCol   - MyCol - число доп.колонок слева
-    reslines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
+    ResLines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
     Made As String      '=изм.каждый шаг - Made    - завершенный шаг по листу
     NextStep As String  '=изм.каждый шаг - NextRep - следующий шаг по листу
     RepFile As String   'не изм.-  файл DB с отчетом
@@ -134,7 +136,12 @@ Type TOCmatch
     Loader As String    'не изм.-   Loader отчета
 End Type
 
-Public RepTOC As TOCmatch   ' строка TOCmatch
+Public RepTOC As TOCmatch   ' структура TOCmatch
+Public RepMatch As TOCmatch ' структура TOCmatch для отчета в match.xlsm
+Public Rep1C As TOCmatch    ' структура TOCmatch для отчета в 1С.xlsm
+Public RepSF As TOCmatch    ' структура TOCmatch для отчета в SFDC.xlsm
+Public RepADSK As TOCmatch  ' структура TOCmatch для отчета в ADSK.xlsm
+Public RepStock As TOCmatch ' структура TOCmatch для отчета в Stock.xlsm
 
 Public Const REP_LOADED = "Loaded"            ' MoveToMatch: отчет загружен в файл DB
 Public Const REP_INSMYCOL = "MyCol inserted"  ' MyCol слева вставлены и заполнены

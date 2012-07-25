@@ -21,7 +21,6 @@ Sub From1Cpayment()
 '  27.6.12 - избавляемся от формул со ссылками на другой файл
 '  25.7.12 - InsMyCol и InsSummary
 
-''    Dim LO, Ln, Lines, LinesOld, PaymentsheetName, Pold
     ModStart REP_1C_P_LOAD
     
     InsMyCol "Payment_MyCol"
@@ -31,12 +30,12 @@ Sub From1Cpayment()
     Selection.EntireColumn.Hidden = True  '   ..валютных проводок, расходных
                                           '   .. кредитов,отделов и фирм
     Call DateCol(PAY_SHEET, PAYDATE_COL) ' преобразование колонки Дат
-    SheetSort PAY_SHEET, PAYDATE_COL     ' сортируем Платежи по Дате прихода денег
+'    SheetSort PAY_SHEET, PAYDATE_COL     ' сортируем Платежи по Дате прихода денег
     
-'    SFmatchFill PAY_SHEET   '*** выполняем Update по отчетам SF
+    SFmatchFill PAY_SHEET   '*** выполняем Update по отчетам SF
 
 '*******************************************************
-'    Call PaymentPaint    '* раскрашиваем Лист Платежей *
+    Call PaymentPaint    '* раскрашиваем Лист Платежей *
 '*******************************************************
 
     ModEnd
@@ -64,7 +63,8 @@ Sub SFmatchFill(SheetN)
         
     Select Case SheetN
         Case PAY_SHEET:
-            L = EOL_PaySheet
+'            L = EOL_PaySheet
+            L = RepTOC.EOL
             AccCol = PAYACC_COL
         Case DOG_SHEET:
             L = EOL_DogSheet
@@ -77,7 +77,8 @@ Sub SFmatchFill(SheetN)
             Stop
     End Select
         
-    DB_SFDC.Sheets(SFacc).Select
+    DB_SFDC.Sheets(SFacc).Activate
+'    DB_SFDC.Sheets(SFacc).Select
     With ThisWorkbook.Sheets(PAY_SHEET)
         For i = 2 To L
             Progress i / L / 3
