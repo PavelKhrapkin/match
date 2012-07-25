@@ -10,7 +10,7 @@ Attribute VB_Name = "From1C"
 '<*> From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
 '(*) FromStock      - замена Складской Книги в листе Stock
 '
-' 1.7.2012 П.Л.Храпкин match 2.0
+' 25.7.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
 Sub From1Cpayment()
@@ -19,70 +19,26 @@ Sub From1Cpayment()
 '
 '  25.6.12 - match 2.0
 '  27.6.12 - избавляемся от формул со ссылками на другой файл
+'  25.7.12 - InsMyCol и InsSummary
 
-    Dim LO, Ln, Lines, LinesOld, PaymentsheetName, Pold
-
+''    Dim LO, Ln, Lines, LinesOld, PaymentsheetName, Pold
     ModStart REP_1C_P_LOAD
     
-    Sheets(1).Select                   ' новый отчет в листе 1
-    Sheets(1).UsedRange.Activate
-    With Selection.Font    ' устанавливаем по новому отчету стандартный шрифт
-        .Name = "Calibri"
-        .size = 8
-    End With
-    
-    Sheets(2).Columns("A:E").Copy   ' из прежнего отчета копируем колонки A:E
-    Sheets(1).Columns("A:A").Select '    и вставляем их слева к новому отчету
-    Selection.Insert Shift:=xlToRight
-        
+    InsMyCol "Payment_MyCol"
+    InsSummary "Payment_Summary"
+
     Range("J:Q,T:U,W:X").Select           ' делаем невидимыми ненужные колонки
     Selection.EntireColumn.Hidden = True  '   ..валютных проводок, расходных
                                           '   .. кредитов,отделов и фирм
-    LinesOld = EOL(2)               ' кол-во строк в старом отчете
-    Lines = EOL(1)                  ' кол-во строк в новом отчете
-
-' дополняем колонки формул до конца рабочей области
-    LO = LinesOld - 3
-    Ln = Lines - 2
-    Range(Cells(LO, 1), Cells(LO, 5)).Select
-    If Ln > LO Then
-        Selection.AutoFill Destination:=Range(Cells(LO, 1), Cells(Ln, 5)), _
-            Type:=xlFillDefault
-    End If
-    
     Call DateCol(PAY_SHEET, PAYDATE_COL) ' преобразование колонки Дат
     SheetSort PAY_SHEET, PAYDATE_COL     ' сортируем Платежи по Дате прихода денег
-        
-    Sheets(2).Select                ' вставляем группу ячеек - итоги сверки
-    Range(Cells(LinesOld - 2, 2), Cells(LinesOld, 18)).Copy
-    Sheets(1).Select
-    Range(Cells(Lines - 1, 2), Cells(Lines - 1, 2)).Activate
-    ActiveSheet.Paste
     
-    SFmatchFill PAY_SHEET   '*** выполняем Update по отчетам SF
-  
+'    SFmatchFill PAY_SHEET   '*** выполняем Update по отчетам SF
+
 '*******************************************************
-    Call PaymentPaint    '* раскрашиваем Лист Платежей *
+'    Call PaymentPaint    '* раскрашиваем Лист Платежей *
 '*******************************************************
-    
-' подставляем название нового отчета в лист SF
-    PaymentsheetName = Sheets(1).Name   ' имена листов старого и нового
-    Pold = Sheets(2).Name               '   ..отчетов по Платежам
-    
-    SheetsCtrlH "SF", Pold, PaymentsheetName
-    SheetsCtrlH "P_PaidContract", Pold, PaymentsheetName
-'    SheetsCtrlH "P_Update", Pold, PaymentsheetName
-        
-    Sheets(2).Select
-    ActiveWindow.SelectedSheets.Delete  ' удаляем старый платежный отчет
-    
-    Sheets(PaymentsheetName).Select
-    With ActiveWorkbook.Sheets(1).Tab   ' Таб нового отчета - красный
-        .Color = 255
-        .TintAndShade = 0
-    End With
-    
-    Doing = "Отчет платежей " & Sheets(1).Name
+
     ModEnd
 End Sub
 Sub testSFmatchFill()
@@ -147,17 +103,21 @@ Sub SFmatchFill(SheetN)
             Else
                 .Cells(i, PAYINSF_COL) = ""
                 .Cells(i, PAYIDSF_COL) = ""
-                SFid = ""
             End If
         Next i
-'''
-'''                '-- "сшиваем" с Контрактами ADSK в SF_PA --
-'''    '..... потом здесь можно поместить ВСЕ Контракты ADSK по номерам с "+"
-'''            If CSmatch(SFid, SFPA_PAYID_COL, SF_PA, DB_SFDC) <> 0 Then
-'''                 .Cells(i, PAYADSK_COL) = "1"
-'''            Else
-'''                .Cells(i, PAYADSK_COL) = ""
-'''            End If
+
+        DB_SFDC.Sheets(SF_PA).Select
+        For i = 2 To L
+            Progress 2 / 3 + i / L / 3
+                '-- "сшиваем" с Контрактами ADSK в SF_PA --
+    '..... потом здесь можно поместить ВСЕ Контракты ADSK по номерам с "+"
+            SFid = .Cells(i, PAYIDSF_COL)
+            If CSmatch(SFid, SFPA_PAYID_COL) <> 0 Then
+                .Cells(i, PAYADSK_COL) = "1"
+            Else
+                .Cells(i, PAYADSK_COL) = ""
+            End If
+        Next i
     End With
 End Sub
 Sub testCSmatch()
@@ -173,26 +133,6 @@ Sub testCSmatch()
     A = CSmatch("ОАО ""ЭХО""", 2)
     ModEnd
 End Sub
-Function CSmatch(Val, Col)
-'
-' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
-'                   Если Val не найден- возвращает 0. Лист для поиска Val должен быть Selected.
-' 8/7/12
-
-    Const Big = 77777
-    Dim CheckCS
-    Dim N As Long
-    N = 1
-    Do
-        CSmatch = 0
-        On Error Resume Next
-        CSmatch = Application.Match(Val, Range(Cells(N, Col), Cells(Big, Col)), 0) + N - 1
-        CheckCS = Cells(CSmatch, Col)
-        On Error GoTo 0
-        If IsEmpty(CSmatch) Or Not IsNumeric(CSmatch) Or CSmatch <= 0 Then Exit Function
-        N = CSmatch + 1
-    Loop While Val <> CheckCS
-End Function
 Sub From1Cdogovor()
 '
 ' Заменяет лист отчета 1С "Договоры" новым Листом на первом месте

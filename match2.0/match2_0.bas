@@ -27,8 +27,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 8.2.2012 - распознаем новый отчет, запускаем его обработку
 ' 23.7.12 - match2.0 - распознавание отчета по ТОС
 
-    Dim NewRep As String        ' имя файла с новым отчетом
-    Static DirDBs As String     ' католог файлов DBs из 'match.xlsm'!We
+    Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Integer
     
     NewRep = ActiveWorkbook.Name
