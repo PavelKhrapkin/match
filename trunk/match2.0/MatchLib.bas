@@ -2,12 +2,15 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 22.7.2012
+' П.Л.Храпкин, А.Пасс 25.7.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
 ' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
-' - NextRep(RepName, MadeStep, NextStep) - записывает в ТОС состояние RepName
+' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
+' - InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
+' - InsSummary(SheetN, F)       - вставляем сводку F в ряд EL от конца вверх
+' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
 '(*)LogReset()                  - сброс и очистка Log листа
@@ -80,8 +83,8 @@ Sub ModStart(Report)
 ''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
     Case REP_SF_LOAD:
         Doing = "Загрузка Платежей из Salesforce - SF"
-        Set DB_1C = Workbooks.Open(F_DIR & F_1C, UpdateLinks:=False, ReadOnly:=True)
-        CheckSheet PAY_SHEET, DB_1C
+        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
+        CheckSheet PAY_SHEET
         EOL_PaySheet = RepTOC.EOL
         CheckSheet SF
         EOL_SF = RepTOC.EOL
@@ -173,7 +176,7 @@ End Sub
 Sub WrTOC()
 '
 ' - WrTOC() - записывает Publoc RepTOC в оглавление match.Sheets(1)
-'   20.7.2012
+'   25.7.2012
 
     Dim i As Long
     
@@ -188,9 +191,9 @@ FoundRep:
         .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
         .Cells(i, TOC_EOL_COL) = RepTOC.EOL
         .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
+        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
         .Cells(i, TOC_MADE_COL) = RepTOC.Made
         .Cells(i, TOC_NEXTREP_COL) = RepTOC.NextStep
-        .Cells(i, TOC_REPDIR_COL) = RepTOC.Dir
         .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
         .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
         .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
@@ -199,9 +202,6 @@ FoundRep:
         .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
         .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
         .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
-        .Cells(i, TOC_FRTOC_COL) = RepTOC.FrTOC
-        .Cells(i, TOC_TOTOC_COL) = RepTOC.N_TOC
-        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
         .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
     End With
     Exit Sub
@@ -222,6 +222,38 @@ Sub NextRep(RepName, MadeStep, NextStep)
     RepTOC.NextStep = NextStep
     WrTOC
 End Sub
+ Sub InsMyCol(F)
+ '
+ ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону в F
+ '  25.7.12
+ 
+    Dim i As Integer
+    If RepTOC.Made <> REP_LOADED Then Exit Sub
+    
+    With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
+        For i = 1 To Range(F).Columns.Count
+            .Cells(1, 1).EntireColumn.Insert
+        Next i
+        For i = 1 To Range(F).Columns.Count
+            .Columns(i).ColumnWidth = Range(F).Cells(3, i)
+        Next i
+        Sheets("Forms").Range(F).Copy Destination:=.Cells(1, 1)
+        .Range("A2:B" & RepTOC.EOL).FillDown
+    End With
+    RepTOC.Made = REP_INSMYCOL
+    WrTOC
+End Sub
+ Sub InsSummary(F)
+ '
+ ' - InsSummary(F) - вставляем сводку (пятку) по шаблону F
+ '  25.7.12
+ 
+    If RepTOC.Made <> REP_INSMYCOL Then Exit Sub
+    Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN).Activate
+    Range(F).Copy _
+        Destination:=Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
+        .Cells(RepTOC.EOL + RepTOC.ResLines - Range(F).Rows.Count + 1, 1)
+ End Sub
 Sub MS(Msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
@@ -470,24 +502,24 @@ Sub GetMatch()
 '       * если файл match.xlsm уже открыт - активирует его
 '       * если нет - каталог DirDBs есть в файле C:\match_environment.xlsx
 '       * если в DirDBs в TOCmatch отличается от match_environment - переписываем
-'   22.7.12
+'   25.7.12
         
     Dim W As Workbook
     Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
-    Dim DirDBs As String
 
     For Each W In Application.Workbooks
         If W.Name = F_MATCH Then
-            Set DB_MATCH = W
-            W.Activate
+'            Set DB_MATCH = W
+'            W.Activate
             DirDBs = W.Path & "\"
-            If Cells(1, TOC_F_DIR_COL) <> DirDBs Then
+            If W.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
                 Dim Respond As Integer
                 Respond = MsgBox("Файл <match.xlsx> загружен из необычного места!" _
                     & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
                 If Respond <> vbYes Then End
-                Cells(1, TOC_F_DIR_COL) = DirDBs    ' новый DirDBs запишем в TOCmatch
-                                                    '.. и во вспомогательный файл
+    ' новый DirDBs запишем в TOCmatch и во вспомогательный файл
+                W.Sheets(TOC).Cells(1, TOC_F_DIR_COL) = DirDBs
+                Set F_match_env = Workbooks.Open(F_match_environment)
 
 ''' вообще- то здесь надо бы проверить, что в новом DirDBs есть все файлы - но не сейчас!
 ''' это можно сделать с пом. Dir(DirDBs) а потом просмотрев весь TOCmatch выдать MsgBox
@@ -496,7 +528,6 @@ Sub GetMatch()
 '''                Workbooks.Open (F_SFDC)
 '''                Workbooks.Open (F_ADSK)
                 
-                Set F_match_env = Workbooks.Open(F_match_environment)
                 Cells(1, 1) = Now
                 Cells(1, 2) = DirDBs
                 F_match_env.Close
@@ -509,30 +540,31 @@ Sub GetMatch()
     DirDBs = F_match_env.Sheets(1).Cells(2, 1)
     F_match_env.Close
     Set DB_MATCH = Workbooks.Open(DirDBs & F_MATCH, UpdateLinks:=False)
-    CheckSheet TOC, DB_MATCH
+    CheckSheet TOC
 End Sub
-Sub CheckSheet(SheetN, Optional F = Null)
+Sub CheckSheet(SheetN)
+''Sub CheckSheet(SheetN, Optional F = Null)
 '
 ' - CheckSheet(SheetN, [F]) - проверяет наличие штампа в листе SheetN файла F
 '                             Заполняется структура Public RepTOC
-'   22.7.12
+'   25.7.12
     
     Dim TestedStamp As String
     Dim StR As Long, StC As Long
     Dim i As Long
     
-    Select Case SheetN
-    Case PAY_SHEET: SheetN = "Платежи"
-    Case DOG_SHEET: SheetN = "Договоры"
-    End Select
-    
+''    Select Case SheetN
+''    Case PAY_SHEET: SheetN = "Платежи"
+''    Case DOG_SHEET: SheetN = "Договоры"
+''    End Select
+''
     For i = 4 To EOL(TOC, DB_MATCH)
         If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = SheetN Then GoTo FoundRep
     Next i
     GoTo FatalRep
     
 FoundRep:
-    With DB_MATCH.Sheets(1)
+    With DB_MATCH.Sheets(TOC)
         RepTOC.Dat = .Cells(i, TOC_DATE_COL)
         RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
         RepTOC.EOL = .Cells(i, TOC_EOL_COL)
@@ -551,16 +583,16 @@ FoundRep:
         RepTOC.Loader = .Cells(i, TOC_REPLOADER_COL)
     End With
     
-    If IsNull(F) Then
-        Set F = ThisWorkbook
-    End If
-    
+''    If IsNull(F) Then
+''        Set F = ThisWorkbook
+''    End If
+''
     With RepTOC
         StR = .StampR
         If .RepFile = F_SFDC Then StR = StR + .EOL
         StC = .StampC
         If .Made <> REP_LOADED Then StC = StC + .MyCol
-        TestedStamp = F.Sheets(.SheetN).Cells(StR, StC)
+        TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
         If .StampType = "=" Then
             If .Stamp <> TestedStamp Then GoTo FatalRep
         ElseIf .StampType = "I" Then

@@ -2,13 +2,16 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   22.7.12
+'   24.7.12
 
 Option Explicit
 
 '============================ файлы DBs ===============================
 ''Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
+Public DirDBs As String    ' каталог файлов DBs из 'match.xlsm'!We
+' вспомогательный файл 'match_environment.xlsx' содержит DirDBs
 Public Const F_match_environment = "C:\match_environment.xlsx"
+
 Public Const F_MATCH = "match.xlsm"
 Public Const F_1C = "1C.xlsm"
 Public Const F_SFDC = "SFDC.xlsm"
@@ -117,7 +120,7 @@ Type TOCmatch
     Name As String      'не изм.- имя отчета в базе данных
     EOL  As Long        '=изм.только MoveToMatch - EOL отчета без пятки
     MyCol As Long       '=изм.InsMyCol   - MyCol - число доп.колонок слева
-    ResLines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
+    reslines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
     Made As String      '=изм.каждый шаг - Made    - завершенный шаг по листу
     NextStep As String  '=изм.каждый шаг - NextRep - следующий шаг по листу
     RepFile As String   'не изм.-  файл DB с отчетом
