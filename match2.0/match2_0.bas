@@ -11,6 +11,7 @@ Attribute VB_Name = "match2_0"
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
 '   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
+'   31.7.2012 - Обработка Процессов - Loader'ов в ProcessEngine
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -103,7 +104,8 @@ RepNameHandle:
     DB_MATCH.Close
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
-        Application.Run ("'" & DirDBs & RepFile & "'!" & RepLoader)
+'        Application.Run ("'" & DirDBs & RepFile & "'!" & RepLoader)
+        Application.Run "'" & DirDBs & F_MATCH & "'!ProcStart", RepLoader
     End If
     MyDB.Save
     Close
