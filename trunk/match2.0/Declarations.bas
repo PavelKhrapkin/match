@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   26.7.12
+'   31.7.12
 
 Option Explicit
 
@@ -24,7 +24,18 @@ Public DB_SFDC As Workbook  'отчеты Salesforce
 Public DB_ADSK As Workbook  'отчеты Autodesk
 Public DB_STOCK As Workbook 'отчеты по Складу и Заказам
 
-'==================== Обрабатываемые Отчеты =============================
+'==================== Процессы на листе Process ====================
+Public Const Process = "Process"    'Каталог и контекст всех процессов
+Public Const PROC_START = "<*>ProcStart"    ' начало Процесса
+Public Const PROC_END = "<*>ProcEnd"        ' конец Процесса
+
+Public Const PROC_STEP_COL = 2      'колонка Step - Шаг Процесса
+Public Const PROC_PREVSTEP_COL = 3  'колонка PrevStep
+Public Const PROC_STEPDONE_COL = 4  'колонка Done - Шаг выполнен
+Public Const PROC_PAR1_COL = 5      'колонка Параметр 1 - имя Процесса
+Public Const PROC_NAME_COL = PROC_PAR1_COL ' имя Процесса в Par1
+Public Const PROC_REP1_COL = 10     'колонка Документ 1 - имя листа
+
 '-- загрузка и препроцессинг базы 1C.xlsm
 Public Const REP_1C_P_LOAD = "Загрузка Платежей из 1С"
 Public Const REP_1C_P_PAINT = "Раскраска Платежей 1С"

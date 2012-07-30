@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 26.7.2012
+' П.Л.Храпкин, А.Пасс 31.7.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -37,6 +37,8 @@ Attribute VB_Name = "MatchLib"
 ' - SheetDedup2(SheetN, ColSort,ColAcc) - сортировка и слияние листа SheetN
 '                                 по колонкам ColSort, ColAcc
 ' - DateCol(SheetN, Col)        - преобразование колонки Col из текста в Дату
+' - DateSort(SheetN, Col)       - преобразование колонки Col из текстового формата в Date
+'                                 и сортировка по этой колонке от старых к новым датам
 ' - HideLns(FrR, ToR, Col, Criteria) - скрывает строки от FrR до ToR,
 '                                 если Col соотв.Criteria (для WP)
 ' - Progress(Pct)               - вывод Progress Bar'а - процентов выполнения кода
@@ -222,7 +224,7 @@ Function GetRep(RepName) As TOCmatch
     
     If DB_MATCH Is Nothing Then
         Set DB_MATCH = FileOpen(F_MATCH)
-        GetRep = GetRep(TOC)    ' для TOCmatch - РЕКУРСИЯ для проверки Штампа
+        GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ
             
         DirDBs = DB_MATCH.Path & "\"
         If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
@@ -348,24 +350,33 @@ Sub NextRep(RepName, MadeStep, NextStep)
     RepTOC.NextStep = NextStep
     WrTOC
 End Sub
-Sub InsMyCol(F)
+Sub InsMyCol(F, FS)
 '
-' - InsMyCol(F) - вставляем колонки в лист слева по шаблону в F
-'  26.7.12
+' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
+'  28.7.12
  
     Dim i As Integer
     If RepTOC.Made <> REP_LOADED Then Exit Sub
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
+        .Activate
+'---- вставляем колонки по числу MyCol
         For i = 1 To RepTOC.MyCol
             .Cells(1, 1).EntireColumn.Insert
         Next i
+'---- задаем ширину вставленных колонок
         For i = 1 To RepTOC.MyCol
             .Columns(i).ColumnWidth = Range(F).Cells(3, i)
         Next i
+'---- копируем колонки MyCol от верха до EOL
         Sheets("Forms").Range(F).Copy Destination:=.Cells(1, 1)
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
     End With
+'---- вставляем пятку по FS
+    Range(FS).Copy _
+        Destination:=Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
+        .Cells(RepTOC.EOL + RepTOC.ResLines - Range(F).Rows.count + 1, 1)
+    
     RepTOC.Made = REP_INSMYCOL
     WrTOC
 End Sub
@@ -781,6 +792,15 @@ Sub DateCol(SheetN, Col)
         End If
 NXT:
     Next i
+End Sub
+Sub DateSort(SheetN, Col)
+'
+' - DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
+'                           и сортировка по этой колонке от старых к новым датам
+'   31.7.12
+
+    DateCol SheetN, Col
+    SheetSortSheetN , Col
 End Sub
 Sub HideLns(FrR, ToR, Col, _
     Optional Criteria As String, Optional HideFlag As Boolean = True)
