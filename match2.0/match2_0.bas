@@ -11,7 +11,7 @@ Attribute VB_Name = "match2_0"
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
 '   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
-'   31.7.2012 - Обработка Процессов - Loader'ов в ProcessEngine
+'    1.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -27,16 +27,18 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 'Pavel Khrapkin 23-Dec-2011
 ' 8.2.2012 - распознаем новый отчет, запускаем его обработку
 ' 26.7.12 - match2.0 - распознавание отчета по ТОС
+' 1.8.12 - RepTOC.EOL вместо вызова EOL(TOC,DB_MATCH), bug fix
+'          Сброс всех Процессов, работающих с загружаемым Документом
 
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Integer
     
     NewRep = ActiveWorkbook.Name
-    Lines = EOL(1, Workbooks(NewRep))
+    Lines = EOL(ActiveSheet.Name, Workbooks(NewRep))
     
     GetRep TOC
     
-    For i = 4 To EOL(1, DB_MATCH)
+    For i = 4 To RepTOC.EOL
         If IsThisStamp(i, NewRep) Then GoTo RepNameHandle
     Next i
     GoTo FatalNewRep
@@ -95,10 +97,31 @@ RepNameHandle:
         .Cells(i, TOC_MADE_COL) = REP_LOADED
         RepLoader = .Cells(i, TOC_REPLOADER_COL)
         .Cells(i, TOC_CREATED_COL) = Created
-        .Cells(i, TOC_NEXTREP_COL) = ""
         .Cells(1, 1) = Now
         .Cells(1, TOC_F_DIR_COL) = DirDBs
+'----------- окрашиваем даты в TOCmatch на сегодня -------------
+        Dim D As Date, MaxDays As Integer
+        For i = 4 To RepTOC.EOL
+            D = .Cells(i, TOC_DATE_COL)
+            MaxDays = .Cells(i, TOC_MAXDAYS_COL)
+            If D <> "0:00:00" And Now - D > MaxDays Then
+                .Cells(i, TOC_DATE_COL).Interior.Color = vbRed
+            End If
+        Next i
     End With
+'---------- Сброс всех Процессов, работающих с загружаемым Документом
+    With DB_MATCH.Sheets(Process)
+        For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_REP1_COL) = RepName _
+                    Or .Cells(i, PROC_REP1_COL + 1) = RepName _
+                    Or .Cells(i, PROC_REP1_COL + 2) = RepName _
+                    Or .Cells(i, PROC_REP1_COL + 3) = RepName _
+                    Or .Cells(i, PROC_REP1_COL + 4) = RepName Then
+                .Cells(i, PROC_STEPDONE_COL) = ""
+            End If
+        Next i
+    End With
+    
     LogWr "Новый отчет '" & RepName & "' загружен в " & RepFile
     DB_MATCH.Save
     DB_MATCH.Close
