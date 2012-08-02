@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 31.7.2012
+' П.Л.Храпкин, А.Пасс 2.8.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -12,7 +12,6 @@ Attribute VB_Name = "MatchLib"
 ' - GetMatch()                  - открывает файл match.xlsm из каталога DirDBs
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' - InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
-' - InsSummary(SheetN, F)       - вставляем сводку F в ряд EL от конца вверх
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
@@ -196,7 +195,6 @@ FoundRep:
         .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
         .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
         .Cells(i, TOC_MADE_COL) = RepTOC.Made
-        .Cells(i, TOC_NEXTREP_COL) = RepTOC.NextStep
         .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
         .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
         .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
@@ -219,9 +217,11 @@ Function GetRep(RepName) As TOCmatch
 '
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
 '   26.7.12
+'    2.8.12 - NOP по пустому RepName
 
     Dim i As Long
     
+    If RepName = "" Then Exit Function
     If DB_MATCH Is Nothing Then
         Set DB_MATCH = FileOpen(F_MATCH)
         GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ
@@ -263,7 +263,6 @@ FoundRep:
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
         RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
-        RepTOC.NextStep = .Cells(i, TOC_NEXTREP_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
         RepTOC.Stamp = .Cells(i, TOC_STAMP_COL)
@@ -340,20 +339,11 @@ Function FileOpen(RepFile) As Workbook
     
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
 End Function
-Sub NextRep(RepName, MadeStep, NextStep)
-'
-' - NextRep(RepName, MadeStep, NextStep) - записывает в ТОС состояние RepName
-'   20.7.12
-
-    RepTOC.Dat = Now
-    RepTOC.Made = MadeStep
-    RepTOC.NextStep = NextStep
-    WrTOC
-End Sub
 Sub InsMyCol(F, FS)
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
-'  28.7.12
+'                 Если заголовок колонки шаблона пятки пустой - пропускаем
+'  1.8.12
  
     Dim i As Integer
     If RepTOC.Made <> REP_LOADED Then Exit Sub
@@ -371,25 +361,18 @@ Sub InsMyCol(F, FS)
 '---- копируем колонки MyCol от верха до EOL
         Sheets("Forms").Range(F).Copy Destination:=.Cells(1, 1)
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
+'---- вставляем пятку по шаблону в FS
+        For i = 1 To Range(FS).Columns.Count
+            If Rannge(FS).Cells(1, i) <> "" Then
+                Range(FS).Columns(i).Copy Destination:=.Cells( _
+                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.Count + 1, i)
+            End If
+        Next i
+
     End With
-'---- вставляем пятку по FS
-    Range(FS).Copy _
-        Destination:=Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
-        .Cells(RepTOC.EOL + RepTOC.ResLines - Range(F).Rows.count + 1, 1)
     
     RepTOC.Made = REP_INSMYCOL
     WrTOC
-End Sub
-Sub InsSummary(F)
-'
-' - InsSummary(F) - вставляем сводку (пятку) по шаблону F
-'  25.7.12
-    
-    If RepTOC.Made <> REP_INSMYCOL Then Exit Sub
-    Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN).Activate
-    Range(F).Copy _
-        Destination:=Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
-        .Cells(RepTOC.EOL + RepTOC.ResLines - Range(F).Rows.count + 1, 1)
 End Sub
 Sub MS(Msg)
 '
@@ -477,7 +460,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -498,7 +481,7 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 ' если Mode = 0 или не указан - окрашиваем весь ряд, иначе только Col
 '   26.1.2011
 
-    AllCol = ActiveSheet.UsedRange.Columns.count
+    AllCol = ActiveSheet.UsedRange.Columns.Count
     Range(Cells(1, 1), Cells(Lines, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
@@ -580,7 +563,7 @@ Sub testEOL()
     C = EOL(1, F)
         F.Close SaveChanges:=False
 End Sub
-Function EOL(SheetN, Optional F = Null)
+Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
 '
 ' - EOL(SheetN,[F]) - возвращает количество строк в листе SheetN файла F
 '   20/1/2012
@@ -589,16 +572,18 @@ Function EOL(SheetN, Optional F = Null)
 '   12.5.12 - Sheets(SheetN).Select исключен
 '   24.6.12 - AllCol - Public
 '   29.6.12 - match 2.0 - открыть файл S, если указан параметр
+'   31.7.12 - файл ActiveWorkbook а не ThisWorkbook по умолчанию,
+'             ByVal SheetN As String - преобразование передаче параметра
 
     Dim i
 
-    If IsNull(F) Then
-        Set F = ThisWorkbook
+    If F Is Nothing Then
+        Set F = ActiveWorkbook
     End If
     
     With F.Sheets(SheetN)
-        EOL = .UsedRange.Rows.count
-        AllCol = .UsedRange.Columns.count
+        EOL = .UsedRange.Rows.Count
+        AllCol = .UsedRange.Columns.Count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -619,7 +604,6 @@ Function CSmatch(Val, Col) As Double
 '                   Если Val не найден- возвращает 0. Лист для поиска Val должен быть Selected.
 ' 8/7/12
 
-'    Const BIG = 77777
     Dim CheckCS
     Dim N As Long
     N = 1
@@ -657,7 +641,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
+    Sheets.add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
@@ -770,7 +754,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc)
         Loop While i < EOL_SheetN
     End With
 End Sub
-Sub DateCol(SheetN, Col)
+Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
@@ -793,14 +777,14 @@ Sub DateCol(SheetN, Col)
 NXT:
     Next i
 End Sub
-Sub DateSort(SheetN, Col)
+Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
 '
 ' - DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
 '                           и сортировка по этой колонке от старых к новым датам
 '   31.7.12
 
     DateCol SheetN, Col
-    SheetSortSheetN , Col
+    SheetSort SheetN, Col
 End Sub
 Sub HideLns(FrR, ToR, Col, _
     Optional Criteria As String, Optional HideFlag As Boolean = True)
