@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   31.7.12
+'   2.8.12
 
 Option Explicit
 
@@ -28,13 +28,16 @@ Public DB_STOCK As Workbook 'отчеты по Складу и Заказам
 Public Const Process = "Process"    'Каталог и контекст всех процессов
 Public Const PROC_START = "<*>ProcStart"    ' начало Процесса
 Public Const PROC_END = "<*>ProcEnd"        ' конец Процесса
+Public Const PROC_IFISDONE = "-?-IsDone"    ' проверка, что шаг связанного Процесса выполнен
 
+Public Const PROC_TIME_COL = 1      'колонка 1 - дата и время выполнения Шага
 Public Const PROC_STEP_COL = 2      'колонка Step - Шаг Процесса
 Public Const PROC_PREVSTEP_COL = 3  'колонка PrevStep
-Public Const PROC_STEPDONE_COL = 4  'колонка Done - Шаг выполнен
-Public Const PROC_PAR1_COL = 5      'колонка Параметр 1 - имя Процесса
+Public Const PROC_STEPFILE_COL = 4  'колонка "В файле" - файл, где код Шага
+Public Const PROC_STEPDONE_COL = 5  'колонка Done - Шаг выполнен
+Public Const PROC_PAR1_COL = 6      'колонка Параметр 1 - имя Процесса
 Public Const PROC_NAME_COL = PROC_PAR1_COL ' имя Процесса в Par1
-Public Const PROC_REP1_COL = 10     'колонка Документ 1 - имя листа
+Public Const PROC_REP1_COL = 11     'колонка Документ 1 - имя листа
 
 '-- загрузка и препроцессинг базы 1C.xlsm
 Public Const REP_1C_P_LOAD = "Загрузка Платежей из 1С"
@@ -108,7 +111,7 @@ Public Const TOC_EOL_COL = 3            ' EOL отчета без пятки
 Public Const TOC_MYCOL_COL = 4          ' MyCol - число доп.колонок слева
 Public Const TOC_RESLINES_COL = 5       ' число строк пятки ResLines
 Public Const TOC_MADE_COL = 6           ' Made - завершенный шаг по листу
-Public Const TOC_NEXTREP_COL = 7        ' NextRep - следующий шаг по листу
+Public Const TOC_MAXDAYS_COL = 7        ' Периодичность - max дней с обновления отчета
 Public Const TOC_REPFILE_COL = 8        ' имя файла, содержащего отчет
 Public Const TOC_SHEETN_COL = 9         ' имя листа, содержащего отчет (окрашено)
 Public Const TOC_STAMP_COL = 10         ' Штамп
@@ -135,7 +138,6 @@ Type TOCmatch
     MyCol As Long       '=изм.InsMyCol   - MyCol - число доп.колонок слева
     ResLines As Long    '=изм.InsSmmary  - число строк в пятке отчета после EOL
     Made As String      '=изм.каждый шаг - Made    - завершенный шаг по листу
-    NextStep As String  '=изм.каждый шаг - NextRep - следующий шаг по листу
     RepFile As String   'не изм.-  файл DB с отчетом
     SheetN As String    'не изм.-  имя листа, содержащего отчет
     Stamp As String     'не изм.-  строка - Штамп
