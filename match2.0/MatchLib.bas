@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 2.8.2012
+' П.Л.Храпкин, А.Пасс 5.8.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -177,15 +177,15 @@ Sub ModEnd()
 End Sub
 Sub WrTOC()
 '
-' - WrTOC() - записывает Public RepTOC в оглавление match.Sheets(1)
-'   25.7.2012
+' - WrTOC() - записывает структуру Public RepTOC в оглавление match.Sheets(TOC)
+'   5.8.2012
 
     Dim i As Long
     
     For i = 4 To BIG
         If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.SheetN Then GoTo FoundRep
     Next i
-    GoTo FatalRepTOC
+    GoTo FatalRep
 
 FoundRep:
     With DB_MATCH.Sheets(1)
@@ -204,10 +204,11 @@ FoundRep:
         .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
         .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
         .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
+        .Cells(1, 1) = Now
     End With
     Exit Sub
     
-FatalRepTOC:
+FatalRep:
     ErrMsg FATAL_ERR, "WrTOC: Нарушена структура RepТОС для отчета " & RepTOC.SheetN
     Stop
     End
@@ -343,7 +344,7 @@ Sub InsMyCol(F, FS)
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
-'  1.8.12
+'  3.8.12
  
     Dim i As Integer
     If RepTOC.Made <> REP_LOADED Then Exit Sub
@@ -355,17 +356,19 @@ Sub InsMyCol(F, FS)
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину вставленных колонок
-        For i = 1 To RepTOC.MyCol
+        For i = 1 To Range(F).Columns.count
             .Columns(i).ColumnWidth = Range(F).Cells(3, i)
         Next i
 '---- копируем колонки MyCol от верха до EOL
-        Sheets("Forms").Range(F).Copy Destination:=.Cells(1, 1)
+        For i = 1 To RepTOC.MyCol
+            Sheets("Forms").Range(F).Columns(i).Copy Destination:=.Cells(1, i)
+        Next i
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
-        For i = 1 To Range(FS).Columns.Count
-            If Rannge(FS).Cells(1, i) <> "" Then
+        For i = 1 To Range(FS).Columns.count
+            If Range(FS).Cells(1, i) <> "" Then
                 Range(FS).Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.Count + 1, i)
+                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.count + 1, i)
             End If
         Next i
 
@@ -460,7 +463,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -481,7 +484,7 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 ' если Mode = 0 или не указан - окрашиваем весь ряд, иначе только Col
 '   26.1.2011
 
-    AllCol = ActiveSheet.UsedRange.Columns.Count
+    AllCol = ActiveSheet.UsedRange.Columns.count
     Range(Cells(1, 1), Cells(Lines, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
@@ -582,8 +585,8 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
     End If
     
     With F.Sheets(SheetN)
-        EOL = .UsedRange.Rows.Count
-        AllCol = .UsedRange.Columns.Count
+        EOL = .UsedRange.Rows.count
+        AllCol = .UsedRange.Columns.count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -641,7 +644,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
+    Sheets.add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
@@ -783,6 +786,7 @@ Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
 '                           и сортировка по этой колонке от старых к новым датам
 '   31.7.12
 
+    Sheets(SheetN).Activate
     DateCol SheetN, Col
     SheetSort SheetN, Col
 End Sub
