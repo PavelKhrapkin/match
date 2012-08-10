@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 5.8.2012
+' П.Л.Храпкин, А.Пасс 7.8.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -344,7 +344,7 @@ Sub InsMyCol(F, FS)
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
-'  3.8.12
+'  7.8.12
  
     Dim i As Integer
     If RepTOC.Made <> REP_LOADED Then Exit Sub
@@ -374,7 +374,7 @@ Sub InsMyCol(F, FS)
 
     End With
     
-    RepTOC.Made = REP_INSMYCOL
+    RepTOC.Made = PublicStepName
     WrTOC
 End Sub
 Sub MS(Msg)
@@ -827,21 +827,34 @@ Sub Progress(Pct)
 '   15/2/2012
 '   26.5.12 - MsgBox каждые 20 сек во время исполнения Progress
 '   29.5.12 - изменение формы
+'    7.8.12 - попытка заменить Форму на StatusBar
         
-    With ProgressForm
-        .ProgressFrame.Caption = Format(Pct, "0%")
-        .LabelProgress.Width = Pct * .ProgressFrame.Width
-        .Repaint
-    End With
-    
-    Static t
-    Dim R As String
-    If t = 0 Then t = Timer
-    If Timer - t > 20 Then
-        t = Timer
-        R = MsgBox("Дальше?", vbYesNo)
-        If R = vbNo Then ExRespond = False
+    If PublicProcessName = "" Then
+        With DB_MATCH.Sheets(Process)
+            PublicProcessName = .Cells(1, PROCESS_NAME_COL)
+            PublicStepName = .Cells(1, STEP_NAME_COL)
+        End With
     End If
+    
+    Application.StatusBar = PublicProcessName & "> " _
+        & "Шаг " & PublicStepName _
+        & ": " & Format(Pct, "0.00%")
+    
+          
+''    With ProgressForm
+''        .ProgressFrame.Caption = Format(Pct, "0%")
+''        .LabelProgress.Width = Pct * .ProgressFrame.Width
+''        .Repaint
+''    End With
+''
+''    Static t
+''    Dim R As String
+''    If t = 0 Then t = Timer
+''    If Timer - t > 20 Then
+''        t = Timer
+''        R = MsgBox("Дальше?", vbYesNo)
+''        If R = vbNo Then ExRespond = False
+''    End If
     
 End Sub
 Sub StopSub()

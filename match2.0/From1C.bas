@@ -10,117 +10,55 @@ Attribute VB_Name = "From1C"
 '<*> From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
 '(*) FromStock      - замена Складской Книги в листе Stock
 '
-' 25.7.2012 П.Л.Храпкин match 2.0
+' 10.8.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
-Sub From1Cpayment()
+Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
 '
-' From1Cpayment() - Заменяет лист отчета 1С "Приход денег на счета" новым Листом на первом месте
-'
-'  25.6.12 - match 2.0
-'  27.6.12 - избавляемся от формул со ссылками на другой файл
-'  25.7.12 - InsMyCol и InsSummary
+' - SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
+'       записывая в колонку ColTo Id рекорда найденного по значению в ColFr
+' 8.8.12
 
-    ModStart REP_1C_P_LOAD
+    Dim DocTo As String ' имя входного Документа - отчета
+    Dim RepFr As TOCmatch, RepTo As TOCmatch
+    Dim Val
+    Dim i As Integer, N As Integer
     
-    InsMyCol "Payment_MyCol"
-    InsSummary "Payment_Summary"
-
-    Range("J:Q,T:U,W:X").Select           ' делаем невидимыми ненужные колонки
-    Selection.EntireColumn.Hidden = True  '   ..валютных проводок, расходных
-                                          '   .. кредитов,отделов и фирм
-    Call DateCol(PAY_SHEET, PAYDATE_COL) ' преобразование колонки Дат
-'    SheetSort PAY_SHEET, PAYDATE_COL     ' сортируем Платежи по Дате прихода денег
-    
-    SFmatchFill PAY_SHEET   '*** выполняем Update по отчетам SF
-
-'*******************************************************
-    Call PaymentPaint    '* раскрашиваем Лист Платежей *
-'*******************************************************
-
-    ModEnd
-End Sub
-Sub testSFmatchFill()
-    ModStart REP_1C_P_PAINT
-    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
-    SFmatchFill PAY_SHEET
-    ModEnd
-End Sub
-Sub SFmatchFill(SheetN)
-'
-' - SFmatchFill(SheetN)  - заполнение связей листа SheetN по SFDC
-' 8.7.12
-
-    Dim L As Integer        '= EOL заполняемого отчета
-    Dim Acc As String       'поле Клиент 1С с нормализацией
-    Dim SFid As String      'поле IdSF - Id Платежа в SF
-    Dim iPaid As Integer    '= номер "сшитой" строки в SF
-    Dim AccCol As Integer   '= номер "сшиваемой" колонки
-    Dim i As Integer        '= номер текущей строки заполняемого отчета
-    
-'    SFaccColFill PAY_SHEET  ' в колонке 1 если Организация есть в SF
-'    SFaccCol PAY_SHEET, PAY_RESLINES    ' раскрашиваем колонку A
-        
-    Select Case SheetN
-        Case PAY_SHEET:
-'            L = EOL_PaySheet
-            L = RepTOC.EOL
-            AccCol = PAYACC_COL
-        Case DOG_SHEET:
-            L = EOL_DogSheet
-            AccCol = DOG1CACC_COL
-        Case Acc1C:
-            L = EOL_Acc1C
-            AccCol = A1C_NAME_COL
-        Case Else
-            ErrMsg FATAL_ERR, "неправильный лист в SFaccColFill"
-            Stop
-    End Select
-        
-    DB_SFDC.Sheets(SFacc).Activate
-'    DB_SFDC.Sheets(SFacc).Select
-    With ThisWorkbook.Sheets(PAY_SHEET)
-        For i = 2 To L
-            Progress i / L / 3
-                '-- "нормализуем" имя Организации  и "сшиваем" его с SFacc --
-            Acc = Replace(Compressor(.Cells(i, AccCol)), vbCrLf, "")
-            .Cells(i, AccCol) = Acc
-            If CSmatch(Acc, SFACC_ACC1C_COL) <> 0 Then
-                .Cells(i, PAYISACC_COL) = "1"
+    DocTo = ActiveSheet.Name
+    RepTo = GetRep(DocTo)
+    Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN).Activate
+    RepFr = GetRep(DocFr)
+    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
+        Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Select
+        For i = 2 To RepTo.EOL
+            Progress i / RepTo.EOL
+            Val = .Cells(i, ColVal)
+            N = CSmatch(Val, ColFr)
+            If N > 0 Then
+                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
             Else
-                .Cells(i, PAYISACC_COL) = ""
-            End If
-        Next i
-                        
-        DB_SFDC.Sheets(SF).Select
-        For i = 2 To L
-            Progress 1 / 3 + i / L / 3
-                '-- "сшиваем" с Платежом в SF --
-            iPaid = CSmatch(.Cells(i, PAYCODE_COL), SF_COD_COL)
-            If iPaid <> 0 Then
-                .Cells(i, PAYINSF_COL) = "1"
-                SFid = DB_SFDC.Sheets(SF).Cells(iPaid, SF_PAYID_COL)
-                .Cells(i, PAYIDSF_COL) = SFid
-            Else
-                .Cells(i, PAYINSF_COL) = ""
-                .Cells(i, PAYIDSF_COL) = ""
-            End If
-        Next i
-
-        DB_SFDC.Sheets(SF_PA).Select
-        For i = 2 To L
-            Progress 2 / 3 + i / L / 3
-                '-- "сшиваем" с Контрактами ADSK в SF_PA --
-    '..... потом здесь можно поместить ВСЕ Контракты ADSK по номерам с "+"
-            SFid = .Cells(i, PAYIDSF_COL)
-            If CSmatch(SFid, SFPA_PAYID_COL) <> 0 Then
-                .Cells(i, PAYADSK_COL) = "1"
-            Else
-                .Cells(i, PAYADSK_COL) = ""
+                .Cells(i, ColTo) = ""
             End If
         Next i
     End With
 End Sub
+Sub ContractPaint()
+'
+' - ContractPaint() - Раскрашиваем Лист Договоров
+' 10.8.12
+
+    Pnt DOGSFSTAT_COL, "Закрыт", rgbLightGreen      ' Договоры Закрытые в SF- зеленые
+    Pnt DOGSFSTAT_COL, "Открыт", rgbOrange          ' Открытые Договоры - оранжевые
+    Pnt DOGSFSTAT_COL, "Черновик", rgbLightBlue     ' Черновики - голубые
+    Pnt DOGSFSTAT_COL, "Не состоялся", Antique      ' Не состоялся - Antique
+    Pnt DOGPAID1C_COL, 1, LimeG, 1                  ' Оплаченные - темно зеленый
+    Pnt DOGISINV1C_COL, 1, rgbOlive, 1              ' Выставлен Счет - оливковый
+    Pnt DOG1CSCAN_COL, 1, rgbViolet, 1              ' Отсканировано - фиолетовый
+'-- копируем пятку в Платежи1С
+    Range("Contract_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
+End Sub
+
+
 Sub testCSmatch()
     If "G" = "g" Then Stop
     Dim A
@@ -197,6 +135,75 @@ Sub From1Cdogovor()
     ActiveWorkbook.Sheets(3).Tab.Color = LimeG  ' Tab нового отчета - зеленый
     Doing = Sheets(3).Name
     Call ModEnd(3)
+End Sub
+Sub PaymentPaint()
+'
+' - PaymentPaint() - Раскрашиваем Лист Платежей 1C
+' 24.6.12 переписано для match 2.0
+'  7.8.12 оформлено как Шаг
+
+    Dim i As Integer
+    Dim Rub, Doc    'поля "Итого руб" и "Плат.док"
+    
+    PublicStepName = ""
+    GetRep PAY_SHEET
+    DB_1C.Sheets(PAY_SHEET).Select
+    
+    Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
+    Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
+    
+    With Sheets(PAY_SHEET)
+        For i = 2 To RepTOC.EOL
+            Progress i / RepTOC.EOL
+            If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые Платежи в SF
+                Range(Cells(i, 2), Cells(i, AllCol)).Interior.Color = rgbLightGreen
+            ElseIf Trim(.Cells(i, PAYDOC_COL)) = "" Or Trim(.Cells(i, PAYSALE_COL)) = "" Then
+                .Cells(i, 1).EntireRow.Hidden = True    ' нал убираем
+            Else
+'-- окраска еще не занесенных Платежей в зависимости от суммы
+                Rub = .Cells(i, PAYRUB_COL)
+                If Rub >= 1000000 Then
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBrown
+                ElseIf Rub > 500000 Then
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbOrange
+                ElseIf Rub > 300000 Then
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBisque
+                ElseIf Rub > 30000 Then
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBeige
+                End If
+            End If
+            
+'-- окраска Договоров
+            If .Cells(i, PAYDOGOVOR_COL) <> "" Then     ' голубые Договоры
+                .Cells(i, PAYDOGOVOR_COL).Interior.Color = rgbLightBlue
+            End If
+            If .Cells(i, PAYOSNDOGOVOR_COL) <> "" Then  ' голубые Осн.Договоры
+                .Cells(i, PAYOSNDOGOVOR_COL).Interior.Color = rgbLightBlue
+            End If
+'-- окраска товаров ADSK в соответствии с SF_PA
+            If InStr(.Cells(i, PAYGOOD_COL), "Auto") <> 0 Then  ' Autodesk
+                If .Cells(i, PAYADSK_COL) = "" Then
+                    .Cells(i, PAYGOOD_COL).Interior.Color = rgbADSK
+                Else
+                    .Cells(i, PAYGOOD_COL).Interior.Color = rgbPink
+                End If
+            End If
+'-- окраска колонки А - Организация есть в SF
+            If .Cells(i, PAYISACC_COL) = "1" Then
+                .Cells(i, PAYISACC_COL).Interior.Color = rgbYellow
+            Else
+                .Cells(i, PAYISACC_COL).Interior.Color = rgbRed
+            End If
+            
+'-- скрываем нал
+            Doc = Trim(.Cells(i, PAYDOC_COL))
+            If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then .Rows(i).Hidden = True
+            
+        Next i
+'-- копируем пятку в Платежи1С
+        Range("Payment_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
+    End With
+'    ModEnd REP_1C_P_PAINT
 End Sub
 Sub From1Caccount()
 '

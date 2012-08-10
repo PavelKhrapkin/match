@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   2.8.12
+'   10.8.12
 
 Option Explicit
 
@@ -38,6 +38,11 @@ Public Const PROC_STEPDONE_COL = 5  'колонка Done - Шаг выполнен
 Public Const PROC_PAR1_COL = 6      'колонка Параметр 1 - имя Процесса
 Public Const PROC_NAME_COL = PROC_PAR1_COL ' имя Процесса в Par1
 Public Const PROC_REP1_COL = 11     'колонка Документ 1 - имя листа
+
+Public Const PROCESS_NAME_COL = 7  'колонка - имя текущего Процесса
+Public Const STEP_NAME_COL = 9     'колонка - имя текущего Шага
+Public PublicProcessName As String
+Public PublicStepName As String
 
 '-- загрузка и препроцессинг базы 1C.xlsm
 Public Const REP_1C_P_LOAD = "Загрузка Платежей из 1С"
@@ -157,7 +162,6 @@ Public RepADSK As TOCmatch  ' структура TOCmatch для отчета в ADSK.xlsm
 Public RepStock As TOCmatch ' структура TOCmatch для отчета в Stock.xlsm
 
 Public Const REP_LOADED = "Loaded"            ' MoveToMatch: отчет загружен в файл DB
-Public Const REP_INSMYCOL = "MyCol inserted"  ' MyCol слева вставлены и заполнены
 
 '=============== База DB_SFDC - файл SFDC.xlsm ==============
 Public Const SF = "SF"              ' лист отчета по Платежам
@@ -289,11 +293,12 @@ Public Const PAY_SHEET = "Платежи"  ' лист Платежей
 Public Const PAY_RESLINES = 3       ' кол-во строк пятки отчета по Платежам
 Public Const PAY_MYCOLS = 5         ' количество моих колонок слева
 
-Public Const PAYISACC_COL = 1       ' колонка =1? если Организация есть в SF
-Public Const PAYSFLN_COL = 2        ' колонка - номер строки в SF
-Public Const PAYADSK_COL = 3        ' колонка - связи Платежа с ADSK в SF
-Public Const PAYINSF_COL = 4        ' колонка =1, если Платеж есть в SF
+Public Const PAYISACC_COL = 1       ' колонка =1, если Организация есть в SF
+Public Const PAYINSF_COL = 2        ' колонка =1, если Платеж есть в SF
+Public Const PAYIDSF_COL = 3        ' колонка - Id Платежа в SF
+Public Const PAYADSK_COL = 4        ' колонка - связи Платежа с ADSK в SF
 Public Const PAYCODE_COL = 5        ' колонка кода Платежа
+'----
 Public Const PAYDOC_COL = 6         ' колонка "Плат.док."
 Public Const PAYDATE_COL = 7        ' колонка "Дата прих.денег"
 Public Const PAYINVOICE_COL = 8     ' колонка "Счет"
@@ -310,10 +315,13 @@ Public Const DOG_SHEET = "Договоры" ' лист Договоров для модуля ConctAnalitics
 
 Public Const DOGRES = 7             ' кол-во строк пятки отчета по Договорам
 
+Public Const DOGISACC_COL = 1      ' колонка =1, если Организация есть в SF
 Public Const DOGSFSTAT_COL = 2     ' колонка статуса Договора в SF
-Public Const DOGPIAID1C_COL = 5    ' колонка Договора1C "Оплачено"
+Public Const DOGIDSF_COL = 3       ' колонка Id Договора в SF
+Public Const DOGPAID1C_COL = 5     ' колонка Договора1C "Оплачено"
 Public Const DOG1CSCAN_COL = 7     ' колонка "Отсканировано"
 Public Const DOGCOD_COL = 8        ' колонка кода Договора вида "Осн/Договр"
+'----
 Public Const DOG1C_COL = 10        ' колонка "Номер договора" в отчете 1С
 Public Const DOG1CDAT_COL = 12     ' колонка Дата подписания
 Public Const DOG1CFIRM_COL = 13    ' колонка Фирма
@@ -338,6 +346,8 @@ Public Const Acc1C = "Список клиентов 1C"   ' Справочник клиентов 1С
 
 Public Const ACC1C_RES = 3      ' пятка справочника организаций 1С
 
+Public Const A1C_ISACC_COL = 1      ' колонка =1, если Организация есть в SF
+'---
 Public Const A1C_NAME_COL = 5   ' колонка "Название фирмы" в 1С
 Public Const A1C_CON_COL = 6    ' колонка "контакт" в 1С
 Public Const A1C_TEL_COL = 7    ' колонка "Телефон"
