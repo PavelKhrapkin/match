@@ -19,6 +19,8 @@ Attribute VB_Name = "FromSF"
 '  12.5.12 - bug fix
 '  16.5.12 - новый отчет по свзкам Платежей с Контрактами ADSK SF_PA
 '  15.7.12 - match2.0 - все неспецифические действия выполняет MoveToMatch
+'   2.8.12 - сшивание SF c Платежами 1С Шагом PaidSF_Fill
+'  10.8.12 - сшивание SFD c Договорами 1С Шагом DogSF_Fill
 
     Option Explicit    ' Force explicit variable declaration
         
@@ -35,6 +37,47 @@ Attribute ShowControlPanel.VB_ProcData.VB_Invoke_Func = "Q\n14"
     MainControlPanel.Show
     End
 End Sub
+Sub PaidSF_Fill()
+'
+' - PaidSF_Fill() - заполнение колонки А листа SF номерами строк - Платежей 1С
+'   2.8.12
+
+    Dim Rep1C As TOCmatch, RepSF As TOCmatch
+    Dim PayK As String      'поле SF - код Платежа
+    Dim i As Integer
+    
+    PublicStepName = ""
+    RepSF = GetRep(SF)
+    Rep1C = GetRep(PAY_SHEET)
+    DB_1C.Sheets(Rep1C.SheetN).Select
+    With DB_SFDC.Sheets(SF)
+        For i = 2 To RepSF.EOL
+            Progress i / RepSF.EOL
+            PayK = .Cells(i, SF_COD_COL)
+            .Cells(i, 1) = CSmatch(PayK, PAYCODE_COL)
+        Next i
+    End With
+End Sub
+Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Integer)
+'
+' - DogSFD_Fill() - заполнение колонки А листа SFD номерами строк - Договоров 1С
+'   10.8.12
+
+    Dim Rep1C As TOCmatch, RepSF As TOCmatch
+    Dim i As Integer
+
+    PublicStepName = ""
+    RepSF = GetRep(SheetSF)
+    Rep1C = GetRep(Sheet1C)
+    DB_1C.Sheets(Rep1C.SheetN).Select
+    With DB_SFDC.Sheets(SheetSF)
+        For i = 2 To RepSF.EOL
+            Progress i / RepSF.EOL
+            .Cells(i, 1) = CSmatch(.Cells(i, ColSF), Col1C)
+        Next i
+    End With
+
+End Sub
 Sub Match1C_SF()
 '
 ' (*) обновление отчета SF "Платежи Сверка с 1С"
@@ -46,54 +89,52 @@ Sub Match1C_SF()
 '   9.1.12 - корректное копирование сводки по SF
 '  26.1.12 - проверка, что на входе действительно отчет Платежи, сортировка SF
 '  28.1.12 - параметризация по именам листов
-'  14.8.12 - match2.0 - полностью переписано
+'  14.7.12 - match2.0 - полностью переписано
    
-    ModStart REP_SF_LOAD
-    
-    InsMyCol "SF_MyCol", EOL_SF
-    InsSummary "SF_Summary", EOL_SF + SFresLines
+'    Application.Run ProcStart, REP_SF_LOAD
+    GetRep TOC
+    Application.Run "'" & DirDBs & F_MATCH & "'!ProcStart", "REP_SF_LOAD"
 
-'---- заполняем Match - связку с Платежами 1С
-    DB_1C.Sheets(PAY_SHEET).Select
+'''
+'''    ModStart REP_SF_LOAD
+'''
+'''    InsMyCol "SF_MyCol", EOL_SF
+'''    InsSummary "SF_Summary", EOL_SF + SFresLines
+'''
+''''---- заполняем Match - связку с Платежами 1С
+'''    If RepTOC.Made <> REP_LOADED Then Exit Sub
+'''    DB_1C.Sheets(PAY_SHEET).Select
+'''
+'''    Dim i
+'''    With ThisWorkbook.Sheets(SF)
+'''        For i = 2 To EOL_SF
+'''            Progress i / EOL_SF
+'''            .Cells(i, 1) = CSmatch(.Cells(i, SF_COD_COL), PAYCODE_COL)
+'''        Next i
+'''    End With
+'''    NextRep SF, "InsMyCol", "PaymentPaint"
+''''********************
+''''    PaymentPaint   '*
+''''********************
+'''
+'''    ModEnd
+ End Sub
+ Sub LinkCol(PrevStep, To_DB, ToSheet, ToCol, ToValCol, ToEOL, Fr_DB, FrSheet, FrCol)
+ '
+ '
+ '
+    If RepTOC.Made <> PrevStep Then Exit Sub
+    Fr_DB.Sheets(FrSheets).Select
 
     Dim i
-    With ThisWorkbook.Sheets(SF)
-        For i = 2 To EOL_SF
-            Progress i / EOL_SF
-            .Cells(i, 1) = CSmatch(.Cells(i, SF_COD_COL), PAYCODE_COL)
+    With To_DB.Sheets(ToSheets)
+        For i = 2 To ToEOL
+            Progress i / ToEOL
+            .Cells(i, ToCol) = CSmatch(.Cells(i, ToValCol), FrCol)
         Next i
     End With
     NextRep SF, "InsMyCol", "PaymentPaint"
-'********************
-'    PaymentPaint   '*
-'********************
 
-    ModEnd
- End Sub
- Sub InsMyCol(F, EL)
- '
- ' - InsMyCol(SheetN, F) - вставляем колонки формул F в SheetN
- '  20.7.12
- 
-    Dim i As Integer
-    If RepTOC.Made <> REP_LOADED Then Exit Sub
-    For i = 1 To Range(F).Columns.Count
-        ActiveSheet.Cells(1, 1).EntireColumn.Insert
-        ActiveSheet.Columns(i).ColumnWidth = Range(F).Cells(3, i)
-    Next i
-    Sheets("Forms").Range(F).Copy Destination:=ActiveSheet.Cells(1, 1)
-    ActiveSheet.Range("A2:B" & EL).FillDown
-    RepTOC.Made = REP_INSMYCOL
-    WrTOC
-End Sub
- Sub InsSummary(F, EL)
- '
- ' - InsSummary(SheetN, F) - вставляем сводку F в ряд EL от конца вверх
- '  20.7.12
- 
-    If RepTOC.Made <> REP_INSMYCOL Then Exit Sub
-    Sheets("Forms").Range(F).Copy _
-        Destination:=ActiveSheet.Cells(EL - Range(F).Rows.Count + 1, 1)
  End Sub
 '''''''''''    LinesOld = ModStart("SF", _
 '''''''''''        "MatchSF_1C - обновляем лист SF по отчету Salesforce <Платежи из 1С>")
@@ -232,8 +273,8 @@ Sub SFaccRep()
     
     ModStart SFacc, "Обновление листа отчета Salesforce по Организациям SFacc"
 
-    LinesOld = Sheets(SFacc).UsedRange.Rows.Count ' кол-во строк в старом отчете
-    Lines = Sheets(1).UsedRange.Rows.Count        ' кол-во строк в новом отчете
+    LinesOld = Sheets(SFacc).UsedRange.Rows.count ' кол-во строк в старом отчете
+    Lines = Sheets(1).UsedRange.Rows.count        ' кол-во строк в новом отчете
     LO = LinesOld - SFresLines
     Ln = Lines - SFresLines
     
