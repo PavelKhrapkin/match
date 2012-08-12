@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 7.8.2012
+' П.Л.Храпкин, А.Пасс 10.8.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -297,26 +297,81 @@ FoundRep:
         Case Else: GoTo FatalRep
         End Select
             
-        StR = .StampR
-        If .RepFile = F_SFDC Then StR = StR + .EOL
-        StC = .StampC
-        If .Made <> REP_LOADED Then StC = StC + .MyCol
-        TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
-        If .StampType = "=" Then
-            If .Stamp <> TestedStamp Then GoTo FatalRep
-        ElseIf .StampType = "I" Then
-            If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo FatalRep
-        Else
-            ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
-        End If
+        Dim S() As String
+        S = split(.StampR, ",")
+        For i = LBound(S) To UBound(S)
+            StR = S(i)
+            If .RepFile = F_SFDC Then StR = StR + .EOL
+            StC = .StampC
+            If .Made <> REP_LOADED Then StC = StC + .MyCol
+            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
+            If .StampType = "=" Then
+                If .Stamp <> TestedStamp Then GoTo NxtChk
+            ElseIf .StampType = "I" Then
+                If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo NxtChk
+            Else
+                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
+            End If
+            GetRep = RepTOC
+            Exit Function
+NxtChk:
+        Next i
+        GoTo FatalRep
     End With
-    GetRep = RepTOC
-    Exit Function
 FatalRep:
     ErrMsg FATAL_ERR, "GetRep: Запрос не существующего в ТОС отчета " & RepName
     Stop
     End
 End Function
+Sub CheckStamp(iTOC As Integer)
+'
+' - CheckStamp(iTOC) - проверка штампа в строке iTOC списка Документов в TOCmatch
+' 11.8.12
+        
+    Dim S() As String
+    Dim StR As Integer
+    
+    Dim RepName As String
+    Dim R As String
+    Dim C As Long
+    Dim Txt As String
+    Dim Typ As String
+    
+    With DB_MATCH.Sheets(TOC)
+        R = .Cells(iTOC, TOC_STAMP_R_COL)
+        C = .Cells(iTOC, TOC_STAMP_C_COL)
+        Txt = .Cells(iTOC, TOC_STAMP_COL)
+        Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
+        RepName = .Cells(iTOC, TOC_REPNAME_COL)
+    End With
+    
+    With RepTOC
+        S = split(R, ",")
+        For i = LBound(S) To UBound(S)
+            StR = S(i)
+            If .RepFile = F_SFDC Then StR = StR + .EOL
+            If .Made <> REP_LOADED Then C = C + .MyCol
+            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, C)
+            If Typ = "=" Then
+                If Txt <> TestedStamp Then GoTo NxtChk
+            ElseIf Typ = "I" Then
+                If InStr(LCase$(TestedStamp), LCase$(Txt)) = 0 Then GoTo NxtChk
+            Else
+                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
+            End If
+        
+            If .ParChech <> "" Then CheckStamp iTOC + 1
+            Exit Sub
+NxtChk:
+        Next i
+        GoTo FatalRep
+    End With
+FatalRep:
+    ErrMsg FATAL_ERR, "GetRep: Запрос не существующего в ТОС отчета " & RepName
+    Stop
+    End
+
+End Sub
 Function FileOpen(RepFile) As Workbook
 '
 ' - FileOpen(RepFile)   - проверяет, открыт ли RepFile, если нет - открывает
@@ -344,13 +399,16 @@ Sub InsMyCol(F, FS)
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
-'  7.8.12
+'  10.8.12
  
     Dim i As Integer
-    If RepTOC.Made <> REP_LOADED Then Exit Sub
+'    If RepTOC.Made <> REP_LOADED Then Exit Sub
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
         .Activate
+'---- А может мы уже эту колонку вставляли?
+        If .Cells(1, 1) = Range(F).Cells(1, 1) Then Exit Sub
+
 '---- вставляем колонки по числу MyCol
         For i = 1 To RepTOC.MyCol
             .Cells(1, 1).EntireColumn.Insert
@@ -482,18 +540,19 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 '
 ' подпрограмма выбирает колонку Col по критерию Criteria и окрашивает в Color
 ' если Mode = 0 или не указан - окрашиваем весь ряд, иначе только Col
-'   26.1.2011
+'   26.1.2012
+'   10.8.12 - заменено Lines на RepTOC.EOL
 
     AllCol = ActiveSheet.UsedRange.Columns.count
-    Range(Cells(1, 1), Cells(Lines, AllCol)).AutoFilter _
+    Range(Cells(1, 1), Cells(RepTOC.EOL, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
-        Range(Cells(2, 2), Cells(Lines, AllCol)).Interior.Color = Color
+        Range(Cells(2, 2), Cells(RepTOC.EOL, AllCol)).Interior.Color = Color
     Else
-        Range(Cells(2, Col), Cells(Lines, Col)).Interior.Color = Color
+        Range(Cells(2, Col), Cells(RepTOC.EOL, Col)).Interior.Color = Color
     End If
     If Criteria = "Не состоялся" Then   ' "Не состоялся" - перечеркиваем
-        Range(Cells(2, 2), Cells(Lines, AllCol)).Font.Strikethrough = True
+        Range(Cells(2, 2), Cells(RepTOC.EOL, AllCol)).Font.Strikethrough = True
     End If
     ActiveSheet.UsedRange.AutoFilter Field:=Col
 End Sub
@@ -702,20 +761,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, x, EOL_SheetN As Integer
+    Dim i, prev, X, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        x = Sheets(SheetN).Cells(i, Col)
-        If x = prev Then
+        X = Sheets(SheetN).Cells(i, Col)
+        If X = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = x
+            prev = X
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -726,7 +785,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc)
 '   23.5.2012
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, x As String
+    Dim prev As String, X As String
     Dim PrevAcc As String, NewAcc As String
     
     Call SheetSort(SheetN, ColSort)
@@ -735,8 +794,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            x = .Cells(i, ColSort)
-            If x = prev Then
+            X = .Cells(i, ColSort)
+            If X = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 NewAcc = .Cells(i, СolAcc)
                 If PrevAcc <> "" And NewAcc <> "" And PrevAcc <> NewAcc Then
@@ -752,7 +811,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = x
+                prev = X
             End If
         Loop While i < EOL_SheetN
     End With
@@ -829,16 +888,18 @@ Sub Progress(Pct)
 '   29.5.12 - изменение формы
 '    7.8.12 - попытка заменить Форму на StatusBar
         
+    Static InitFlag As Boolean
     If PublicProcessName = "" Then
         With DB_MATCH.Sheets(Process)
             PublicProcessName = .Cells(1, PROCESS_NAME_COL)
             PublicStepName = .Cells(1, STEP_NAME_COL)
         End With
+        InitFlag = True
     End If
     
     Application.StatusBar = PublicProcessName & "> " _
         & "Шаг " & PublicStepName _
-        & ": " & Format(Pct, "0.00%")
+        & ": " & Format(Pct, "0%")
     
           
 ''    With ProgressForm
@@ -964,15 +1025,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim x() As String
+    Dim X() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    x = split(DicList, ",")
+    X = split(DicList, ",")
     
-    For i = LBound(x) To UBound(x)
-        If InStr(lW, LCase$(x(i))) <> 0 Then
+    For i = LBound(X) To UBound(X)
+        If InStr(lW, LCase$(X(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If

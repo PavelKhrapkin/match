@@ -11,7 +11,7 @@ Attribute VB_Name = "match2_0"
 '   16.5.2012 - добавлен отчет SF_PA
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
 '   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
-'    1.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
+'   11.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -29,6 +29,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 26.7.12 - match2.0 - распознавание отчета по ТОС
 ' 1.8.12 - RepTOC.EOL вместо вызова EOL(TOC,DB_MATCH), bug fix
 '          Сброс всех Процессов, работающих с загружаемым Документом
+' 11.8.12 - bug fix - раскраска даты отчета
 
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Integer
@@ -106,6 +107,8 @@ RepNameHandle:
             MaxDays = .Cells(i, TOC_MAXDAYS_COL)
             If D <> "0:00:00" And Now - D > MaxDays Then
                 .Cells(i, TOC_DATE_COL).Interior.Color = vbRed
+            Else
+                .Cells(i, TOC_DATE_COL).Interior.Color = vbWhite
             End If
         Next i
     End With
@@ -127,7 +130,6 @@ RepNameHandle:
     DB_MATCH.Close
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
-'        Application.Run ("'" & DirDBs & RepFile & "'!" & RepLoader)
         Application.Run "'" & DirDBs & F_MATCH & "'!ProcStart", RepLoader
     End If
     MyDB.Save
@@ -184,6 +186,7 @@ Function IsThisStamp(iTOC, NewRep) As Boolean
 
 End Function
 Sub TriggerOptionsFormulaStyle()
+Attribute TriggerOptionsFormulaStyle.VB_ProcData.VB_Invoke_Func = "R\n14"
 '
 ' * Trigger Options-Formula Style A1/R1C1
 '
