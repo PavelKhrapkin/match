@@ -113,7 +113,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         Done = DB_MATCH.Sheets(Process).Cells(i, PROC_STEPDONE_COL)
         IsDone = True
         If Done = "1" Then
-            If TraceStep Then MS "IdDone: Шаг " & Proc & "/" & Step & " был выполнен"
+            If TraceStep Then MS "IsDone: Шаг " & Proc & "/" & Step & " был выполнен"
             Exit Function
         End If
         IsDone = False
@@ -158,7 +158,7 @@ Sub Exec(Step, iProc)
         If TraceStep Then
             MS "<> Процесс " & .Cells(1, PROCESS_NAME_COL) _
                 & " перед выполнением Шага " & Step
-             If TraceStop Then Stop
+            If TraceStop Then Stop
         End If
         
         If .Cells(iProc, PROC_PAR1_COL + 4) <> "" Then
