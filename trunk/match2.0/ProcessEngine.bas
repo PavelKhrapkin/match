@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   7.8.12 П.Л.Храпкин
+'   16.8.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -69,30 +69,17 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
 '
 ' - IsDone(Proc, Step) - проверка, что шаг Step процесса уже Proc выполнен
 '   7.8.12
+'  16.8.12 - bug fix про PrevStep без запятой давал ошибку
 
     Dim i As Integer
+    Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
-    Dim x() As String   '=каждая часть может быть вида <Proc>/<Step>
+    Dim X() As String   '=каждая часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
     
     Proc = Trim(Proc): Step = Trim(Step)
     
-    If InStr(Step, ",") <> 0 Then
-        S = split(Trim(Step), ",")
-        For i = LBound(S) To UBound(S)
-            If InStr(S(i), "/") <> 0 Then
-                x = split(S(i), "/")
-                If Not IsDone(x(0), x(1)) Then ProcStart x(0)
-'                If TraceStep Then MS "Шаг " & x(0) & "/" & x(1) & " выполнен"
-            Else
-                If Not IsDone(Proc, S(i)) Then ProcStart Proc
-'                If TraceStep Then MS "Шаг " & S(i) & " этого Процесса был выполнен"
-            End If
-        Next i
-        IsDone = True
-        Exit Function
-        
-    ElseIf Step = REP_LOADED Then
+    If Step = REP_LOADED Then
         i = ToStep(Proc)
         Rep = DB_MATCH.Sheets(Process).Cells(i, PROC_REP1_COL)
         GetRep Rep
@@ -109,17 +96,24 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        i = ToStep(Proc, Step)
-        Done = DB_MATCH.Sheets(Process).Cells(i, PROC_STEPDONE_COL)
+        S = split(Trim(Step), ",")
+        For i = LBound(S) To UBound(S)
+            If InStr(S(i), "/") <> 0 Then
+                X = split(S(i), "/")
+                If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
+                If Not IsDone(X(0), X(1)) Then ProcStart X(0)
+            Else
+                iStep = ToStep(Proc, Step)
+                If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
+                    IsDone = True
+                    Exit Function
+                End If
+                ProcStart Proc
+            End If
+        Next i
         IsDone = True
-        If Done = "1" Then
-            If TraceStep Then MS "IsDone: Шаг " & Proc & "/" & Step & " был выполнен"
-            Exit Function
-        End If
-        IsDone = False
+        Exit Function
     End If
-    
-    
 End Function
 Sub Exec(Step, iProc)
 '
@@ -148,10 +142,11 @@ Sub Exec(Step, iProc)
 
         R = GetRep(.Cells(iProc, PROC_REP1_COL))
             '-- Select лист, с которым будем работать
-        Workbooks(R.RepFile).Sheets(R.SheetN).Select
+        If R.Name <> "" Then Workbooks(R.RepFile).Sheets(R.SheetN).Select
         Code = Step
         PublicStepName = Step
-        File = .Cells(iProc, PROC_STEPFILE_COL)
+'        File = .Cells(iProc, PROC_STEPFILE_COL)
+        File = F_MATCH  '!!!!!!!!!!!!!!!!!!!!!!!!
         If File <> "" Then Code = "'" & DirDBs & File & "'!" & Step
         
         .Cells(1, STEP_NAME_COL) = Step
@@ -160,6 +155,7 @@ Sub Exec(Step, iProc)
                 & " перед выполнением Шага " & Step
             If TraceStop Then Stop
         End If
+        ExRespond = True
         
         If .Cells(iProc, PROC_PAR1_COL + 4) <> "" Then
             Application.Run Code, _
@@ -242,7 +238,8 @@ End Function
 Sub testRunProc()   'Ctrl/W
 Attribute testRunProc.VB_ProcData.VB_Invoke_Func = "W\n14"
 '    RunProc "REP_1C_P_LOAD"
-    RunProc "REP_SF_LOAD"
+'    RunProc "REP_SF_LOAD"
+    RunProc "HANDL_Payment"
 End Sub
 Sub RunProc(Proc)
 '
