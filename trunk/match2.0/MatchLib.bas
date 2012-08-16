@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 10.8.2012
+' П.Л.Храпкин, А.Пасс 15.8.2012
 '
 ' - ModStart(Report)            - начало модуля работы с Листом SheetN
 ' - PublicVarInit()             - инициализация глобальных переменных EOL и др
@@ -179,6 +179,7 @@ Sub WrTOC()
 '
 ' - WrTOC() - записывает структуру Public RepTOC в оглавление match.Sheets(TOC)
 '   5.8.2012
+'  12.8.12 - "серые" колонки описывающие Штамп не записываем
 
     Dim i As Long
     
@@ -197,10 +198,10 @@ FoundRep:
         .Cells(i, TOC_MADE_COL) = RepTOC.Made
         .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
         .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
-        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
-        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
-        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
-        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
+'''        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
+'''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
+'''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
+'''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
         .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
         .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
         .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
@@ -219,6 +220,7 @@ Function GetRep(RepName) As TOCmatch
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
 '   26.7.12
 '    2.8.12 - NOP по пустому RepName
+'   12.8.12 - StampR допускает альтернативное положение Штампа, например, "4, 1"
 
     Dim i As Long
     
@@ -297,72 +299,78 @@ FoundRep:
         Case Else: GoTo FatalRep
         End Select
             
-        Dim S() As String
-        S = split(.StampR, ",")
-        For i = LBound(S) To UBound(S)
-            StR = S(i)
-            If .RepFile = F_SFDC Then StR = StR + .EOL
-            StC = .StampC
-            If .Made <> REP_LOADED Then StC = StC + .MyCol
-            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
-            If .StampType = "=" Then
-                If .Stamp <> TestedStamp Then GoTo NxtChk
-            ElseIf .StampType = "I" Then
-                If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo NxtChk
-            Else
-                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
-            End If
-            GetRep = RepTOC
-            Exit Function
-NxtChk:
-        Next i
-        GoTo FatalRep
+        CheckStamp i
+''''        Dim S() As String
+''''        S = split(.StampR, ",")
+''''        For i = LBound(S) To UBound(S)
+''''            StR = S(i)
+''''            If .RepFile = F_SFDC Then StR = StR + .EOL
+''''            StC = .StampC
+''''            If .Made <> REP_LOADED Then StC = StC + .MyCol
+''''            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
+''''            If .StampType = "=" Then
+''''                If .Stamp <> TestedStamp Then GoTo NxtChk
+''''            ElseIf .StampType = "I" Then
+''''                If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo NxtChk
+''''            Else
+''''                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
+''''            End If
+''''            GetRep = RepTOC
+''''            Exit Function
+''''NxtChk:
+''''        Next i
+''''        GoTo FatalRep
+        
+        GetRep = RepTOC
+        Exit Function
     End With
 FatalRep:
     ErrMsg FATAL_ERR, "GetRep: Запрос не существующего в ТОС отчета " & RepName
     Stop
     End
 End Function
-Sub CheckStamp(iTOC As Integer)
+Sub CheckStamp(iTOC As Long)
 '
 ' - CheckStamp(iTOC) - проверка штампа в строке iTOC списка Документов в TOCmatch
-' 11.8.12
+' 15.8.12
         
-    Dim S() As String
-    Dim StR As Integer
+    Dim SR() As String, SC() As String
+    Dim StR As Long, StC As Long
     
     Dim RepName As String
-    Dim R As String
-    Dim C As Long
-    Dim Txt As String
+    Dim Txt As String, TestedStamp As String
     Dim Typ As String
+    Dim Continued As String
+    Dim i As Long, j As Long
     
     With DB_MATCH.Sheets(TOC)
-        R = .Cells(iTOC, TOC_STAMP_R_COL)
-        C = .Cells(iTOC, TOC_STAMP_C_COL)
+        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         Txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
+        Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
     
     With RepTOC
-        S = split(R, ",")
-        For i = LBound(S) To UBound(S)
-            StR = S(i)
-            If .RepFile = F_SFDC Then StR = StR + .EOL
-            If .Made <> REP_LOADED Then C = C + .MyCol
-            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, C)
-            If Typ = "=" Then
-                If Txt <> TestedStamp Then GoTo NxtChk
-            ElseIf Typ = "I" Then
-                If InStr(LCase$(TestedStamp), LCase$(Txt)) = 0 Then GoTo NxtChk
-            Else
-                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
-            End If
-        
-            If .ParChech <> "" Then CheckStamp iTOC + 1
-            Exit Sub
+        For i = LBound(SR) To UBound(SR)
+            For j = LBound(SC) To UBound(SC)
+                StR = SR(i)
+                StC = SC(j)
+                If .RepFile = F_SFDC Then StR = StR + .EOL
+                TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
+                If Typ = "=" Then
+                    If Txt <> TestedStamp Then GoTo NxtChk
+                ElseIf Typ = "I" Then
+                    If InStr(LCase$(TestedStamp), LCase$(Txt)) = 0 Then GoTo NxtChk
+                Else
+                    ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
+                End If
+            
+                If Continued <> "" Then CheckStamp iTOC + 1
+                Exit Sub
 NxtChk:
+            Next j
         Next i
         GoTo FatalRep
     End With
@@ -395,11 +403,12 @@ Function FileOpen(RepFile) As Workbook
     
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
 End Function
-Sub InsMyCol(F, FS)
+Sub InsMyCol(F, Optional FS As String = "")
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
 '  10.8.12
+'  15.8.12 - Optional FS
  
     Dim i As Integer
 '    If RepTOC.Made <> REP_LOADED Then Exit Sub
@@ -423,6 +432,7 @@ Sub InsMyCol(F, FS)
         Next i
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
+        If FS = "" Then Exit Sub
         For i = 1 To Range(FS).Columns.count
             If Range(FS).Cells(1, i) <> "" Then
                 Range(FS).Columns(i).Copy Destination:=.Cells( _
@@ -432,8 +442,8 @@ Sub InsMyCol(F, FS)
 
     End With
     
-    RepTOC.Made = PublicStepName
-    WrTOC
+''    RepTOC.Made = PublicStepName
+''    WrTOC
 End Sub
 Sub MS(Msg)
 '
