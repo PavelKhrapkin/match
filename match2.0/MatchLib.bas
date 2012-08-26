@@ -2,14 +2,12 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 15.8.2012
+' П.Л.Храпкин, А.Пасс 26.8.2012
 '
-' - ModStart(Report)            - начало модуля работы с Листом SheetN
-' - PublicVarInit()             - инициализация глобальных переменных EOL и др
-' - ModEnd(SheetN)              - завершение Модуля, работающего с листом SheetN
-' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
-' - GetMatch()                  - открывает файл match.xlsm из каталога DirDBs
+' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
+' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
+' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' - InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
@@ -27,6 +25,7 @@ Attribute VB_Name = "MatchLib"
 ' - DDMMYYYY(d)                 - преобразование даты d в текстовый формат DDMMYYYY
 ' - Dec(a)                      - формат числа а в виде текста с десятичной точкой
 ' - EOL(SheetN)                 - возвращает номер последней строки листа SheetN
+' - RowDel(RowStr)              - удаляет строки активного листа в соответствии с RowStr
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
@@ -60,167 +59,13 @@ Option Explicit
     Public Const Gray = 8750469     ' серый
     
     Public Const Log = "Log"        ' Log лист
-
-Sub ModStart(Report)
-'
-' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
-'
-'  26.7.12  - переписано для match 2.0
-
-    GetRep TOC
-    
-    Select Case Report
-    Case REP_1C_P_LOAD:
-        Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
-        GetRep SF
-        GetRep PAY_SHEET
-''        CheckSheet PAY_SHEET
-''        EOL_PaySheet = RepTOC.EOL
-    Case REP_1C_P_PAINT:
-        Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
-    Case REP_1C_SFACCFIL:
-        Doing = "Заполнение колонки 1 для листа Платежей"
-        GetRep PAY_SHEET
-        EOL_PaySheet = RepTOC.EOL
-''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-    Case REP_SF_LOAD:
-        Doing = "Загрузка Платежей из Salesforce - SF"
-        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
-        GetRep PAY_SHEET
-        EOL_PaySheet = RepTOC.EOL
-        GetRep SF
-        EOL_SF = RepTOC.EOL
-''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
-''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
-''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-'''        P = True
-'    Case REP_1C_С_LOAD:
-'    Case Acc1C:
-    Case Else:
-        ErrMsg FATAL_ERR, "Запрошен неизвестный отчет"
-        End
-    End Select
-
-'''''''    With Application
-'''''''        .DisplayStatusBar = True
-'''''''        .StatusBar = Msg
-'''''''' для ускорения Excel отключаем вывод и др.
-'''''''        .ScreenUpdating = False
-'''''''        .Calculation = xlCalculationManual
-'''''''        .EnableEvents = False
-'''''''        .DisplayAlerts = False
-'''''''    End With
-'''''''    ActiveSheet.DisplayPageBreaks = False
-'''''''    Call AutoFilterReset(SheetN)
-'''''''
-'''''''' ---- определение EOL для всех основных листов
-'''''''    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
-'''''''    EOL_SF = EOL(SF) - SFresLines
-'''''''    EOL_SFD = EOL(SFD) - SFresLines
-'''''''    EOL_SFopp = EOL(SFopp) - SFresLines
-'''''''    EOL_SFacc = EOL(SFacc) - SFresLines
-'''''''    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
-'''''''    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
-'''''''    EOL_Stock = EOL(STOCK_SHEET)
-'''''''    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-'''''''    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
-'''''''
-'''''''    Select Case SheetN
-'''''''    Case PAY_SHEET:     ModStart = EOL_PaySheet
-'''''''    Case DOG_SHEET:     ModStart = EOL_DogSheet
-'''''''    Case Acc1C:         ModStart = EOL_Acc1C
-'''''''    Case STOCK_SHEET:   ModStart = EOL_Stock
-'''''''    Case SF:            ModStart = EOL_SF
-'''''''    Case SFD:           ModStart = EOL_SFD
-'''''''    Case SFacc:         ModStart = EOL_SFacc
-'''''''    Case SF_PA:         ModStart = EOL_SFlnkADSK
-'''''''    Case Else:
-'''''''        ModStart = EOL(SheetN)
-'''''''    End Select
-'''''''' ----
-    ExRespond = True
-
-'    Range("A1:A" & ModStart).EntireRow.Hidden = False
-    With ProgressForm
-        .Show vbModeless
-        .ProgressLabel.Caption = Doing
-    End With
-    LogWr ""
-    LogWr (Doing)
-End Sub
-Sub ModEnd()
-'
-' - ModEnd() - подпрограмма завершения работы Модуля
-'  15.2.2012
-'  19.4.12  - восстановление вывода Excel
-'  2.7.12  - match 2.0
-' 20.7.12 - переписываем TOCmatch to RepTOC
-
-    WrTOC
-    Close
-
-'    i = AutoFilterReset(SheetN)
-'    ActiveSheet.Range("A" & i).Select
-    ProgressForm.Hide
-' восстанавливаем вывод Excel и др
-    With Application
-        .StatusBar = False
-        .ScreenUpdating = True
-        .Calculation = xlCalculationAutomatic
-        .EnableEvents = True
-        .DisplayStatusBar = True
-        .DisplayAlerts = True
-    End With
-    ActiveSheet.DisplayPageBreaks = True
-    LogWr (Doing & " - ГОТОВО!")
-End Sub
-Sub WrTOC()
-'
-' - WrTOC() - записывает структуру Public RepTOC в оглавление match.Sheets(TOC)
-'   5.8.2012
-'  12.8.12 - "серые" колонки описывающие Штамп не записываем
-
-    Dim i As Long
-    
-    For i = 4 To BIG
-        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.SheetN Then GoTo FoundRep
-    Next i
-    GoTo FatalRep
-
-FoundRep:
-    With DB_MATCH.Sheets(1)
-        .Cells(i, TOC_DATE_COL) = RepTOC.Dat
-        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
-        .Cells(i, TOC_EOL_COL) = RepTOC.EOL
-        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
-        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
-        .Cells(i, TOC_MADE_COL) = RepTOC.Made
-        .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
-        .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
-'''        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
-'''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
-'''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
-'''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
-        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
-        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
-        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
-        .Cells(1, 1) = Now
-    End With
-    Exit Sub
-    
-FatalRep:
-    ErrMsg FATAL_ERR, "WrTOC: Нарушена структура RepТОС для отчета " & RepTOC.SheetN
-    Stop
-    End
-
-End Sub
 Function GetRep(RepName) As TOCmatch
 '
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
 '   26.7.12
 '    2.8.12 - NOP по пустому RepName
 '   12.8.12 - StampR допускает альтернативное положение Штампа, например, "4, 1"
+'   17.8.12 - FatalRep в отдельной подпрограмме; Activate RepName
 
     Dim i As Long
     
@@ -257,7 +102,7 @@ Function GetRep(RepName) As TOCmatch
         For i = 4 To EOL(TOC, DB_MATCH)
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
-        GoTo FatalRep
+        FatalRep "GetRep ", RepName
 
 FoundRep:
         RepTOC.Dat = .Cells(i, TOC_DATE_COL)
@@ -278,7 +123,7 @@ FoundRep:
     End With
     
 '---- проверка штампа ----------
-    Dim StR As Long, StC As Long
+    Dim Str As Long, StC As Long
     Dim TestedStamp As String
     With RepTOC
         Select Case .RepFile
@@ -296,52 +141,44 @@ FoundRep:
         Case F_STOCK:
             Set DB_STOCK = FileOpen(.RepFile)
             RepStock = RepTOC
-        Case Else: GoTo FatalRep
+        Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
         End Select
             
         CheckStamp i
-''''        Dim S() As String
-''''        S = split(.StampR, ",")
-''''        For i = LBound(S) To UBound(S)
-''''            StR = S(i)
-''''            If .RepFile = F_SFDC Then StR = StR + .EOL
-''''            StC = .StampC
-''''            If .Made <> REP_LOADED Then StC = StC + .MyCol
-''''            TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
-''''            If .StampType = "=" Then
-''''                If .Stamp <> TestedStamp Then GoTo NxtChk
-''''            ElseIf .StampType = "I" Then
-''''                If InStr(LCase$(TestedStamp), LCase$(.Stamp)) = 0 Then GoTo NxtChk
-''''            Else
-''''                ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & .StampType
-''''            End If
-''''            GetRep = RepTOC
-''''            Exit Function
-''''NxtChk:
-''''        Next i
-''''        GoTo FatalRep
         
         GetRep = RepTOC
-        Exit Function
+        Workbooks(.RepFile).Sheets(.SheetN).Activate
     End With
-FatalRep:
-    ErrMsg FATAL_ERR, "GetRep: Запрос не существующего в ТОС отчета " & RepName
+End Function
+Sub FatalRep(SubName, RepName)
+'
+' - FatalRep(SubName, RepName) - сообщение о фатальной ошибке при запросе RepName
+' 17.8.12
+
+    ErrMsg FATAL_ERR, SubName & "> Запрос не существующего в ТОС отчета " & RepName
     Stop
     End
-End Function
-Sub CheckStamp(iTOC As Long)
+End Sub
+Function CheckStamp(iTOC As Long, _
+    Optional NewRep As String = "", Optional NewRepEOL, Optional IsSF, _
+    Optional InSheetN As Integer = 1) As Boolean
 '
 ' - CheckStamp(iTOC) - проверка штампа в строке iTOC списка Документов в TOCmatch
-' 15.8.12
-        
+' 15.8.2012
+' 18.8.12 - CheckStamp оформлена как Bolean Function для использования в MoveToMatch
+'           Optional параметры используются только для MoveToMatch
+' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
+
     Dim SR() As String, SC() As String
-    Dim StR As Long, StC As Long
+    Dim Str As Long, StC As Long
     
     Dim RepName As String
     Dim Txt As String, TestedStamp As String
     Dim Typ As String
     Dim Continued As String
     Dim i As Long, j As Long
+    
+    CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
         SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
@@ -355,10 +192,18 @@ Sub CheckStamp(iTOC As Long)
     With RepTOC
         For i = LBound(SR) To UBound(SR)
             For j = LBound(SC) To UBound(SC)
-                StR = SR(i)
+                Str = SR(i)
                 StC = SC(j)
-                If .RepFile = F_SFDC Then StR = StR + .EOL
-                TestedStamp = Workbooks(RepTOC.RepFile).Sheets(.SheetN).Cells(StR, StC)
+                If NewRep = "" Then
+                    If .RepFile = F_SFDC Then Str = Str + .EOL
+                    TestedStamp = Workbooks(.RepFile).Sheets(.SheetN).Cells(Str, StC)
+                ElseIf IsMissing(IsSF) Then
+                    Str = Str + NewRepEOL - SFresLines
+                    TestedStamp = Workbooks(NewRep).Sheets(InSheetN).Cells(Str, StC)
+                Else
+                    If IsSF Then Str = Str + NewRepEOL - SFresLines
+                    TestedStamp = Workbooks(NewRep).Sheets(InSheetN).Cells(Str, StC)
+                End If
                 If Typ = "=" Then
                     If Txt <> TestedStamp Then GoTo NxtChk
                 ElseIf Typ = "I" Then
@@ -367,19 +212,15 @@ Sub CheckStamp(iTOC As Long)
                     ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
                 End If
             
-                If Continued <> "" Then CheckStamp iTOC + 1
-                Exit Sub
+                If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
+                Exit Function
 NxtChk:
             Next j
         Next i
-        GoTo FatalRep
+        If NewRep = "" Then FatalRep "GetRep.CheckStamp", RepName
+        CheckStamp = False
     End With
-FatalRep:
-    ErrMsg FATAL_ERR, "GetRep: Запрос не существующего в ТОС отчета " & RepName
-    Stop
-    End
-
-End Sub
+End Function
 Function FileOpen(RepFile) As Workbook
 '
 ' - FileOpen(RepFile)   - проверяет, открыт ли RepFile, если нет - открывает
@@ -403,15 +244,49 @@ Function FileOpen(RepFile) As Workbook
     
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
 End Function
+Sub WrTOC()
+'
+' - WrTOC() - записывает структуру Public RepTOC в оглавление match.Sheets(TOC)
+'   5.8.2012
+'  12.8.12 - "серые" колонки описывающие Штамп не записываем
+'  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
+
+    Dim i As Long
+    
+    For i = 4 To BIG
+        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.SheetN Then GoTo FoundRep
+    Next i
+    FatalRep "WrTOC", RepTOC.SheetN
+
+FoundRep:
+    With DB_MATCH.Sheets(TOC)
+        .Cells(i, TOC_DATE_COL) = RepTOC.Dat
+        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
+        .Cells(i, TOC_EOL_COL) = RepTOC.EOL
+'''        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
+'''        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
+        .Cells(i, TOC_MADE_COL) = RepTOC.Made
+'''        .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
+'''        .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
+'''        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
+'''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
+'''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
+'''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
+        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
+        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
+'''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
+'''        .Cells(1, 1) = Now
+    End With
+End Sub
 Sub InsMyCol(F, Optional FS As String = "")
 '
 ' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
 '  10.8.12
 '  15.8.12 - Optional FS
+'  26.8.12 - RowHeight шапки как в шаблоне
  
     Dim i As Integer
-'    If RepTOC.Made <> REP_LOADED Then Exit Sub
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
         .Activate
@@ -430,6 +305,7 @@ Sub InsMyCol(F, Optional FS As String = "")
         For i = 1 To RepTOC.MyCol
             Sheets("Forms").Range(F).Columns(i).Copy Destination:=.Cells(1, i)
         Next i
+        .Rows(1).RowHeight = Sheets("Forms").Range(F).Rows(1).RowHeight
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
@@ -439,11 +315,7 @@ Sub InsMyCol(F, Optional FS As String = "")
                     RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.count + 1, i)
             End If
         Next i
-
     End With
-    
-''    RepTOC.Made = PublicStepName
-''    WrTOC
 End Sub
 Sub MS(Msg)
 '
@@ -595,12 +467,13 @@ Function CurRate(Cur) As Double
 '
 ' возвращает число - курс к рублю по коду валюты Cur по таблице Currence на листе We
 '   21.2.2012
+'   20.8.12 - распознавание "руб"
 
     Dim S
 
     CurRate = 1
-    If Cur = "RUB" Or Trim(Cur) = "" Then Exit Function
-    S = WorksheetFunction.VLookup(Cur, Sheets(We).Range("RUB_Rate"), 2, False)
+    If InStr(LCase(Cur), "руб") > 0 Or Trim(Cur) = "" Then Exit Function
+    S = WorksheetFunction.VLookup(Cur, Range("RUB_Rate"), 3, False)
     CurRate = Replace(S, ".", ",")
 End Function
 Function CurISO(Cur1C)
@@ -627,12 +500,12 @@ Function Dec(A) As String
     Dec = "'" & WorksheetFunction.Substitute(A, ",", ".")
 End Function
 Sub testEOL()
-    Dim A, B, C
+    Dim A, b, c
     A = EOL(1)
-    B = EOL(2)
+    b = EOL(2)
         Dim F As Workbook
         Set F = Workbooks.Open(F_SFDC, UpdateLinks:=True, ReadOnly:=True)
-    C = EOL(1, F)
+    c = EOL(1, F)
         F.Close SaveChanges:=False
 End Sub
 Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
@@ -646,6 +519,7 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
 '   29.6.12 - match 2.0 - открыть файл S, если указан параметр
 '   31.7.12 - файл ActiveWorkbook а не ThisWorkbook по умолчанию,
 '             ByVal SheetN As String - преобразование передаче параметра
+'   20.8.12 - по отсутствующему SheetN возвращается EOL = -1
 
     Dim i
 
@@ -653,8 +527,13 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
         Set F = ActiveWorkbook
     End If
     
+    EOL = -1
+    On Error Resume Next
+    EOL = F.Sheets(SheetN).UsedRange.Rows.count
+    On Error GoTo 0
+    If EOL <= 0 Then Exit Function
+    
     With F.Sheets(SheetN)
-        EOL = .UsedRange.Rows.count
         AllCol = .UsedRange.Columns.count
         Do
             For i = 1 To AllCol
@@ -664,12 +543,13 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
             EOL = EOL - 1       ' иногда UsedRange оставляет пустые строки,
         Loop                    '   .. например, если в строке есть невидимый формат
     End With
-    Exit Function
-
-Err: MsgBox "Ошибка в данных на листе " & SheetN & " в ячейке (" & _
-        i & "," & EOL & ")"
-    Stop
 End Function
+Sub RowDel(RowStr As String)
+'
+' - RowDel(RowStr) - удаляет строки активного листа в соответствии с RowStr
+'   25.8.12
+    ActiveSheet.Rows(RowStr).Delete
+End Sub
 Function CSmatch(Val, Col) As Double
 '
 ' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
@@ -695,7 +575,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
 '   4.2.2012
 '  11.2.2012 - пересмотр спецификаций
 '  10.3.12 - изменение спецификации - параметр HRD_Range
-'  25.3.12 - листы C_Contr и C_ContrLnk
+'  25.3.12 - листы NewContract и NewContractLnk
 '  17.4.12 - лист A_Acc - новые Организации
 '  18.4.12 - лист A_Dic - Словарь Организаций
 '  28.4.12 - лист NewOrderList - лист Новых Заказов
@@ -705,6 +585,8 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
 '  11.6.12 - листы A_Acc и AccntUpd
 '  12.6.12 - лист BTO_SHEET - лог для писем БТО
 
+    DB_MATCH.Sheets(SheetN).Activate
+    
 ' -- стираем старый лист
     On Error Resume Next
     Application.DisplayAlerts = False
@@ -713,7 +595,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
+    Sheets.Add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
@@ -722,8 +604,8 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     Select Case SheetN
     Case O_NewOpp:      EOL_NewOpp = 1
     Case P_Paid:        EOL_NewPay = 1
-    Case C_Contr:       EOL_NewContr = 1
-    Case C_ContrLnk:    EOL_ContrLnk = 1
+    Case NewContract:       EOL_NewContr = 1
+    Case NewContractLnk:    EOL_ContrLnk = 1
     Case P_PaymentUpd:  EOL_PaymentUpd = 1
     Case A_Dic:         EOL_DIC = 1
     Case A_Acc:         EOL_AdAcc = 1
@@ -756,7 +638,7 @@ Sub SheetSort(SheetN, Col)
     
     With ActiveWorkbook.Worksheets(Name).AutoFilter.Sort
         .SortFields.Clear
-        .SortFields.add key:=Cells(1, Col), SortOn:=xlSortOnValues, Order:= _
+        .SortFields.Add key:=Cells(1, Col), SortOn:=xlSortOnValues, Order:= _
         xlAscending, DataOption:=xlSortNormal
         .Header = xlYes
         .MatchCase = False
@@ -1058,3 +940,121 @@ Sub testISML()
     A = IsMatchList("собака", "мышка,кошка,соб,лев")
     A = IsMatchList("собака", "мышка,кошка,лев")
 End Sub
+'?????????????????????????????????????????????????????????????????????????
+'?????????????????? процедуры, подлежащие удалению  ??????????????????????
+'?????????????????????????????????????????????????????????????????????????
+Sub ModStart(Report)
+'
+' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
+'
+'  26.7.12  - переписано для match 2.0
+
+    GetRep TOC
+    
+    Select Case Report
+    Case REP_1C_P_LOAD:
+        Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
+        GetRep SF
+        GetRep PAY_SHEET
+''        CheckSheet PAY_SHEET
+''        EOL_PaySheet = RepTOC.EOL
+    Case REP_1C_P_PAINT:
+        Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
+    Case REP_1C_SFACCFIL:
+        Doing = "Заполнение колонки 1 для листа Платежей"
+        GetRep PAY_SHEET
+        EOL_PaySheet = RepTOC.EOL
+''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
+    Case REP_SF_LOAD:
+        Doing = "Загрузка Платежей из Salesforce - SF"
+        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
+        GetRep PAY_SHEET
+        EOL_PaySheet = RepTOC.EOL
+        GetRep SF
+        EOL_SF = RepTOC.EOL
+''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
+''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
+''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
+''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
+'''        P = True
+'    Case REP_1C_С_LOAD:
+'    Case Acc1C:
+    Case Else:
+        ErrMsg FATAL_ERR, "Запрошен неизвестный отчет"
+        End
+    End Select
+
+'''''''    With Application
+'''''''        .DisplayStatusBar = True
+'''''''        .StatusBar = Msg
+'''''''' для ускорения Excel отключаем вывод и др.
+'''''''        .ScreenUpdating = False
+'''''''        .Calculation = xlCalculationManual
+'''''''        .EnableEvents = False
+'''''''        .DisplayAlerts = False
+'''''''    End With
+'''''''    ActiveSheet.DisplayPageBreaks = False
+'''''''    Call AutoFilterReset(SheetN)
+'''''''
+'''''''' ---- определение EOL для всех основных листов
+'''''''    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
+'''''''    EOL_SF = EOL(SF) - SFresLines
+'''''''    EOL_SFD = EOL(SFD) - SFresLines
+'''''''    EOL_SFopp = EOL(SFopp) - SFresLines
+'''''''    EOL_SFacc = EOL(SFacc) - SFresLines
+'''''''    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
+'''''''    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
+'''''''    EOL_Stock = EOL(STOCK_SHEET)
+'''''''    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
+'''''''    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
+'''''''
+'''''''    Select Case SheetN
+'''''''    Case PAY_SHEET:     ModStart = EOL_PaySheet
+'''''''    Case DOG_SHEET:     ModStart = EOL_DogSheet
+'''''''    Case Acc1C:         ModStart = EOL_Acc1C
+'''''''    Case STOCK_SHEET:   ModStart = EOL_Stock
+'''''''    Case SF:            ModStart = EOL_SF
+'''''''    Case SFD:           ModStart = EOL_SFD
+'''''''    Case SFacc:         ModStart = EOL_SFacc
+'''''''    Case SF_PA:         ModStart = EOL_SFlnkADSK
+'''''''    Case Else:
+'''''''        ModStart = EOL(SheetN)
+'''''''    End Select
+'''''''' ----
+    ExRespond = True
+
+'    Range("A1:A" & ModStart).EntireRow.Hidden = False
+    With ProgressForm
+        .Show vbModeless
+        .ProgressLabel.Caption = Doing
+    End With
+    LogWr ""
+    LogWr (Doing)
+End Sub
+Sub ModEnd()
+'
+' - ModEnd() - подпрограмма завершения работы Модуля
+'  15.2.2012
+'  19.4.12  - восстановление вывода Excel
+'  2.7.12  - match 2.0
+' 20.7.12 - переписываем TOCmatch to RepTOC
+
+    WrTOC
+    Close
+
+'    i = AutoFilterReset(SheetN)
+'    ActiveSheet.Range("A" & i).Select
+    ProgressForm.Hide
+' восстанавливаем вывод Excel и др
+    With Application
+        .StatusBar = False
+        .ScreenUpdating = True
+        .Calculation = xlCalculationAutomatic
+        .EnableEvents = True
+        .DisplayStatusBar = True
+        .DisplayAlerts = True
+    End With
+    ActiveSheet.DisplayPageBreaks = True
+    LogWr (Doing & " - ГОТОВО!")
+End Sub
+
