@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   16.8.12 П.Л.Храпкин
+'   26.8.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -27,6 +27,7 @@ Sub ProcStart(Proc As String)
 '
 ' - ProcStart(Proc) - запуск Процесса Proc по таблице Process в match.xlsm
 '   7.8.12
+'  26.8.12 - окраска выполненного Процесса
 
     Dim Step As String, PrevStep As String
     Dim i As Integer
@@ -34,7 +35,9 @@ Sub ProcStart(Proc As String)
     Proc = Trim(Proc)
     
     i = ToStep(Proc)
+    
     With DB_MATCH.Sheets(Process)
+        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
         Do While Step <> PROC_END
             i = i + 1
             Step = .Cells(i, PROC_STEP_COL)
@@ -57,7 +60,8 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
-        .Cells(1, PROCESS_NAME_COL) = ""
+        .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
+        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
     End With
     MS "<*> Процесс " & Proc & " завершен!"
     Exit Sub
@@ -103,7 +107,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
                 If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
                 If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
-                iStep = ToStep(Proc, Step)
+                iStep = ToStep(Proc, S(i))
                 If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
                     IsDone = True
                     Exit Function
@@ -119,6 +123,7 @@ Sub Exec(Step, iProc)
 '
 ' - Exec(Step, iProc) - вызов Шага Step по строке iProc таблицы Процессов
 '   7.8.12
+'  26.8.12 - окраска строки в Process для успешно выполненного Шага
        
     Dim Code As String
     Dim File As String
@@ -189,6 +194,7 @@ Sub Exec(Step, iProc)
         Application.StatusBar = False
         .Cells(iProc, PROC_STEPDONE_COL) = "1"  ' Done = "1" - Шаг выполнен
         .Cells(iProc, PROC_TIME_COL) = Now
+        .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
         .Cells(1, STEP_NAME_COL) = ""
         .Cells(1, 1) = Now
         R.Made = Step
@@ -239,7 +245,9 @@ Sub testRunProc()   'Ctrl/W
 Attribute testRunProc.VB_ProcData.VB_Invoke_Func = "W\n14"
 '    RunProc "REP_1C_P_LOAD"
 '    RunProc "REP_SF_LOAD"
-    RunProc "HANDL_Payment"
+'    RunProc "HANDL_Payment"
+'    RunProc "HANDL_NewContract"
+    RunProc "REPORT_ADSKquantity"
 End Sub
 Sub RunProc(Proc)
 '

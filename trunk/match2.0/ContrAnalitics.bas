@@ -6,20 +6,61 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   17.8.2012
+'   19.8.2012
 
 Option Explicit
 Sub NewContr()
-    NewSheet O_NewOpp, "HDR_NewOpp"
+'
+' - NewContr()  - просмотр Договоров 1С для занесения в SF новах через DL
+' 18.8.2012
 
-    For i = 2 To Lines
-        Progress i / Lines
-        If ExRespond = False Then Exit For
-        WrNewSheet C_Contr, DB_1C.Sheets(DOG_SHEET), i, "PAR_NewContract"
-        With Sheets(DOG_SHEET)
-            NewContract .Cells(i, DOG1C_COL), .Cells(i, DOG1C_MAINDOG_COL), ContrK
+    Dim Dog As TOCmatch
+    Dim i As Long
+    
+    Dog = GetRep(DOG_SHEET)
+'    NewSheet NewContract
+
+    With DB_1C.Sheets(DOG_SHEET)
+        For i = 2 To Dog.EOL
+            Progress i / Dog.EOL
+'            If ExRespond = False Then Exit For
+            If .Cells(i, DOGIDSF_COL) = "" And .Cells(i, DOGISACC_COL) <> "" Then
+                WrNewSheet NewContract, DB_1C.Sheets(DOG_SHEET), i
+            End If
+'         - WrNewSheet(SheetNew, SheetDB, DB_Line, ToWriteCols, HDR_FormName)
+'            NewContract .Cells(i, DOG1C_COL), .Cells(i, DOG1C_MAINDOG_COL), ContrK
+        Next i
+    End With
+End Sub
+Sub NewSheet(SheetName)
+'
+' - NewSheet(SheetName, HDRform) - создает новый лист SheetName
+'       Название шапки нового листа берется из названия SheetName,
+'       а ширина колонок шапки- из третьей cтроки формы
+' 19.8.12
+
+    Dim HDRform As String
+    Dim i As Long
+    
+    HDRform = "HDR_" & SheetName
+    
+    With DB_MATCH
+        .Sheets.Add After:=.Sheets(.Sheets.count)
+        .Sheets(.Sheets.count).Name = SheetName
+        With .Sheets(SheetName)
+            .Tab.Color = rgbLightBlue
+            .Activate
+            For i = 1 To Range(HDRform).Columns.count
+                Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
+                .Columns(i).ColumnWidth = .Cells(3, i)
+            Next i
+            .Rows(6).Delete
+            .Rows(5).Delete
+            .Rows(4).Delete
+            .Rows(3).Delete
+            .Rows(2).Delete
         End With
-    Next i
+    End With
 End Sub
 Sub WriteCSV(NewSheet, DirStr, FileStr, BatStr)
 '
@@ -28,30 +69,73 @@ Sub WriteCSV(NewSheet, DirStr, FileStr, BatStr)
     ChDir DirStr
     WriteCSV NewSheet, FileStr
     Shell BatStr
-'    DB_MATCH.Sheets(NewSheet).Delete
+    DB_MATCH.Sheets(NewSheet).Delete
 End Sub
-Sub WrNewSheet(SheetNew, SheetDB, DB_Line, ToWriteCols, HDR_FormName)
+Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
 '
-' - WrNewSheet(SheetNew, SheetDB, DB_Line, ToWriteCols, HDR_FormName)
-'           записывает новый рекорд в лист SheetNew из строки DB_Line листа SheetDB,
-'           используя колонки из Range(ToWriteCols). Шапка берется из HDR_FormName
-'
-    Dim iNewLine As Long
+' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
+'                                            из строки DB_Line листа SheetDB
+'     * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
+'       Имя Адаптера имеет вид "Имя[@Документ]". Необязательный фрагмент @Документ
+'       указывает на то, что в Параметре указано значение из другого Документа
+'     * SheetNew создается при первом обращении; вспомогательные Документы тоже
+' 19.8.2012
+
+    Dim P As Range
+    Dim iNewLine As Long    '= номер строки в SheetNew
+    Dim i As Long
+    Dim X As String         '= обрабатываемое значение в SheetDB
+    Dim AdapterName() As String, AdapterPar As String
     
-    If Sheets(SheetNew) = Nothing Then
-        ClearSheet SheetNew, Range(HDR_FormName)
+    If P Is Nothing Then
+        NewSheet SheetNew
+        Set P = Range("HDR_" & SheetNew)
+    '>>>>>>>> позже написать разбор строки и формирование AdapterPar для нескольких Документов
+    '>>>>>>>> указанных через запятые. Понадобится массив Par; AdapterPar тоже будет с запятыми
+        Dim AuxDocName As String, AuxRep() As String, AuxDocRange As Range
+        Dim Aux As TOCmatch
+        AuxDocName = P.Cells(6, 1)
+        If AuxDocName <> "" Then
+            AuxRep = split(AuxDocName, "/")
+            Aux = GetRep(AuxRep(0))
+            Set AuxDocRange = Workbooks(Aux.RepFile).Sheets(Aux.SheetN).Range(AuxRep(1))
+        End If
     End If
     iNewLine = EOL(SheetNew, DB_MATCH) + 1
     
-    Dim P As Range
-    P = Range(ToWriteCols)
-    
     With DB_MATCH.Sheets(SheetNew)
         For i = 1 To P.Columns.count
-            .Cells(iNewLine, i) = SheetDB.Cells(DB_Line, P(i))
+            X = SheetDB.Cells(DB_Line, P.Cells(4, i))
+            AdapterName = split(P.Cells(5, i), "/")
+            If UBound(AdapterName) < 1 Then
+                .Cells(iNewLine, i) = X
+            Else
+                If AdapterName(0) <> Aux.Name Then
+                    AdapterPar = WorksheetFunction.VLookup _
+                        (X, Range(AdapterName(0)), AdapterName(1), False)
+                Else
+                    AdapterPar = WorksheetFunction.VLookup _
+                        (X, AuxDocRange, AdapterName(1), False)
+                End If
+                .Cells(iNewLine, i) = Adapter(AdapterName(0), AdapterPar)
+            End If
         Next i
     End With
 End Sub
+Function Adapter(AdapterName, AdapterPar) As String
+'
+' Adater(AdapterName, AdapterPar) - обрабатывает AdapterPar в зависимости от AdapterName
+' - 19.8.12
+
+    Select Case AdapterName
+    Case "", "Мы", "Продавец_в_SF": Adapter = AdapterPar
+    Case "Dec": Adapter = Dec(AdapterPar)
+    Case "CurISO": Adapter = CurISO(AdapterPar)
+    Case "CurRate": Adapter = CurRate(AdapterPar)
+    Case Else
+        ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
+    End Select
+End Function
 Sub ContrPass()
 '
 ' Проход по отчету Договоров и обзор/создание соответствующих Проектов
@@ -76,8 +160,8 @@ Sub ContrPass()
 '---------- проход по Договорам ------------------------
     OppIs = 0: OppNew = 0: NoOpp = 0: Fruitful = 0
     ClearSheet O_NewOpp, Range("HDR_NewOpp")
-    ClearSheet C_Contr, Range("HDR_NewContract")
-    ClearSheet C_ContrLnk, Range("HDR_ContrLnk")
+    ClearSheet NewContract, Range("HDR_NewContract")
+    ClearSheet NewContractLnk, Range("HDR_ContrLnk")
     
     For i = 2 To Lines
         Progress i / Lines
@@ -116,8 +200,8 @@ Sub ContrPass()
     Next i
 Ex:
     ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Dogovor\"
-    WriteCSV C_Contr, "Dogovor.txt"
-    WriteCSV C_ContrLnk, "ContrUpd.txt"
+    WriteCSV NewContract, "Dogovor.txt"
+    WriteCSV NewContractLnk, "ContrUpd.txt"
     Shell "quotaDogovor.bat"
     Shell "quotaContUpd.bat"
 
@@ -220,7 +304,7 @@ Sub DogOppLink()
     CheckSheet SFD, Lines + 2, 3, SFcontrRepName
     CheckSheet SFopp, EOL_SFopp + 2, 1, SFoppRepName
 
-    ClearSheet C_ContrLnk, Range("HDR_ContrLnk")
+    ClearSheet NewContractLnk, Range("HDR_ContrLnk")
     
 '-- проход по листу SFD - по Договорам
     For i = 2 To Lines

@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   10.8.12
+'   26.8.12
 
 Option Explicit
 
@@ -73,10 +73,11 @@ Public Silent As Boolean    ' если True - не выводить сообщений об ошибках
 Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
 Public Const P_Paid = "P_Paid"              ' лист новых Платежей
 Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
-Public Const C_Contr = "C_Contr"            ' лист новых Договоров
-Public Const C_ContrLnk = "C_ContrLnk"      ' лист связок Договоров с Проектами
+Public Const NewContract = "NewContract"            ' лист новых Договоров
+Public Const NewContractLnk = "NewContractLnk"      ' лист связок Договоров с Проектами
 Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
 Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
+Public Const ADSKstatistics = "ADSKstatistics"      ' имя листа статистики по ADSK
 
 Public EOL_PaySheet     ' последняя строка отчета 1С по Платежам без пятки
 Public EOL_DogSheet     ' последняя строка отчета 1С по Договорам без пятки
@@ -132,8 +133,7 @@ Public Const TOC_PAR_5_COL = 19         ' колонка Штампа Параметр 5
 Public Const TOC_PAR_6_COL = 20         ' колонка Штампа Параметр 6
 
 Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
-Public Const TOC_FRTOC_COL = TOC_PAR_2_COL      ' нач.строка Штампов
-Public Const TOC_TOTOC_COL = TOC_PAR_3_COL      ' кон.строка Штампов
+Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
 Type TOCmatch
@@ -319,6 +319,7 @@ Public Const DOGISACC_COL = 1      ' колонка =1, если Организация есть в SF
 Public Const DOGSFSTAT_COL = 2     ' колонка статуса Договора в SF
 Public Const DOGIDSF_COL = 3       ' колонка Id Договора в SF
 Public Const DOGPAID1C_COL = 5     ' колонка Договора1C "Оплачено"
+Public Const DOGISINV1C_COL = 6    ' колонка Договора1C "по счетам"
 Public Const DOG1CSCAN_COL = 7     ' колонка "Отсканировано"
 Public Const DOGCOD_COL = 8        ' колонка кода Договора вида "Осн/Договр"
 '----
@@ -346,7 +347,7 @@ Public Const Acc1C = "Список клиентов 1C"   ' Справочник клиентов 1С
 
 Public Const ACC1C_RES = 3      ' пятка справочника организаций 1С
 
-Public Const A1C_ISACC_COL = 1      ' колонка =1, если Организация есть в SF
+Public Const A1C_ISACC_COL = 1  ' колонка =1, если Организация есть в SF
 '---
 Public Const A1C_NAME_COL = 5   ' колонка "Название фирмы" в 1С
 Public Const A1C_CON_COL = 6    ' колонка "контакт" в 1С
@@ -366,12 +367,15 @@ Public Const STOCK_NEWSN_COL = 1    ' колонка "SN"
 Public Const STOCK_CONTRADSK_COL = 2 ' колонка "ContrADSK"
 Public Const STOCK_SF_SN_COL = 3    ' колонка "SF_SN"
 Public Const STOCK_GOOD_COL = 4     ' колонка "Товар"
-Public Const STOCK_INVOICE_COL = 5  ' колонка "Счет"
-Public Const STOCK_ACC_COL = 6      ' колонка "Acc"
-Public Const STOCK_CLIENT_COL = 7   ' колонка "Клиент"
-Public Const STOCK_PRODUCT_COL = 8  ' колонка "Наименование продукта"
-Public Const STOCK_SN_COL = 10      ' колонка "Серийный №"
-Public Const STOCK_DATE_COL = 11    ' колонка "Дата"
+Public Const STOCK_IDSF_COL = 5     ' колонка "IdSF"
+Public Const STOCK_IDSFORDER_COL = 6 ' колонка "IdSForder"
+Public Const STOCK_INVOICE_COL = 7  ' колонка "Счет"
+Public Const STOCK_ACC_COL = 8      ' колонка "Acc"
+Public Const STOCK_CLIENT_COL = 9   ' колонка "Клиент"
+Public Const STOCK_PRODUCT_COL = 10  ' колонка "Наименование продукта"
+Public Const STOCK_SN_COL = 12      ' колонка "Серийный №"
+Public Const STOCK_DATE_COL = 13    ' колонка "Дата"
+Public Const STOCK_OLDSN_COL = 15   ' колонка "Старый S/N"
 
 '~ ~ ~ ~ ~ ~ ~ ~ ~ Письма БТО не проведенные по Складу ~ ~ ~ ~ ~ ~ ~ ~ ~
 Public Const BTO_SHEET = "BTOlog"   ' Письма БТО без проводки по Складу
@@ -385,11 +389,12 @@ Public Const BTO_GOOD_COL = 6       ' колонка "Товар ADSK"
 Public Const BTO_MAIL_COL = 7       ' колонка "Письмо"
 
 '############## Заказы у Дистрибуторов или Поставщиков #################
-Public Const OrderList = "2011-12"   ' Лист Заказов
-Public Const OrderListStamp = "Заказ подтвердил"
+'''''''Public Const OrderList = "2011-12"  ' Лист Заказов
+'''''''Public Const OrderListStamp = "Заказ подтвердил"
 
-Public Const OL_ORDER_COL = 8    ' колонка "Адрес" в 1С
-
+Public Const OL_IDSF_COL = 3        ' колонка "IdSF"
+Public Const OL_IDSFORDER_COL = 4   ' колонка "IdSForder"
+'''''''Public Const OL_ORDER_COL = 8       ' колонка "Адрес" в 1С
 
 
 '#.#.#.#.#.#.#. Лист новых Заказов для DL .#.#.#.#.#.#.#.#.#
@@ -421,7 +426,7 @@ Public Const AccntUpd = "AccntUpd"      ' лист новых связей Организаций SF и 1С
 Public Const ACCUPD_SFID_COL = 1        ' колонка "SFaccId"
 Public Const ACCUPD_1CNAME_COL = 2      ' колонка "Acc1C"
 
-'................ Лист новых Договоров C_Contr ..........................
+'................ Лист новых Договоров NewContract ..........................
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
 Public Const NEWDOG_DATE_COL = 2        ' Date - Дата подписания
 Public Const NEWDOG_WE_COL = 3          ' We - наша фирма
