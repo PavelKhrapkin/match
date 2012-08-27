@@ -2,8 +2,8 @@ Attribute VB_Name = "StockAnalitics"
 '---------------------------------------------------------------------------------
 ' StockAnalitics  - анализ базы по Складу
 '
-'S GetInv1C(InvCol, SFcol,  _   - связь со Счетом 1С по колонкам строк и дат
-'       StrInvCol, DateCol,[Str2InvCol])
+' S   GetInv1C(InvCol,PayN_Col, _       - находит номер строки в Платежах PayN со Счетом,
+'         StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
 ' [*] StockHandling()   - проход по листу "Склад", поиск продуктов Autodesk
 '  -  FindAcc1C(Client, Acc1C) - поиск Счета 1С указанного в Client для Acc1C
 '  -  SeekInv(Str) - выделение Счета в текстовой строке Str
@@ -15,45 +15,46 @@ Attribute VB_Name = "StockAnalitics"
 '   26.8.2012
 
 Option Explicit
-Sub GetInv1C(F As String)
-InvCol As Integer, SFcol As Integer, _
-    StrInvCol As Integer, DateCol As Integer, Optional Str2InvCol As Integer)
+Sub GetInv1C(InvCol As Integer, PayN_Col As Integer, _
+    StrInvCol As Integer, DateCol As Integer, Optional Str2InvCol As Integer = 0)
 '
-'S GetInv1C(F)   - связь со Счетом 1С по колонкам строк и дат
-'           * все параметры - номера колонок - берутся из формы F
+'S GetInv1C(InvCol,PayN_Col, _       - находит номер строки в Платежах со Счетом 1С,
+'      StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
+' ----- ПАРАМЕТРЫ, ЗАПИСЫВАЕМЫЕ В ТАБЛИЦУ ПРОЦЕССОВ -------
+' 1.InvCol      - номер колонки в MyCol, куда вставляется найденная строка - Счет 1С
+' 2.PayN_Col    - номер колонки в MyCol, куда всталяют найденный номер строки с Платежах 1С
+' 3.StrInvCol   - номер колонки в Заказах - "Номер счета 1С"
+' 4.DateCol     - номер колонки - привязка к Дате Счета 1С
+' 5.[Str2InvCol]- альтернативная колонка с текстом Счета 1С
+'-----------------------------------------------------------
 '           * используется как Шаг для активных листов "Заказы" или "Склад"
-'           * выполняет поиск по Счетам в Платежах 1С, а потом связывает с SFDC
 '           * колонка Str2InvCol - возможная альтернативная строка со Счетом
 '   26.8.12
 
     Dim DocTo As String ' имя входного Документа - отчета
     Dim RepSF As TOCmatch, RepSForder As TOCmatch, RepP As TOCmatch, RepTo As TOCmatch
     Dim Str As String, Inv As String, Str2 As String, Inv2 As String, D As Date
-    Dim i As Integer, N As Integer
+    Dim i As Integer, i1C As Integer
     Dim X
     
     DocTo = ActiveSheet.Name
     RepTo = GetRep(DocTo)
     RepP = GetRep(PAY_SHEET)
-    RepSF = GetRep(SF)
+    EOL_PaySheet = RepP.EOL
+    
 
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
         .Activate
-''''''        Workbooks(RepP.RepFile).Sheets(RepSF.SheetN).Select
         For i = 2 To RepTo.EOL
             Progress i / RepTo.EOL
             
             Str = SeekInv(.Cells(i, StrInvCol))
             
-            X = .Cells(i, DateCol)
-            If IsDate(X) Then
-                D = X
-            Else
-                D = Now
-            End If
+            X = .Cells(i, DateCol): D = Now
+            If IsDate(X) Then D = X
             
             Str2 = ""
-            If Not IsMissing(Str2InvCol) Then Str2 = SeekInv(.Cells(i, Str2InvCol))
+            If Str2InvCol > 0 Then Str2 = SeekInv(.Cells(i, Str2InvCol))
             
             If Str = Str2 Then
             ElseIf Str = "" Or Str2 = "" Then
@@ -63,16 +64,7 @@ InvCol As Integer, SFcol As Integer, _
             End If
             .Cells(i, InvCol) = Str
             
-            If IsInv1C(Str, D, i1C) Then
-                .cells(
-            End If
-''
-''            N = CSmatch(Val, ColFr)
-''            If N > 0 Then
-''                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
-''            Else
-''                .Cells(i, ColTo) = ""
-''            End If
+            If IsInv1C(Str, D, i1C) Then .Cells(i, PayN_Col) = i1C
         Next i
     End With
 
