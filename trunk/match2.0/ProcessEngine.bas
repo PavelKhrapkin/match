@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   26.8.12 П.Л.Храпкин
+'   1.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -71,7 +71,8 @@ Err:
 End Sub
 Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
 '
-' - IsDone(Proc, Step) - проверка, что шаг Step процесса уже Proc выполнен
+' - IsDone(Proc, Step) - проверка, что шаг Step процесса уже Proc выполнен,
+'                        а если не выполнен - запуск исполняющей его Процедуры
 '   7.8.12
 '  16.8.12 - bug fix про PrevStep без запятой давал ошибку
 
@@ -100,10 +101,10 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        S = split(Trim(Step), ",")
+        S = Split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                X = split(S(i), "/")
+                X = Split(S(i), "/")
                 If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
                 If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
@@ -112,7 +113,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
                     IsDone = True
                     Exit Function
                 End If
-                ProcStart Proc
+                ProcStart Proc  'здесь - только по PrevStep
             End If
         Next i
         IsDone = True
@@ -124,9 +125,9 @@ Sub Exec(Step, iProc)
 ' - Exec(Step, iProc) - вызов Шага Step по строке iProc таблицы Процессов
 '   7.8.12
 '  26.8.12 - окраска строки в Process для успешно выполненного Шага
+'   1.9.12 - ревизия кода
        
     Dim Code As String
-    Dim File As String
     Dim R As TOCmatch       '= обрабатываемый Документ - отчет
             
     If Step = PROC_END Or Step = "" Then Exit Sub
@@ -142,17 +143,7 @@ Sub Exec(Step, iProc)
         End If
 
 '*********** вызов подпрограммы - Шага ***********************
-'// в будущем, когда от Loader'ов перейдем к Handler'ам
-'// имя "рабочего" отчета можно будет брать из строки - названия Процедуры
-
-        R = GetRep(.Cells(iProc, PROC_REP1_COL))
-            '-- Select лист, с которым будем работать
-        If R.Name <> "" Then Workbooks(R.RepFile).Sheets(R.SheetN).Select
-        Code = Step
-        PublicStepName = Step
-'        File = .Cells(iProc, PROC_STEPFILE_COL)
-        File = F_MATCH  '!!!!!!!!!!!!!!!!!!!!!!!!
-        If File <> "" Then Code = "'" & DirDBs & File & "'!" & Step
+        Code = "'" & DirDBs & F_MATCH & "'!" & Step
         
         .Cells(1, STEP_NAME_COL) = Step
         If TraceStep Then
@@ -192,6 +183,7 @@ Sub Exec(Step, iProc)
         End If
 '-- запись отметки о Шаге в TOCmatch и в таблицу Процессов
         Application.StatusBar = False
+        .Activate
         .Cells(iProc, PROC_STEPDONE_COL) = "1"  ' Done = "1" - Шаг выполнен
         .Cells(iProc, PROC_TIME_COL) = Now
         .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
@@ -241,18 +233,29 @@ MyProc: .Cells(1, PROCESS_NAME_COL) = Proc      'имя Процесса
     ErrMsg FATAL_ERR, "ToStep: Обращение к несуществующему Шагу " & Step _
         & " Процесса " & Proc
 End Function
-Sub testRunProc()   'Ctrl/W
-Attribute testRunProc.VB_ProcData.VB_Invoke_Func = "W\n14"
-'    RunProc "REP_1C_P_LOAD"
-'    RunProc "REP_SF_LOAD"
-'    RunProc "HANDL_Payment"
-'    RunProc "HANDL_NewContract"
-    RunProc "REPORT_ADSKquantity"
-End Sub
-Sub RunProc(Proc)
+Sub StepIn()
 '
-' - RunProc(Proc)   - запуск Процесса Proc
-'   31.7.12
-'''    GetRep Process
-    Application.Run "'" & DirDBs & F_MATCH & "'!ProcStart", Proc
+' - StepIn()    - начало исполнения Шага, т.е. Активация и выбор нужных листов
+'   1.9.12
+
+    Const FILE_PARAMS = 5   'максимальное количество файлов в Шаге
+    
+    Dim iStep As Integer, i As Long
+    Dim P As TOCmatch, S As TOCmatch, Rep As String
+    
+    GetRep Process
+    With DB_MATCH.Sheets(Process)
+        PublicProcName = .Cells(1, PROCESS_NAME_COL)
+        PublicStepName = .Cells(1, STEP_NAME_COL)
+        
+        iStep = ToStep(PublicProcName, PublicStepName)
+        
+        For i = FILE_PARAMS To 1 Step -1
+            Rep = .Cells(iStep, i + PROC_REP1_COL - 1)
+            If Rep <> "" Then
+                S = GetRep(Rep)
+                Workbooks(S.RepFile).Sheets(S.SheetN).Activate
+            End If
+        Next i
+    End With
 End Sub

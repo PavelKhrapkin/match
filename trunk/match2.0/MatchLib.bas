@@ -2,14 +2,14 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 26.8.2012
+' П.Л.Храпкин, А.Пасс 31.8.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
 ' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
-' - InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
+' S InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
@@ -147,7 +147,7 @@ FoundRep:
         CheckStamp i
         
         GetRep = RepTOC
-        Workbooks(.RepFile).Sheets(.SheetN).Activate
+'''        Workbooks(.RepFile).Sheets(.SheetN).Activate
     End With
 End Function
 Sub FatalRep(SubName, RepName)
@@ -181,8 +181,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         Txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
@@ -229,7 +229,7 @@ Function FileOpen(RepFile) As Workbook
     Dim W As Workbook
     For Each W In Application.Workbooks
         If W.Name = RepFile Then
-            W.Activate
+'            W.Activate
             Set FileOpen = W
             Exit Function
         End If
@@ -280,16 +280,18 @@ FoundRep:
 End Sub
 Sub InsMyCol(F, Optional FS As String = "")
 '
-' - InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
+' S InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '                 Если заголовок колонки шаблона пятки пустой - пропускаем
 '  10.8.12
 '  15.8.12 - Optional FS
-'  26.8.12 - RowHeight шапки как в шаблоне
+'  26.8.12 - RowHeight шапки как в шаблоне; если строке 2 "V" - копируем шапку
+'  31.8.12 - внедрение StepIn
  
+    StepIn
+    
     Dim i As Integer
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
-        .Activate
 '---- А может мы уже эту колонку вставляли?
         If .Cells(1, 1) = Range(F).Cells(1, 1) Then Exit Sub
 
@@ -297,13 +299,15 @@ Sub InsMyCol(F, Optional FS As String = "")
         For i = 1 To RepTOC.MyCol
             .Cells(1, 1).EntireColumn.Insert
         Next i
-'---- задаем ширину вставленных колонок
+'---- задаем ширину и заголовки вставленных колонок
         For i = 1 To Range(F).Columns.count
             .Columns(i).ColumnWidth = Range(F).Cells(3, i)
+            If Range(F).Cells(2, i) = "V" Then .Cells(1, i) = Range(F).Cells(1, i)
         Next i
 '---- копируем колонки MyCol от верха до EOL
         For i = 1 To RepTOC.MyCol
-            Sheets("Forms").Range(F).Columns(i).Copy Destination:=.Cells(1, i)
+            Sheets("Forms").Range(F).Cells(1, i).Copy Destination:=.Cells(1, i)
+            Sheets("Forms").Range(F).Cells(2, i).Copy Destination:=.Cells(2, i)
         Next i
         .Rows(1).RowHeight = Sheets("Forms").Range(F).Rows(1).RowHeight
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
@@ -500,12 +504,12 @@ Function Dec(A) As String
     Dec = "'" & WorksheetFunction.Substitute(A, ",", ".")
 End Function
 Sub testEOL()
-    Dim A, b, c
+    Dim A, b, C
     A = EOL(1)
     b = EOL(2)
         Dim F As Workbook
         Set F = Workbooks.Open(F_SFDC, UpdateLinks:=True, ReadOnly:=True)
-    c = EOL(1, F)
+    C = EOL(1, F)
         F.Close SaveChanges:=False
 End Sub
 Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
@@ -718,7 +722,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     Dim D() As String
     
     For i = 1 To EOL(SheetN)
-        D = split(Sheets(SheetN).Cells(i, Col), ".")
+        D = Split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             DD = D(0)
             If DD < 1 Or DD > 31 Then GoTo NXT
@@ -733,11 +737,13 @@ NXT:
 End Sub
 Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
 '
-' - DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
+' S DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
 '                           и сортировка по этой колонке от старых к новым датам
 '   31.7.12
+'   31.8.12 - оформлен как Step со StepIn
 
-    Sheets(SheetN).Activate
+    StepIn
+'''    Sheets(SheetN).Activate
     DateCol SheetN, Col
     SheetSort SheetN, Col
 End Sub
@@ -779,37 +785,12 @@ Sub Progress(Pct)
 '   26.5.12 - MsgBox каждые 20 сек во время исполнения Progress
 '   29.5.12 - изменение формы
 '    7.8.12 - попытка заменить Форму на StatusBar
-        
-    Static InitFlag As Boolean
-    If PublicProcessName = "" Then
-        With DB_MATCH.Sheets(Process)
-            PublicProcessName = .Cells(1, PROCESS_NAME_COL)
-            PublicStepName = .Cells(1, STEP_NAME_COL)
-        End With
-        InitFlag = True
-    End If
-    
-    Application.StatusBar = PublicProcessName & "> " _
+'   31.8.12 - внедрение StepIn
+            
+    Application.StatusBar = PublicProcName & "> " _
         & "Шаг " & PublicStepName _
         & ": " & Format(Pct, "0%")
-    
-          
-''    With ProgressForm
-''        .ProgressFrame.Caption = Format(Pct, "0%")
-''        .LabelProgress.Width = Pct * .ProgressFrame.Width
-''        .Repaint
-''    End With
-''
-''    Static t
-''    Dim R As String
-''    If t = 0 Then t = Timer
-''    If Timer - t > 20 Then
-''        t = Timer
-''        R = MsgBox("Дальше?", vbYesNo)
-''        If R = vbNo Then ExRespond = False
-''    End If
-    
-End Sub
+    End Sub
 Sub StopSub()
 '
 ' StopSub() аварийное завершение процесса - вызывается по Событию FATAL ERROR
@@ -922,7 +903,7 @@ Function IsMatchList(W, DicList) As Boolean
     Dim lW As String
     
     lW = LCase$(W)
-    X = split(DicList, ",")
+    X = Split(DicList, ",")
     
     For i = LBound(X) To UBound(X)
         If InStr(lW, LCase$(X(i))) <> 0 Then

@@ -2,6 +2,8 @@ Attribute VB_Name = "From1C"
 '---------------------------------------------------------------------------
 ' Макросы для загрузки отчетов из 1С
 '
+' S SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
+'               записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
 '<*> From1Cpayment  - заменяет лист отчета из 1С "Приход денег на счета"
 ' -  SFmatchFill(SheetN)  - заполнение связей листа SheetN по SFDC
 ' -  CSmatch(Val,Col,[SheetN],[DB]) - Case Sensitive match возвращает номер строки
@@ -10,22 +12,25 @@ Attribute VB_Name = "From1C"
 '<*> From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
 '(*) FromStock      - замена Складской Книги в листе Stock
 '
-' 10.8.2012 П.Л.Храпкин match 2.0
+' 31.8.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
 Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
 '
-' - SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
-'       записывая в колонку ColTo Id рекорда найденного по значению в ColFr
+' S SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
+'       записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
 ' 8.8.12
+' 31.8.12 - внедрение StepIn
 
+    StepIn
+    
     Dim DocTo As String ' имя входного Документа - отчета
     Dim RepFr As TOCmatch, RepTo As TOCmatch
     Dim Val
     Dim i As Integer, N As Integer
     
-    DocTo = ActiveSheet.Name
-    RepTo = GetRep(DocTo)
+''    DocTo = ActiveSheet.Name
+    RepTo = GetRep(ActiveSheet.Name)
     Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN).Activate
     RepFr = GetRep(DocFr)
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
@@ -140,13 +145,16 @@ Sub PaymentPaint()
 ' - PaymentPaint() - Раскрашиваем Лист Платежей 1C
 ' 24.6.12 переписано для match 2.0
 '  7.8.12 оформлено как Шаг
+' 31.8.12 - внедрение StepIn
+
+    StepIn
 
     Dim i As Integer
     Dim Rub, Doc    'поля "Итого руб" и "Плат.док"
     
-    PublicStepName = ""
-    GetRep PAY_SHEET
-    DB_1C.Sheets(PAY_SHEET).Select
+'''    PublicStepName = ""
+'''    GetRep PAY_SHEET
+'''    DB_1C.Sheets(PAY_SHEET).Select
     
     Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
     Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15

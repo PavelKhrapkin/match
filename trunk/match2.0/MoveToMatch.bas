@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 26.8.2012
+' П.Л.Храпкин 28.8.2012
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -20,7 +20,8 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 18.8.12 - отделено от MoveToMatch, раположенного в PERSONAL.xlsb
 ' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
 ' 26.8.12 - сброс окраски вместе с очисткой "1" в поле Done
-
+' 28.8.12 - сброс Шагов, связанных с использованием загружаемого Документа
+    
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
     Dim IsSF As Boolean     '=TRUE, если входной Документ из Salesforce
@@ -104,11 +105,11 @@ RepNameHandle:
         .Cells(1, 1) = Now
         .Cells(1, TOC_F_DIR_COL) = DirDBs
 '----------- окрашиваем даты в TOCmatch на сегодня -------------
-        Dim d As Date, MaxDays As Integer
+        Dim D As Date, MaxDays As Integer
         For i = 4 To RepTOC.EOL
-            d = .Cells(i, TOC_DATE_COL)
+            D = .Cells(i, TOC_DATE_COL)
             MaxDays = .Cells(i, TOC_MAXDAYS_COL)
-            If d <> "0:00:00" And Now - d > MaxDays Then
+            If D <> "0:00:00" And Now - D > MaxDays Then
                 .Cells(i, TOC_DATE_COL).Interior.Color = vbRed
             Else
                 .Cells(i, TOC_DATE_COL).Interior.Color = vbWhite
@@ -117,22 +118,67 @@ RepNameHandle:
     End With
 '---------- Сброс всех Процессов, работающих с загружаемым Документом
     With DB_MATCH.Sheets(Process)
+        .Activate
         For i = 6 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_REP1_COL) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 1) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 2) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 3) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 4) = RepName Then
-                .Cells(i, PROC_STEPDONE_COL) = ""
-                .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+                StepReset i
             End If
         Next i
     End With
-    
     LogWr "Новый отчет '" & RepName & "' загружен в " & RepFile
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
         ProcStart RepLoader
     End If
     MyDB.Save
+End Sub
+Sub StepReset(iStep)
+'
+' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
+' 28.8.12
+
+    Dim Step As String, PrevStep As String
+    Dim Proc As String, ThisProc As String
+    Dim i As Integer, iProc As Integer
+    
+    With DB_MATCH.Sheets(Process)
+        If .Cells(iStep, PROC_STEPDONE_COL) <> "" Then Exit Sub
+        Step = .Cells(iStep, PROC_STEP_COL)
+'---- сброс Шага iStep и окраски старта его Процедуры "<*>ProcStart"
+        For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_STEP_COL) = PROC_START Then iProc = i
+            If i = iStep Then
+                .Cells(i, PROC_STEPDONE_COL) = ""
+                .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+                .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 0
+                Exit For
+            End If
+        Next i
+'---- сброс окраски конца Процедуры "<*>ProcEnd"
+        For i = iProc + 1 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_STEP_COL) = PROC_END Then
+                .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+                Exit For
+            End If
+        Next i
+'---- сброс Шагов, в которых в PrevStep ссылаются на Шаг в "своем" Процессе
+        Proc = .Cells(iProc, PROC_NAME_COL)
+        For i = iProc + 1 To EOL(Process, DB_MATCH)
+            PrevStep = .Cells(i, PROC_PREVSTEP_COL)
+            If InStr(PrevStep, Step) <> 0 And i <> iStep Then
+                StepReset i                                     '* РЕКУРСИЯ *
+            End If
+            If .Cells(i, PROC_STEP_COL) = PROC_END Then Exit For
+        Next i
+'---- сброс Шагов, в которых в PrevStep ссылаются на Шаг из "другого" Процесса
+        For i = 2 To EOL(Process, DB_MATCH)
+            PrevStep = .Cells(iStep, PROC_PREVSTEP_COL)
+            ThisProc = .Cells(iStep, PROC_NAME_COL)
+            If InStr(PrevStep, Proc & "/" & Step) Then StepReset i '* РЕКУРСИЯ *
+        Next i
+    End With
 End Sub
