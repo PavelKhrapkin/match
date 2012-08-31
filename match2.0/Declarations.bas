@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   26.8.12
+'   31.8.12
 
 Option Explicit
 
@@ -28,7 +28,6 @@ Public DB_STOCK As Workbook 'отчеты по Складу и Заказам
 Public Const Process = "Process"    'Каталог и контекст всех процессов
 Public Const PROC_START = "<*>ProcStart"    ' начало Процесса
 Public Const PROC_END = "<*>ProcEnd"        ' конец Процесса
-Public Const PROC_IFISDONE = "-?-IsDone"    ' проверка, что шаг связанного Процесса выполнен
 
 Public Const PROC_TIME_COL = 1      'колонка 1 - дата и время выполнения Шага
 Public Const PROC_STEP_COL = 2      'колонка Step - Шаг Процесса
@@ -37,11 +36,11 @@ Public Const PROC_STEPFILE_COL = 4  'колонка "В файле" - файл, где код Шага
 Public Const PROC_STEPDONE_COL = 5  'колонка Done - Шаг выполнен
 Public Const PROC_PAR1_COL = 6      'колонка Параметр 1 - имя Процесса
 Public Const PROC_NAME_COL = PROC_PAR1_COL ' имя Процесса в Par1
-Public Const PROC_REP1_COL = 11     'колонка Документ 1 - имя листа
+Public Const PROC_REP1_COL = 11     'колонка  - имя листа - Документ 1
 
 Public Const PROCESS_NAME_COL = 7  'колонка - имя текущего Процесса
 Public Const STEP_NAME_COL = 9     'колонка - имя текущего Шага
-Public PublicProcessName As String
+Public PublicProcName As String
 Public PublicStepName As String
 
 '-- загрузка и препроцессинг базы 1C.xlsm

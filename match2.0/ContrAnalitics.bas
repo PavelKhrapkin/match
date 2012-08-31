@@ -11,14 +11,14 @@ Attribute VB_Name = "ContrAnalitics"
 Option Explicit
 Sub NewContr()
 '
-' - NewContr()  - просмотр Договоров 1С для занесения в SF новах через DL
+' - NewContr()  - просмотр Договоров 1С для занесения в SF новых через DL
 ' 18.8.2012
 
     Dim Dog As TOCmatch
     Dim i As Long
     
     Dog = GetRep(DOG_SHEET)
-'    NewSheet NewContract
+    NewSheet NewContract
 
     With DB_1C.Sheets(DOG_SHEET)
         For i = 2 To Dog.EOL
@@ -45,8 +45,11 @@ Sub NewSheet(SheetName)
     HDRform = "HDR_" & SheetName
     
     With DB_MATCH
+        On Error Resume Next
+        .Sheets(SheetName).Delete
         .Sheets.Add After:=.Sheets(.Sheets.count)
         .Sheets(.Sheets.count).Name = SheetName
+        On Error GoTo 0
         With .Sheets(SheetName)
             .Tab.Color = rgbLightBlue
             .Activate
@@ -62,76 +65,108 @@ Sub NewSheet(SheetName)
         End With
     End With
 End Sub
-Sub WriteCSV(NewSheet, DirStr, FileStr, BatStr)
-'
-' - WriteCSV(NewSheet, DirStr, FileStr, BatStr))
-'
-    ChDir DirStr
-    WriteCSV NewSheet, FileStr
-    Shell BatStr
-    DB_MATCH.Sheets(NewSheet).Delete
-End Sub
 Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
 '                                            из строки DB_Line листа SheetDB
-'     * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
-'       Имя Адаптера имеет вид "Имя[@Документ]". Необязательный фрагмент @Документ
-'       указывает на то, что в Параметре указано значение из другого Документа
-'     * SheetNew создается при первом обращении; вспомогательные Документы тоже
-' 19.8.2012
+'   * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
+'     Эти строки хранятся в Range с именем "HDR_" & SheetNew в Forms или Headers
+'   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
+'   * В строке формы под Адаптером можно указать параметры во внешних Документах
+' 29.8.2012
 
     Dim P As Range
     Dim iNewLine As Long    '= номер строки в SheetNew
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
-    Dim AdapterName() As String, AdapterPar As String
+    Dim Y As String         '= результат работы Адаптера
+    Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
-    If P Is Nothing Then
-        NewSheet SheetNew
-        Set P = Range("HDR_" & SheetNew)
-    '>>>>>>>> позже написать разбор строки и формирование AdapterPar для нескольких Документов
-    '>>>>>>>> указанных через запятые. Понадобится массив Par; AdapterPar тоже будет с запятыми
-        Dim AuxDocName As String, AuxRep() As String, AuxDocRange As Range
-        Dim Aux As TOCmatch
-        AuxDocName = P.Cells(6, 1)
-        If AuxDocName <> "" Then
-            AuxRep = split(AuxDocName, "/")
-            Aux = GetRep(AuxRep(0))
-            Set AuxDocRange = Workbooks(Aux.RepFile).Sheets(Aux.SheetN).Range(AuxRep(1))
-        End If
-    End If
     iNewLine = EOL(SheetNew, DB_MATCH) + 1
-    
+
     With DB_MATCH.Sheets(SheetNew)
+        .Activate
+        Set P = Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.count
             X = SheetDB.Cells(DB_Line, P.Cells(4, i))
-            AdapterName = split(P.Cells(5, i), "/")
-            If UBound(AdapterName) < 1 Then
-                .Cells(iNewLine, i) = X
+            
+            Y = Adapter(P.Cells(5, i), X, P.Cells(6, i), IsErr)
+            
+            If IsErr Then
+                .Rows(iNewLine).Delete
+                Exit For
             Else
-                If AdapterName(0) <> Aux.Name Then
-                    AdapterPar = WorksheetFunction.VLookup _
-                        (X, Range(AdapterName(0)), AdapterName(1), False)
-                Else
-                    AdapterPar = WorksheetFunction.VLookup _
-                        (X, AuxDocRange, AdapterName(1), False)
-                End If
-                .Cells(iNewLine, i) = Adapter(AdapterName(0), AdapterPar)
+                .Cells(iNewLine, i) = Y
             End If
         Next i
     End With
 End Sub
-Function Adapter(AdapterName, AdapterPar) As String
+Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 '
-' Adater(AdapterName, AdapterPar) - обрабатывает AdapterPar в зависимости от AdapterName
-' - 19.8.12
+' - Adater(Request, X, F_rqst) - обрабатывает X с помощью Адаптера Request
+'                                с внешними данными в Документе F_rqst
+' 29.8.12
 
+    Dim FF() As String, Tmp() As String, Cols() As String
+    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
+    Dim F() As String
+    Dim i As Long, Par() As String
+    
+    IsErr = False
+    
+'--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
+    Dim AdapterName As String
+    AdapterName = ""
+    If Request <> "" Then
+        Tmp = Split(Request, "/")
+        AdapterName = Tmp(0)
+        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
+    End If
+
+'========== препроцессинг Адаптера =========
     Select Case AdapterName
-    Case "", "Мы", "Продавец_в_SF": Adapter = AdapterPar
-    Case "Dec": Adapter = Dec(AdapterPar)
-    Case "CurISO": Adapter = CurISO(AdapterPar)
-    Case "CurRate": Adapter = CurRate(AdapterPar)
+    Case "MainContract":
+        X = Trim(Replace(X, "Договор", ""))
+    End Select
+    
+'--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
+    If F_rqst <> "" Then
+        
+        FF = Split(F_rqst, ",")
+        For i = LBound(FF) To UBound(FF)
+            Tmp = Split(FF(i), "/")
+            Doc = Tmp(0)
+            Cols = Split(Tmp(1), ":")
+            C1 = Cols(0): C2 = Cols(1)
+            GetRep Doc
+            Set Rng = Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
+                .Range(Columns(C1), Columns(C2))
+            Dim S As String
+            S = ""
+            On Error Resume Next
+            S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
+            On Error GoTo 0
+            If S = "" Then
+                ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
+                    & "(" & X & ") не работает, результат <пусто>"
+                IsErr = True
+                Exit Function
+            Else
+                X = S
+            End If
+        Next i
+    End If
+
+
+'******* выполнение Адаптера с параметрами Par ******
+    Select Case AdapterName
+    Case "", "MainContract": Adapter = X
+    Case "Мы", "Продавец_в_SF":
+        Adapter = WorksheetFunction.VLookup(X, Range(AdapterName), Par(0), False)
+    Case "Dec": Adapter = Dec(X)
+    Case "CurISO": Adapter = CurISO(X)
+    Case "CurRate": Adapter = CurRate(CurISO(X))
+    Case "Дата": Adapter = DDMMYYYY(X)
     Case Else
         ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
     End Select
@@ -366,15 +401,15 @@ Sub DogOppLink()
 '    Shell "quota2.bat"
     ModEnd SFD
 End Sub
-Function Deviation(X, y)
+Function Deviation(X, Y)
 '
 ' возвращает относительную разницу Х и Y
 '   15.3.12
 
     Const ErrVal = 999999
     If X <> 0 Then
-        Deviation = Abs((X - y) / X)
-    ElseIf y = 0 Then
+        Deviation = Abs((X - Y) / X)
+    ElseIf Y = 0 Then
         Deviation = 0
     Else
         Deviation = ErrVal
@@ -394,7 +429,7 @@ Function IsSameVendor(OppType, V1C, ContrCode) As Boolean
     IsSameVendor = False
     
 ' цикл по типам Проектов входящим в OppType -- в Типе их может быть несколько
-    OppTypeArr = split(OppType, ";")
+    OppTypeArr = Split(OppType, ";")
     For i = 0 To UBound(OppTypeArr)
         VendorSF = ""
         On Error Resume Next
