@@ -29,18 +29,19 @@ Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
     Dim Val
     Dim i As Integer, N As Integer
     
-''    DocTo = ActiveSheet.Name
+    DocTo = ActiveSheet.Name
     RepTo = GetRep(ActiveSheet.Name)
     Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN).Activate
     RepFr = GetRep(DocFr)
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
-        Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Select
+        Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Activate
         For i = 2 To RepTo.EOL
-            Progress i / RepTo.EOL
-            Val = .Cells(i, ColVal)
+            Progress i / RepTo.EOL                                  'ActiveSheet = SFacc
+            Val = .Cells(i, ColVal)                                 'писать надо в 1C -- Val
             N = CSmatch(Val, ColFr)
             If N > 0 Then
-                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
+'                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
+                .Cells(i, ColTo) = ActiveSheet.Cells(N, ColFrId)
             Else
                 .Cells(i, ColTo) = ""
             End If
@@ -49,22 +50,23 @@ Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
 End Sub
 Sub DogStatus()
 '
-' - DogStatus()     - вставляет в лист Договоров статус из SND
+' - DogStatus()     - вставляет в лист Договоров статус из SFD
 '   11.8.12
+'   1.9.12 - StepIn
 
-    Dim i As Long, N As Long
+    StepIn
     
-    PublicProcessName = ""
-    GetRep SFD
-    GetRep DOG_SHEET
-    DB_SFDC.Sheets(SFD).Activate
+    Dim i As Long, N As Long, D_EOL As Long
+    
+    D_EOL = EOL(DOG_SHEET, DB_1C)
     With DB_1C.Sheets(DOG_SHEET)
-        For i = 2 To RepTOC.EOL
-            Progress i / RepTOC.EOL
+        For i = 2 To D_EOL
+            Progress i / D_EOL
             N = CSmatch(.Cells(i, DOGCOD_COL), SFD_COD_COL)
             If N > 0 Then
-                .Cells(i, DOGSFSTAT_COL) = _
-                    DB_SFDC.Sheets(SFD).Cells(N, SFD_STATUS_COL)
+'                .Cells(i, DOGSFSTAT_COL) = _
+'                    DB_SFDC.Sheets(SFD).Cells(N, SFD_STATUS_COL)
+                .Cells(i, DOGSFSTAT_COL) = ActiveSheet.Cells(N, SFD_STATUS_COL)
             End If
         Next i
     End With
@@ -73,10 +75,12 @@ Sub ContractPaint()
 '
 ' - ContractPaint() - Раскрашиваем Лист Договоров
 ' 10.8.12
+'  1.9.12 - StepIn
 
-    GetRep DOG_SHEET
+    StepIn
+'    GetRep DOG_SHEET
     Call AutoFilterReset(DOG_SHEET)
-    Rows(1).RowHeight = 50
+'    Rows(1).RowHeight = 50
     
     Pnt DOGSFSTAT_COL, "Закрыт", rgbLightGreen      ' Договоры Закрытые в SF- зеленые
     Pnt DOGSFSTAT_COL, "Открыт", rgbOrange          ' Открытые Договоры - оранжевые
@@ -105,15 +109,18 @@ Sub Acc1C_Bottom()
 End Sub
 Sub AccPaint()
 '
-' - AccPaid() - окраска колонки А - Организация есть в SF
+' S AccPaid() - окраска колонки А - Организация есть в SF
 '   14.8.12
+'   31.8.12 - внедрение StepIn
+
+    StepIn
 
     Dim i As Long
     Dim RepTo As TOCmatch
     Dim R As Range
     
     RepTo = GetRep(ActiveSheet.Name)
-    DB_1C.Sheets(RepTo.SheetN).Activate
+'''    DB_1C.Sheets(RepTo.SheetN).Activate
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
         For i = 2 To RepTo.EOL
             Progress i / RepTo.EOL
@@ -151,10 +158,6 @@ Sub PaymentPaint()
 
     Dim i As Integer
     Dim Rub, Doc    'поля "Итого руб" и "Плат.док"
-    
-'''    PublicStepName = ""
-'''    GetRep PAY_SHEET
-'''    DB_1C.Sheets(PAY_SHEET).Select
     
     Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
     Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
