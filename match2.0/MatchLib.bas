@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 31.8.2012
+' П.Л.Храпкин, А.Пасс 2.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -229,7 +229,6 @@ Function FileOpen(RepFile) As Workbook
     Dim W As Workbook
     For Each W In Application.Workbooks
         If W.Name = RepFile Then
-'            W.Activate
             Set FileOpen = W
             Exit Function
         End If
@@ -250,18 +249,21 @@ Sub WrTOC()
 '   5.8.2012
 '  12.8.12 - "серые" колонки описывающие Штамп не записываем
 '  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
+'   2.9.12 - дополнительные ограничения записи в TOCmatch
 
     Dim i As Long
+    Const BEGIN = 8 ' начало списка обрабатываемых Документов
     
-    For i = 4 To BIG
-        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.SheetN Then GoTo FoundRep
+    If RepTOC.Name = "" Then FatalRep "WrTOC", "<пусто>"
+    For i = BEGIN To BIG
+        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.Name Then GoTo FoundRep
     Next i
     FatalRep "WrTOC", RepTOC.SheetN
 
 FoundRep:
     With DB_MATCH.Sheets(TOC)
         .Cells(i, TOC_DATE_COL) = RepTOC.Dat
-        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
+'''        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
         .Cells(i, TOC_EOL_COL) = RepTOC.EOL
 '''        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
 '''        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
@@ -272,21 +274,24 @@ FoundRep:
 '''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
 '''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
 '''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
-        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
-        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
+'''        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
+'''        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
-'''        .Cells(1, 1) = Now
+        .Cells(1, 1) = Now
     End With
 End Sub
 Sub InsMyCol(F, Optional FS As String = "")
 '
 ' S InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
-'                 Если заголовок колонки шаблона пятки пустой - пропускаем
+'
+'   * Если заголовок колонки шаблона пятки пустой - пропускаем
+'   * Если в строке 2 шапки шаблона "V" - переписываем шапку из шаблона
+'
 '  10.8.12
 '  15.8.12 - Optional FS
 '  26.8.12 - RowHeight шапки как в шаблоне; если строке 2 "V" - копируем шапку
 '  31.8.12 - внедрение StepIn
- 
+
     StepIn
     
     Dim i As Integer
@@ -300,7 +305,7 @@ Sub InsMyCol(F, Optional FS As String = "")
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину и заголовки вставленных колонок
-        For i = 1 To Range(F).Columns.count
+        For i = 1 To Range(F).Columns.Count
             .Columns(i).ColumnWidth = Range(F).Cells(3, i)
             If Range(F).Cells(2, i) = "V" Then .Cells(1, i) = Range(F).Cells(1, i)
         Next i
@@ -313,10 +318,10 @@ Sub InsMyCol(F, Optional FS As String = "")
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
-        For i = 1 To Range(FS).Columns.count
+        For i = 1 To Range(FS).Columns.Count
             If Range(FS).Cells(1, i) <> "" Then
                 Range(FS).Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.count + 1, i)
+                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.Count + 1, i)
             End If
         Next i
     End With
@@ -407,7 +412,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -429,7 +434,7 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 '   26.1.2012
 '   10.8.12 - заменено Lines на RepTOC.EOL
 
-    AllCol = ActiveSheet.UsedRange.Columns.count
+    AllCol = ActiveSheet.UsedRange.Columns.Count
     Range(Cells(1, 1), Cells(RepTOC.EOL, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
@@ -472,22 +477,24 @@ Function CurRate(Cur) As Double
 ' возвращает число - курс к рублю по коду валюты Cur по таблице Currence на листе We
 '   21.2.2012
 '   20.8.12 - распознавание "руб"
+'    4.9.12 - адресация Sheets(We)
 
     Dim S
 
     CurRate = 1
     If InStr(LCase(Cur), "руб") > 0 Or Trim(Cur) = "" Then Exit Function
-    S = WorksheetFunction.VLookup(Cur, Range("RUB_Rate"), 3, False)
+    S = WorksheetFunction.VLookup(Cur, DB_MATCH.Sheets(We).Range("RUB_Rate"), 3, False)
     CurRate = Replace(S, ".", ",")
 End Function
 Function CurISO(Cur1C)
 '
 ' возвращает код валюты в стандарте ISO, преобразовав его из вида 1С
 '   18.3.2012
+'    4.9.2012 - адресация Sheets(We)
 
     CurISO = ""
     On Error Resume Next
-    CurISO = WorksheetFunction.VLookup(Cur1C, Range("Currency"), 2, False)
+    CurISO = WorksheetFunction.VLookup(Cur1C, DB_MATCH.Sheets(We).Range("Currency"), 2, False)
     On Error GoTo 0
 End Function
 Function DDMMYYYY(D) As String
@@ -533,12 +540,12 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
     
     EOL = -1
     On Error Resume Next
-    EOL = F.Sheets(SheetN).UsedRange.Rows.count
+    EOL = F.Sheets(SheetN).UsedRange.Rows.Count
     On Error GoTo 0
     If EOL <= 0 Then Exit Function
     
     With F.Sheets(SheetN)
-        AllCol = .UsedRange.Columns.count
+        AllCol = .UsedRange.Columns.Count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -552,6 +559,7 @@ Sub RowDel(RowStr As String)
 '
 ' - RowDel(RowStr) - удаляет строки активного листа в соответствии с RowStr
 '   25.8.12
+    StepIn
     ActiveSheet.Rows(RowStr).Delete
 End Sub
 Function CSmatch(Val, Col) As Double
@@ -599,7 +607,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.Add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
+    Sheets.Add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
@@ -725,14 +733,14 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
         D = Split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             DD = D(0)
-            If DD < 1 Or DD > 31 Then GoTo NXT
+            If DD < 1 Or DD > 31 Then GoTo Nxt
             MM = D(1)
-            If MM < 1 Or MM > 12 Then GoTo NXT
+            If MM < 1 Or MM > 12 Then GoTo Nxt
             yy = D(2)
             Dat = DD & "." & MM & "." & yy
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
-NXT:
+Nxt:
     Next i
 End Sub
 Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)

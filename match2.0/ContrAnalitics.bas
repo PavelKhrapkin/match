@@ -6,39 +6,42 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   19.8.2012
+'   4.9.2012
 
 Option Explicit
 Sub NewContr()
 '
-' - NewContr()  - просмотр Договоров 1С для занесения в SF новых через DL
+' S NewContr()  - просмотр Договоров 1С для занесения в SF новых через DL
 ' 18.8.2012
+'  3.9.12 - StepIn
 
+    StepIn
+    
     Dim Dog As TOCmatch
     Dim i As Long
     
     Dog = GetRep(DOG_SHEET)
-    NewSheet NewContract
+''    NewSheet NewContract
 
     With DB_1C.Sheets(DOG_SHEET)
         For i = 2 To Dog.EOL
             Progress i / Dog.EOL
-'            If ExRespond = False Then Exit For
             If .Cells(i, DOGIDSF_COL) = "" And .Cells(i, DOGISACC_COL) <> "" Then
                 WrNewSheet NewContract, DB_1C.Sheets(DOG_SHEET), i
             End If
-'         - WrNewSheet(SheetNew, SheetDB, DB_Line, ToWriteCols, HDR_FormName)
-'            NewContract .Cells(i, DOG1C_COL), .Cells(i, DOG1C_MAINDOG_COL), ContrK
         Next i
     End With
 End Sub
-Sub NewSheet(SheetName)
+Sub NewSheet(SheetName As String)
 '
-' - NewSheet(SheetName, HDRform) - создает новый лист SheetName
+' S NewSheet(SheetName, HDRform) - создает новый лист SheetName
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 ' 19.8.12
+'  3.9.12 - StepIn
 
+    StepIn
+    
     Dim HDRform As String
     Dim i As Long
     
@@ -47,13 +50,12 @@ Sub NewSheet(SheetName)
     With DB_MATCH
         On Error Resume Next
         .Sheets(SheetName).Delete
-        .Sheets.Add After:=.Sheets(.Sheets.count)
-        .Sheets(.Sheets.count).Name = SheetName
         On Error GoTo 0
+        .Sheets.Add After:=.Sheets(.Sheets.Count)
+        .Sheets(.Sheets.Count).Name = SheetName
         With .Sheets(SheetName)
             .Tab.Color = rgbLightBlue
-            .Activate
-            For i = 1 To Range(HDRform).Columns.count
+            For i = 1 To Range(HDRform).Columns.Count
                 Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
                 .Columns(i).ColumnWidth = .Cells(3, i)
             Next i
@@ -84,10 +86,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
     
     iNewLine = EOL(SheetNew, DB_MATCH) + 1
 
-    With DB_MATCH.Sheets(SheetNew)
-        .Activate
-        Set P = Range("HDR_" & SheetNew)
-        For i = 1 To P.Columns.count
+        For i = 1 To P.Columns.Count
             X = SheetDB.Cells(DB_Line, P.Cells(4, i))
             
             Y = Adapter(P.Cells(5, i), X, P.Cells(6, i), IsErr)
@@ -101,76 +100,6 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
         Next i
     End With
 End Sub
-Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
-'
-' - Adater(Request, X, F_rqst) - обрабатывает X с помощью Адаптера Request
-'                                с внешними данными в Документе F_rqst
-' 29.8.12
-
-    Dim FF() As String, Tmp() As String, Cols() As String
-    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
-    Dim F() As String
-    Dim i As Long, Par() As String
-    
-    IsErr = False
-    
-'--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
-    Dim AdapterName As String
-    AdapterName = ""
-    If Request <> "" Then
-        Tmp = Split(Request, "/")
-        AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
-    End If
-
-'========== препроцессинг Адаптера =========
-    Select Case AdapterName
-    Case "MainContract":
-        X = Trim(Replace(X, "Договор", ""))
-    End Select
-    
-'--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
-    If F_rqst <> "" Then
-        
-        FF = Split(F_rqst, ",")
-        For i = LBound(FF) To UBound(FF)
-            Tmp = Split(FF(i), "/")
-            Doc = Tmp(0)
-            Cols = Split(Tmp(1), ":")
-            C1 = Cols(0): C2 = Cols(1)
-            GetRep Doc
-            Set Rng = Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN) _
-                .Range(Columns(C1), Columns(C2))
-            Dim S As String
-            S = ""
-            On Error Resume Next
-            S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
-            On Error GoTo 0
-            If S = "" Then
-                ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
-                    & "(" & X & ") не работает, результат <пусто>"
-                IsErr = True
-                Exit Function
-            Else
-                X = S
-            End If
-        Next i
-    End If
-
-
-'******* выполнение Адаптера с параметрами Par ******
-    Select Case AdapterName
-    Case "", "MainContract": Adapter = X
-    Case "Мы", "Продавец_в_SF":
-        Adapter = WorksheetFunction.VLookup(X, Range(AdapterName), Par(0), False)
-    Case "Dec": Adapter = Dec(X)
-    Case "CurISO": Adapter = CurISO(X)
-    Case "CurRate": Adapter = CurRate(CurISO(X))
-    Case "Дата": Adapter = DDMMYYYY(X)
-    Case Else
-        ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
-    End Select
-End Function
 Sub ContrPass()
 '
 ' Проход по отчету Договоров и обзор/создание соответствующих Проектов

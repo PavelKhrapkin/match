@@ -2,8 +2,6 @@ Attribute VB_Name = "StockAnalitics"
 '---------------------------------------------------------------------------------
 ' StockAnalitics  - анализ базы по Складу
 '
-' S   GetInv1C(InvCol,PayN_Col, _       - находит номер строки в Платежах PayN со Счетом,
-'         StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
 ' [*] StockHandling()   - проход по листу "Склад", поиск продуктов Autodesk
 '  -  FindAcc1C(Client, Acc1C) - поиск Счета 1С указанного в Client для Acc1C
 '  -  SeekInv(Str) - выделение Счета в текстовой строке Str
@@ -12,63 +10,9 @@ Attribute VB_Name = "StockAnalitics"
 ' (*) Sndedup() - дедупликация SN найденных по Складу - времянка!
 '  -  SN_ADSKbyStock(PayId, Acc, Dat) - возвращает SN продукта ADSK по Складу
 
-'   26.8.2012
+'   4.9.2012
 
 Option Explicit
-Sub GetInv1C(InvCol As Integer, PayN_Col As Integer, _
-    StrInvCol As Integer, DateCol As Integer, Optional Str2InvCol As Integer = 0)
-'
-'S GetInv1C(InvCol,PayN_Col, _       - находит номер строки в Платежах со Счетом 1С,
-'      StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
-' ----- ПАРАМЕТРЫ, ЗАПИСЫВАЕМЫЕ В ТАБЛИЦУ ПРОЦЕССОВ -------
-' 1.InvCol      - номер колонки в MyCol, куда вставляется найденная строка - Счет 1С
-' 2.PayN_Col    - номер колонки в MyCol, куда всталяют найденный номер строки с Платежах 1С
-' 3.StrInvCol   - номер колонки в Заказах - "Номер счета 1С"
-' 4.DateCol     - номер колонки - привязка к Дате Счета 1С
-' 5.[Str2InvCol]- альтернативная колонка с текстом Счета 1С
-'-----------------------------------------------------------
-'           * используется как Шаг для активных листов "Заказы" или "Склад"
-'           * колонка Str2InvCol - возможная альтернативная строка со Счетом
-'   26.8.12
-
-    Dim DocTo As String ' имя входного Документа - отчета
-    Dim RepSF As TOCmatch, RepSForder As TOCmatch, RepP As TOCmatch, RepTo As TOCmatch
-    Dim Str As String, Inv As String, Str2 As String, Inv2 As String, D As Date
-    Dim i As Integer, i1C As Integer
-    Dim X
-    
-    DocTo = ActiveSheet.Name
-    RepTo = GetRep(DocTo)
-    RepP = GetRep(PAY_SHEET)
-    EOL_PaySheet = RepP.EOL
-    
-
-    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
-        .Activate
-        For i = 2 To RepTo.EOL
-            Progress i / RepTo.EOL
-            
-            Str = SeekInv(.Cells(i, StrInvCol))
-            
-            X = .Cells(i, DateCol): D = Now
-            If IsDate(X) Then D = X
-            
-            Str2 = ""
-            If Str2InvCol > 0 Then Str2 = SeekInv(.Cells(i, Str2InvCol))
-            
-            If Str = Str2 Then
-            ElseIf Str = "" Or Str2 = "" Then
-                Str = Str & Str2
-            Else
-                Str = Str & "+" & Str2
-            End If
-            .Cells(i, InvCol) = Str
-            
-            If IsInv1C(Str, D, i1C) Then .Cells(i, PayN_Col) = i1C
-        Next i
-    End With
-
-End Sub
 
 Sub StockHandling()
 '
@@ -221,7 +165,7 @@ Function SeekInv(Str) As String
     S = Replace(LCase(S), ")", " ")
     S = Replace(LCase(S), "(", " ")
     S = Replace(LCase(S), """", " ")
-    StWord = split(S, " ")
+    StWord = Split(S, " ")
     For i = LBound(StWord) To UBound(StWord)
         Sch = StWord(i)
         If Left(Sch, 1) = Chr(99) Or Left(Sch, 1) = "с" Then ' Ru или En "с"
@@ -317,7 +261,7 @@ Function RemIgnoredSN(Str) As String
         If (Ch > "9" Or Ch < "0") And Ch <> "-" Then Ch = " "
         Mid(S, i, 1) = Ch
     Next i
-    W = split(S, " ")
+    W = Split(S, " ")
     S = ""
     For i = LBound(W) To UBound(W)
         If Len(W(i)) = 12 And Mid(W(i), 4, 1) = "-" Then
