@@ -10,12 +10,16 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   1.9.12 П.Л.Храпкин
+'   5.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
 ' - Exec(Step, iProc)   - вызов Шага Step по строке iProc таблицы Процессов
 ' - ToStep(Proc,[Step]) - возвращает номер строки таблицы Процессов
+' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
+'        с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
+' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
+
 
 Option Explicit
 
@@ -63,7 +67,7 @@ Sub ProcStart(Proc As String)
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
     End With
-    MS "<*> Процесс " & Proc & " завершен!"
+''    MS "<*> Процесс " & Proc & " завершен!"
     Exit Sub
 Err:
     ErrMsg FATAL_ERR, "Нарушена последовательность шагов процедуры " & Proc
@@ -127,7 +131,7 @@ Sub Exec(Step, iProc)
 '  26.8.12 - окраска строки в Process для успешно выполненного Шага
 '   1.9.12 - ревизия кода
        
-    Dim Code As String
+    Dim Code As String, Proc As String
     Dim R As TOCmatch       '= обрабатываемый Документ - отчет
             
     If Step = PROC_END Or Step = "" Then Exit Sub
@@ -189,6 +193,9 @@ Sub Exec(Step, iProc)
         .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
         .Cells(1, STEP_NAME_COL) = ""
         .Cells(1, 1) = Now
+        Proc = .Cells(1, PROCESS_NAME_COL)              'имя Процесса
+        If Proc = "" Then Exit Sub
+        R = GetRep(.Cells(ToStep(Proc), PROC_REP1_COL)) 'обрабатываемый Документ
         R.Made = Step
         R.Dat = Now
         RepTOC = R
@@ -235,7 +242,7 @@ MyProc: .Cells(1, PROCESS_NAME_COL) = Proc      'имя Процесса
 End Function
 Sub StepIn()
 '
-' - StepIn()    - начало исполнения Шага, т.е. Активация и выбор нужных листов
+' - StepIn()    - начало исполнения Шага, т.е. активация и выбор нужных листов
 '   1.9.12
 
     Const FILE_PARAMS = 5   'максимальное количество файлов в Шаге
@@ -259,3 +266,180 @@ Sub StepIn()
         Next i
     End With
 End Sub
+Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
+'
+' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
+'    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
+' 4.9.12
+
+    Dim FF() As String, Tmp() As String, Cols() As String
+    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
+    Dim F() As String
+    Dim i As Long, Par() As String
+    
+    IsErr = False
+    
+'--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
+    Dim AdapterName As String
+    AdapterName = ""
+    If Request <> "" Then
+        Tmp = Split(Request, "/")
+        AdapterName = Tmp(0)
+        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
+    End If
+
+'========== препроцессинг Адаптера =========
+    Select Case AdapterName
+    Case "MainContract":
+        X = Trim(Replace(X, "Договор", ""))
+    End Select
+    
+'--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
+    If F_rqst <> "" And X <> "" Then
+        
+        FF = Split(F_rqst, ",")
+        For i = LBound(FF) To UBound(FF)
+            X = FetchDoc(FF(i), X, IsErr)
+'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+' сейчас используется только один указатель на извлекаемую из Doc величину.
+' В дальнейшем надо использовать массив x(1 to 5) и обращаться к Fetch несколько раз
+'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+'''            Tmp = Split(FF(i), "/")
+'''            Doc = Tmp(0)
+'''            Cols = Split(Tmp(1), ":")
+'''            C1 = Cols(0): C2 = Cols(1)
+'''
+'''            Dim Rdoc As TOCmatch, W As Workbook
+'''            Rdoc = GetRep(Doc)
+'''
+'''            Dim Lit As String
+'''            Const A = 64            ' String("A")-1
+'''            Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
+'''            Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
+'''
+'''            Dim S As String
+'''            S = ""
+'''            On Error Resume Next
+'''            S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
+'''            On Error GoTo 0
+'''            If S = "" Then
+'''                If UBound(Tmp) >= 2 Then
+'''                    If Tmp(2) = "W" Then
+'''                        ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
+'''                            & "(" & X & ") не работает, результат <пусто>"
+'''                    End If
+'''                    If Tmp(2) <> "0" Then IsErr = True
+'''                Else
+'''                    ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
+'''                       & "(" & X & ") не работает, результат <пусто>"
+'''                    IsErr = True
+'''                End If
+'''                Exit Function
+'''            Else
+'''                X = S
+'''            End If
+        Next i
+    End If
+
+'******* выполнение Адаптера с параметрами Par ******
+    Select Case AdapterName
+    Case "", "MainContract": Adapter = X
+    Case "Мы", "Продавец_в_SF":
+        On Error GoTo AdapterFailure
+        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
+        On Error GoTo 0
+    Case "Dec": Adapter = Dec(X)
+    Case "CurISO":
+        Adapter = CurISO(X)
+    Case "CurRate": Adapter = CurRate(X)
+    Case "Дата": Adapter = DDMMYYYY(X)
+    Case Else
+        ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
+    End Select
+    Exit Function
+    
+AdapterFailure:
+    ErrMsg WARNING, "Адаптер " & AdapterName & "(" & X & ") не получил данных"
+    IsErr = True
+End Function
+Function FetchDoc(F_rqst, X, IsErr) As String
+'
+' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
+'                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
+'
+' * F_rqst имеет вид <Doc>/C1[:C2][/W]
+' * <Doc>   - имя Документа, окуда извлекаются данные
+' *   /     - отделяет группы параметров. Возможно несколько групп.
+' *   :     - разделяет параметры внутри группы
+' *             Первая группа - собственно параметры для извлечения С1[:С2]
+' *  C1                 если есть только С1 - извлекается поле номер С1
+' * C1:C2               если С1:С2 - Lookup по С1 -> из C2 с Range по Doc
+' *             Вторая группа - параметры обработки ошибок Fetch - /W или /0
+' *  /W             - WARNING в Log, оставлять IsErr=False, если извлечено ""
+' *  /0             - "" вполне допустимо (например, область в адресе)
+' *             Вторая группа отсутствует - выводить Log и IsErr = True
+'
+' 5.9.12
+
+    FetchDoc = ""
+    If F_rqst = "" Or X = "" Then GoTo ErrExit
+        
+    Dim Tmp() As String, Cols() As String, S As String
+    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
+            
+    Tmp = Split(F_rqst, "/")
+    Doc = Tmp(0)
+    Cols = Split(Tmp(1), ":")
+    C1 = Cols(0)
+    
+    Dim Rdoc As TOCmatch, W As Workbook
+    Rdoc = GetRep(Doc)
+    
+    If UBound(Cols) < 1 Then
+'--- ситуация С1 - в группе один параметр - извлекаем значение по индексу
+        Dim Indx As Long
+        Indx = X
+'!!!!!!!!!!!!!!!!!!!!!!!!!!!
+' сейчас Indx=Х - это просто число, но в дальнейшем тут надо Split
+'!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        If Indx <= 0 Then
+            ErrMsg WARNING, "FetchDoc: " & Doc & "(" & Indx & "," & C1 _
+                & ") - неправильный номер строки"
+            GoTo ErrExit
+        End If
+        S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
+    Else
+'--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup
+        C2 = Cols(1)
+        Dim Lit As String
+        Const A = 64            ' String("A")-1
+        Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
+        Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
+        
+        S = ""
+        On Error Resume Next
+        S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
+        On Error GoTo 0
+    End If
+'--- обработка группы 2 -- если S=""
+    If S = "" Then
+        If UBound(Tmp) >= 2 Then
+            If Tmp(2) = "W" Then
+                ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
+                    & "(" & X & ") не работает, результат <пусто>"
+            End If
+            If Tmp(2) <> "0" Then GoTo ErrExit
+        Else
+            ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
+               & "(" & X & ") не работает, результат <пусто>"
+            GoTo ErrExit
+        End If
+    Else
+        FetchDoc = S
+    End If
+    
+OK_Exit:    IsErr = False
+    Exit Function
+ErrExit:    IsErr = True
+
+End Function

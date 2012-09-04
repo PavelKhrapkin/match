@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   31.8.12
+'   5.9.12
 
 Option Explicit
 
@@ -184,6 +184,7 @@ Public Const SDF_CONTRN_COL = 3    ' колонка Номер договора в SF
 Public Const SFD_ACC1C_COL = 6     ' колонка "Имя Организации в 1С"
 Public Const SFD_DATESTART_COL = 8 ' колонка "Дата начала Договора"
 Public Const SFD_DATEEND_COL = 9   ' колонка "Дата окончания Договора"
+Public Const SFD_SCAN_COL = 10     ' колонка "Отсканировано"
 Public Const SFD_OWNER_COL = 12    ' колонка "Отв."
 Public Const SFD_STATUS_COL = 13   ' колонка "Статус"
 Public Const SFD_CONTRID_COL = 15  ' колонка "Код договора"
@@ -388,17 +389,12 @@ Public Const BTO_GOOD_COL = 6       ' колонка "Товар ADSK"
 Public Const BTO_MAIL_COL = 7       ' колонка "Письмо"
 
 '############## Заказы у Дистрибуторов или Поставщиков #################
-'''''''Public Const OrderList = "2011-12"  ' Лист Заказов
-'''''''Public Const OrderListStamp = "Заказ подтвердил"
+Public Const OrderList = "Заказы"   ' Лист Заказов
 
-Public Const OL_IDSF_COL = 3        ' колонка "IdSF"
-Public Const OL_IDSFORDER_COL = 4   ' колонка "IdSForder"
-'''''''Public Const OL_ORDER_COL = 8       ' колонка "Адрес" в 1С
+Public Const OL_IDSF_COL = 7        ' колонка "IdSF"
+Public Const OL_IDSFORDER_COL = 8   ' колонка "IdSForder"
 
-
-'#.#.#.#.#.#.#. Лист новых Заказов для DL .#.#.#.#.#.#.#.#.#
 Public Const NewOrderList = "NewOrderList"   ' Лист Новых Заказов
-Public EOL_NewOrderList     ' последняя значащая строка листа Новых Заказов
 
 '................. Лист новых Организаций A_Acc ..................
 Public Const A_Acc = "A_Acc"            ' лист новых Организаций
