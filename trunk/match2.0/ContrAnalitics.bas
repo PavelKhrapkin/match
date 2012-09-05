@@ -6,7 +6,7 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   4.9.2012
+'   6.9.2012
 
 Option Explicit
 Sub NewContr()
@@ -75,7 +75,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
 '     Эти строки хранятся в Range с именем "HDR_" & SheetNew в Forms или Headers
 '   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
 '   * В строке формы под Адаптером можно указать параметры во внешних Документах
-' 29.8.2012
+' 5.9.2012
 
     Dim P As Range
     Dim iNewLine As Long    '= номер строки в SheetNew
@@ -86,6 +86,8 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
     
     iNewLine = EOL(SheetNew, DB_MATCH) + 1
 
+    With DB_MATCH.Sheets(SheetNew)
+        Set P = Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
             X = SheetDB.Cells(DB_Line, P.Cells(4, i))
             
