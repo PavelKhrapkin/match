@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   5.9.12 П.Л.Храпкин
+'   6.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -271,6 +271,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
 '    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
 ' 4.9.12
+' 6.9.12 - bug fix
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -278,6 +279,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Dim i As Long, Par() As String
     
     IsErr = False
+    X = Trim(X)
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
@@ -292,6 +294,8 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Select Case AdapterName
     Case "MainContract":
         X = Trim(Replace(X, "Договор", ""))
+    Case "<>0":
+        If X = "0" Then X = ""
     End Select
     
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
@@ -304,47 +308,13 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 ' сейчас используется только один указатель на извлекаемую из Doc величину.
 ' В дальнейшем надо использовать массив x(1 to 5) и обращаться к Fetch несколько раз
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-'''            Tmp = Split(FF(i), "/")
-'''            Doc = Tmp(0)
-'''            Cols = Split(Tmp(1), ":")
-'''            C1 = Cols(0): C2 = Cols(1)
-'''
-'''            Dim Rdoc As TOCmatch, W As Workbook
-'''            Rdoc = GetRep(Doc)
-'''
-'''            Dim Lit As String
-'''            Const A = 64            ' String("A")-1
-'''            Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
-'''            Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
-'''
-'''            Dim S As String
-'''            S = ""
-'''            On Error Resume Next
-'''            S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
-'''            On Error GoTo 0
-'''            If S = "" Then
-'''                If UBound(Tmp) >= 2 Then
-'''                    If Tmp(2) = "W" Then
-'''                        ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
-'''                            & "(" & X & ") не работает, результат <пусто>"
-'''                    End If
-'''                    If Tmp(2) <> "0" Then IsErr = True
-'''                Else
-'''                    ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
-'''                       & "(" & X & ") не работает, результат <пусто>"
-'''                    IsErr = True
-'''                End If
-'''                Exit Function
-'''            Else
-'''                X = S
-'''            End If
         Next i
     End If
 
 '******* выполнение Адаптера с параметрами Par ******
     Select Case AdapterName
     Case "", "MainContract": Adapter = X
-    Case "Мы", "Продавец_в_SF":
+    Case "Мы", "Продавец_в_SF", "Vendor":
         On Error GoTo AdapterFailure
         Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
         On Error GoTo 0
@@ -352,7 +322,12 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Case "CurISO":
         Adapter = CurISO(X)
     Case "CurRate": Adapter = CurRate(X)
-    Case "Дата": Adapter = DDMMYYYY(X)
+    Case "Дата":
+        If X = "" Then
+            Adapter = ""
+        Else
+            Adapter = DDMMYYYY(X)
+        End If
     Case Else
         ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
     End Select
