@@ -1,4 +1,4 @@
-Attribute VB_Name = "match2_0"
+Attribute VB_Name = "For_PERSONAL"
 '---------------------------------------------------------------------------
 ' Макросы для работы с файлом отчетов из 1С и Salesforce Match SF-1C.xlms
 '
@@ -12,6 +12,7 @@ Attribute VB_Name = "match2_0"
 '    2.6.2012 - TriggerOptionsFormulaStyle A1/R1C1
 '   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
 '   17.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
+'    8.9.2012 - этот модуль помещен под названием ForPERSONAL.bas, чтобы не путать
 
     Option Explicit    ' Force explicit variable declaration
     
