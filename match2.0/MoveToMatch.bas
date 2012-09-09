@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 28.8.2012
+' П.Л.Храпкин 9.9.2012
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -35,7 +35,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     
     IsSF = CheckStamp(6, NewRep, Lines)
 
-    For i = 8 To RepTOC.EOL
+    For i = TOCrepLines To RepTOC.EOL
         InSheetN = 1
         With DB_MATCH.Sheets(TOC)
             If .Cells(i, TOC_INSHEETN) <> "" Then
@@ -75,7 +75,7 @@ RepNameHandle:
         ElseIf RepFile = F_STOCK Then
             Created = MyDB.BuiltinDocumentProperties(12)    'дата последнего Save
         Else
-            Created = "1.1.1900"
+            Created = "0:0"
         End If
         .UsedRange.Rows.RowHeight = 15
         .Name = "TMP"
@@ -91,8 +91,6 @@ RepNameHandle:
         .Sheets(RepName).Tab.Color = TabColor
     End With
     
-    LogWr "MoveToMatch: Загружен новый отчет " & RepName _
-        & "; EOL=" & Lines & " строк, в прежнем " & LinesOld
 '------------- match TOC и Log write и Save --------------
     With DB_MATCH.Sheets(TOC)
         .Activate
@@ -129,7 +127,8 @@ RepNameHandle:
             End If
         Next i
     End With
-    LogWr "Новый отчет '" & RepName & "' загружен в " & RepFile
+    LogWr "MoveToMatch: В файл '" & RepFile & "' загружен новый отчет '" _
+        & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
         ProcStart RepLoader
@@ -140,13 +139,14 @@ Sub StepReset(iStep)
 '
 ' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
 ' 28.8.12
+'  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
 
     Dim Step As String, PrevStep As String
     Dim Proc As String, ThisProc As String
     Dim i As Integer, iProc As Integer
     
     With DB_MATCH.Sheets(Process)
-        If .Cells(iStep, PROC_STEPDONE_COL) <> "" Then Exit Sub
+        If .Cells(iStep, PROC_STEPDONE_COL) = "" Then Exit Sub
         Step = .Cells(iStep, PROC_STEP_COL)
 '---- сброс Шага iStep и окраски старта его Процедуры "<*>ProcStart"
         For i = 6 To EOL(Process, DB_MATCH)

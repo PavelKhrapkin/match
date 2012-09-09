@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 2.9.2012
+' П.Л.Храпкин, А.Пасс 9.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -66,10 +66,12 @@ Function GetRep(RepName) As TOCmatch
 '    2.8.12 - NOP по пустому RepName
 '   12.8.12 - StampR допускает альтернативное положение Штампа, например, "4, 1"
 '   17.8.12 - FatalRep в отдельной подпрограмме; Activate RepName
+'    9.9.12 - запись в Log только в match.xlsm; отладка записи Pass DBs; EOL для sfdc.xlsm
 
     Dim i As Long
     
     If RepName = "" Then Exit Function
+    
     If DB_MATCH Is Nothing Then
         Set DB_MATCH = FileOpen(F_MATCH)
         GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ
@@ -77,7 +79,8 @@ Function GetRep(RepName) As TOCmatch
         DirDBs = DB_MATCH.Path & "\"
         If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
             Dim Respond As Integer
-            Respond = MsgBox("Файл <match.xlsx> загружен из необычного места!" _
+            Respond = MsgBox("Файл <match.xlsx> загружен из необычного места:" _
+                & vbCrLf & vbCrLf & "'" & DirDBs & "'" _
                 & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
             If Respond <> vbYes Then End
     '** новый DirDBs запишем в TOCmatch и во вспомогательный файл
@@ -85,7 +88,7 @@ Function GetRep(RepName) As TOCmatch
             Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
             Set F_match_env = Workbooks.Open(F_match_environment)
                 ' при этом все отчеты из TOCmatch должны быть доступны!
-            For i = 4 To EOL(TOC, DB_MATCH)
+            For i = 8 To EOL(TOC, DB_MATCH)
                 GetRep DB_MATCH.Sheets(TOC).Cells(i, TOC_REPNAME_COL)
             Next i
             
@@ -99,7 +102,7 @@ Function GetRep(RepName) As TOCmatch
     End If
     
     With DB_MATCH.Sheets(TOC)
-        For i = 4 To EOL(TOC, DB_MATCH)
+        For i = TOCrepLines To EOL(TOC, DB_MATCH)
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
         FatalRep "GetRep ", RepName
@@ -107,16 +110,12 @@ Function GetRep(RepName) As TOCmatch
 FoundRep:
         RepTOC.Dat = .Cells(i, TOC_DATE_COL)
         RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
-        RepTOC.EOL = .Cells(i, TOC_EOL_COL)
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
         RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
-        RepTOC.Stamp = .Cells(i, TOC_STAMP_COL)
-        RepTOC.StampType = .Cells(i, TOC_STAMP_TYPE_COL)
-        RepTOC.StampR = .Cells(i, TOC_STAMP_R_COL)
-        RepTOC.StampC = .Cells(i, TOC_STAMP_C_COL)
+        RepTOC.EOL = .Cells(i, TOC_EOL_COL)
         RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
         RepTOC.ParChech = .Cells(i, TOC_PARCHECK_COL)
         RepTOC.Loader = .Cells(i, TOC_REPLOADER_COL)
@@ -181,8 +180,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         Txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
@@ -305,7 +304,7 @@ Sub InsMyCol(F, Optional FS As String = "")
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину и заголовки вставленных колонок
-        For i = 1 To Range(F).Columns.Count
+        For i = 1 To Range(F).Columns.count
             .Columns(i).ColumnWidth = Range(F).Cells(3, i)
             If Range(F).Cells(2, i) = "V" Then .Cells(1, i) = Range(F).Cells(1, i)
         Next i
@@ -318,10 +317,10 @@ Sub InsMyCol(F, Optional FS As String = "")
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
-        For i = 1 To Range(FS).Columns.Count
+        For i = 1 To Range(FS).Columns.count
             If Range(FS).Cells(1, i) <> "" Then
                 Range(FS).Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.Count + 1, i)
+                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.count + 1, i)
             End If
         Next i
     End With
@@ -371,10 +370,11 @@ Sub LogWr(Msg)
 ' запись сообщения msg в Log-лист
 '   15.2.2012
 '   26.6.12 - match 2.0
+'    9.9.12 - вместо множества Log в разных файлах вседа пишем в Log match.xlsm
 
     Dim N   ' номер строки в Log
     
-    With ActiveWorkbook.Sheets(Log)
+    With DB_MATCH.Sheets(Log)
         N = .Cells(1, 4)
         N = N + 1
         .Cells(N, 1) = Date
@@ -412,7 +412,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -434,7 +434,7 @@ Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
 '   26.1.2012
 '   10.8.12 - заменено Lines на RepTOC.EOL
 
-    AllCol = ActiveSheet.UsedRange.Columns.Count
+    AllCol = ActiveSheet.UsedRange.Columns.count
     Range(Cells(1, 1), Cells(RepTOC.EOL, AllCol)).AutoFilter _
                             Field:=Col, Criteria1:=Criteria
     If Mode = 0 Then
@@ -540,12 +540,12 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
     
     EOL = -1
     On Error Resume Next
-    EOL = F.Sheets(SheetN).UsedRange.Rows.Count
+    EOL = F.Sheets(SheetN).UsedRange.Rows.count
     On Error GoTo 0
     If EOL <= 0 Then Exit Function
     
     With F.Sheets(SheetN)
-        AllCol = .UsedRange.Columns.Count
+        AllCol = .UsedRange.Columns.count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -607,7 +607,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.Add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
+    Sheets.Add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
@@ -730,7 +730,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     Dim D() As String
     
     For i = 1 To EOL(SheetN)
-        D = Split(Sheets(SheetN).Cells(i, Col), ".")
+        D = split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             DD = D(0)
             If DD < 1 Or DD > 31 Then GoTo Nxt
@@ -911,7 +911,7 @@ Function IsMatchList(W, DicList) As Boolean
     Dim lW As String
     
     lW = LCase$(W)
-    X = Split(DicList, ",")
+    X = split(DicList, ",")
     
     For i = LBound(X) To UBound(X)
         If InStr(lW, LCase$(X(i))) <> 0 Then

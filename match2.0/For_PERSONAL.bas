@@ -32,6 +32,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 '          Сброс всех Процессов, работающих с загружаемым Документом
 ' 11.8.12 - bug fix - раскраска даты отчета
 ' 18.8.12 - перенос основного кода в MoveInMatch в match.xlsm
+' 10.9.12 - bug fix - не там брал Path DBs
     
     Dim D As String
     D = "C:\work\Match\match2.0\DBs"
@@ -65,7 +66,7 @@ OpenTry:
 '------ и среди Workbooks нет. Посмотрим в файле в С:\
         On Error Resume Next
         Set W = Workbooks.Open(DinC)
-        P = W.Sheets(1).Cells(2, 1) & "\" & F
+        P = W.Sheets(1).Cells(1, 2) & F
         W.Close
         Set W = Workbooks.Open(P, UpdateLinks:=False)
         On Error GoTo 0
