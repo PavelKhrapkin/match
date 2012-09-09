@@ -39,6 +39,7 @@ Sub NewSheet(SheetName As String)
 '       а ширина колонок шапки- из третьей cтроки формы
 ' 19.8.12
 '  3.9.12 - StepIn
+'  9.9.12 - displayAlert = False для Delete Sheet
 
     StepIn
     
@@ -48,14 +49,14 @@ Sub NewSheet(SheetName As String)
     HDRform = "HDR_" & SheetName
     
     With DB_MATCH
-        On Error Resume Next
-        .Sheets(SheetName).Delete
-        On Error GoTo 0
-        .Sheets.Add After:=.Sheets(.Sheets.Count)
-        .Sheets(.Sheets.Count).Name = SheetName
+        Application.DisplayAlerts = False
+        .Sheets(RepName).Delete
+        Application.DisplayAlerts = True
+        .Sheets.Add After:=.Sheets(.Sheets.count)
+        .Sheets(.Sheets.count).Name = SheetName
         With .Sheets(SheetName)
             .Tab.Color = rgbLightBlue
-            For i = 1 To Range(HDRform).Columns.Count
+            For i = 1 To Range(HDRform).Columns.count
                 Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
                 .Columns(i).ColumnWidth = .Cells(3, i)
             Next i
@@ -88,7 +89,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
 
     With DB_MATCH.Sheets(SheetNew)
         Set P = Range("HDR_" & SheetNew)
-        For i = 1 To P.Columns.Count
+        For i = 1 To P.Columns.count
             X = SheetDB.Cells(DB_Line, P.Cells(4, i))
             
             Y = Adapter(P.Cells(5, i), X, P.Cells(6, i), IsErr)
@@ -360,7 +361,7 @@ Function IsSameVendor(OppType, V1C, ContrCode) As Boolean
     IsSameVendor = False
     
 ' цикл по типам Проектов входящим в OppType -- в Типе их может быть несколько
-    OppTypeArr = Split(OppType, ";")
+    OppTypeArr = split(OppType, ";")
     For i = 0 To UBound(OppTypeArr)
         VendorSF = ""
         On Error Resume Next

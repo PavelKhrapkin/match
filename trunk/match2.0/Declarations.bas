@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   5.9.12
+'   9.9.12
 
 Option Explicit
 
@@ -13,10 +13,10 @@ Public DirDBs As String    ' каталог файлов DBs из 'match.xlsm'!We
 Public Const F_match_environment = "C:\match_environment.xlsx"
 
 Public Const F_MATCH = "match.xlsm"
-Public Const F_1C = "1C.xlsm"
-Public Const F_SFDC = "SFDC.xlsm"
+Public Const F_1C = "1C.xlsx"
+Public Const F_SFDC = "SFDC.xlsx"
 Public Const F_ADSK = "ADSK.xlsm"
-Public Const F_STOCK = "Stock.xlsm"
+Public Const F_STOCK = "Stock.xlsx"
 
 Public DB_MATCH As Workbook 'отчеты и таблицы match
 Public DB_1C As Workbook    'отчеты 1C
@@ -135,6 +135,9 @@ Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
+Public Const TOCstart = 4       ' первая строка TOCmatch - вначале служебная часть
+Public Const TOCrepLines = 8    ' первая стока Документов. после служебных строк
+    
 Type TOCmatch
     Dat As Date         '=Now   - дата и время загрузки отчета
     Name As String      'не изм.- имя отчета в базе данных
@@ -144,10 +147,10 @@ Type TOCmatch
     Made As String      '=изм.каждый шаг - Made    - завершенный шаг по листу
     RepFile As String   'не изм.-  файл DB с отчетом
     SheetN As String    'не изм.-  имя листа, содержащего отчет
-    Stamp As String     'не изм.-  строка - Штамп
-    StampType As String 'не изм.-  Тип Штампа: строка (=) или подстрока (I)
-    StampR As Long      'не изм.-  строка Штампа: (+EOL)
-    StampC As Long      'не изм.-  колонка Штампа: (+MyCol)
+''''    Stamp As String     'не изм.-  строка - Штамп
+''''    StampType As String 'не изм.-  Тип Штампа: строка (=) или подстрока (I)
+''''    StampR As Long      'не изм.-  строка Штампа: (+EOL)
+''''    StampC As Long      'не изм.-  колонка Штампа: (+MyCol)
     CreateDat As Date   '=изм.только MoveToMatch -  дата и время создания отчета
     ParChech As String  'не изм.-   <>"" - след.строка - доп.Штамп
     Loader As String    'не изм.-   Loader отчета
