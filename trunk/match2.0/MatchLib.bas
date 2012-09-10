@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 9.9.2012
+' П.Л.Храпкин, А.Пасс 11.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -102,7 +102,7 @@ Function GetRep(RepName) As TOCmatch
     End If
     
     With DB_MATCH.Sheets(TOC)
-        For i = TOCrepLines To EOL(TOC, DB_MATCH)
+        For i = 4 To EOL(TOC, DB_MATCH)
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
         FatalRep "GetRep ", RepName
@@ -290,37 +290,41 @@ Sub InsMyCol(F, Optional FS As String = "")
 '  15.8.12 - Optional FS
 '  26.8.12 - RowHeight шапки как в шаблоне; если строке 2 "V" - копируем шапку
 '  31.8.12 - внедрение StepIn
+'  11.9.12 - перенос форм в Headers файла match.xlsm
 
     StepIn
     
+    Dim FF As Range
     Dim i As Integer
+    Set FF = DB_MATCH.Sheets("Header").Range(F)
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
 '---- А может мы уже эту колонку вставляли?
-        If .Cells(1, 1) = Range(F).Cells(1, 1) Then Exit Sub
+        If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
 
 '---- вставляем колонки по числу MyCol
         For i = 1 To RepTOC.MyCol
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину и заголовки вставленных колонок
-        For i = 1 To Range(F).Columns.count
-            .Columns(i).ColumnWidth = Range(F).Cells(3, i)
-            If Range(F).Cells(2, i) = "V" Then .Cells(1, i) = Range(F).Cells(1, i)
+        For i = 1 To FF.Columns.count
+            .Columns(i).ColumnWidth = FF.Cells(3, i)
+            If FF.Cells(2, i) = "V" Then .Cells(1, i) = FF.Cells(1, i)
         Next i
 '---- копируем колонки MyCol от верха до EOL
         For i = 1 To RepTOC.MyCol
-            Sheets("Forms").Range(F).Cells(1, i).Copy Destination:=.Cells(1, i)
-            Sheets("Forms").Range(F).Cells(2, i).Copy Destination:=.Cells(2, i)
+            FF.Cells(1, i).Copy Destination:=.Cells(1, i)
+            FF.Cells(2, i).Copy Destination:=.Cells(2, i)
         Next i
-        .Rows(1).RowHeight = Sheets("Forms").Range(F).Rows(1).RowHeight
+        .Rows(1).RowHeight = FF.Rows(1).RowHeight
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
-        For i = 1 To Range(FS).Columns.count
-            If Range(FS).Cells(1, i) <> "" Then
-                Range(FS).Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - Range(FS).Rows.count + 1, i)
+        Set FF = DB_MATCH.Sheets("Header").Range(FS)
+        For i = 1 To FF.Columns.count
+            If FF.Cells(1, i) <> "" Then
+                FF.Columns(i).Copy Destination:=.Cells( _
+                    RepTOC.EOL + RepTOC.ResLines - FF.Rows.count + 1, i)
             End If
         Next i
     End With
