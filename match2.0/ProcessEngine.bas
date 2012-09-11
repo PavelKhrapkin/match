@@ -10,16 +10,18 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-'   6.9.12 П.Л.Храпкин
+' 12.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
 ' - Exec(Step, iProc)   - вызов Шага Step по строке iProc таблицы Процессов
 ' - ToStep(Proc,[Step]) - возвращает номер строки таблицы Процессов
+' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
+' S Adapt(F) - запускает Адаптеры из формы F
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
 '        с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
-' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
-
+' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
+'                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
 
 Option Explicit
 
@@ -105,10 +107,10 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        S = Split(Trim(Step), ",")
+        S = split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                X = Split(S(i), "/")
+                X = split(S(i), "/")
                 If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
                 If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
@@ -266,6 +268,53 @@ Sub StepIn()
         Next i
     End With
 End Sub
+Sub Adapt(F As String)
+'
+' S Adapt(F) - запускает Адаптеры из формы F в match.xlsm
+'
+' Форма F имеет вид:
+'   Шапка   - заголовок колонки. Шапка записывается и форматируется Шагом InsMyCol
+'   MyCol   - формулы и раскраска полей от Шапки до Пятки. Если "V" - замена шапки
+'   Width   - ширина колонки
+'   Columns - номер колонки в активном листе- левом в списке Документов в Процессе
+'   Адаптер - строка- вызов Адаптера, обрабатывающего Х = <значение по Columns>
+'   Fetch   - строка дополнительных параметров для Адаптера из других Документов
+'
+' 12.9.12
+
+    StepIn
+    
+    Dim FF As Range     '= Форма F
+    Dim R As TOCmatch
+    Dim Rqst As String, F_rqst As String, iX As Long, IsErr As Boolean
+    Dim X As String, Y As String
+    Dim i As Long, Col As Long
+    
+    Set FF = DB_MATCH.Sheets(Header).Range(F)
+    
+    With ActiveSheet
+        R = GetRep(.Name)
+        For i = 2 To R.EOL
+            Progress i / R.EOL
+            For Col = 1 To FF.Columns.Count
+                iX = FF(4, Col)
+                If iX > 0 Then
+                    X = .Cells(i, iX)
+                    Rqst = FF.Cells(5, Col)
+                    F_rqst = FF.Cells(6, Col)
+                    
+                    Y = Adapter(Rqst, X, F_rqst, IsErr)
+                    
+                    If IsErr Then
+                        .Cells(i, Col) = ""
+                    Else
+                        .Cells(i, Col) = Y
+                    End If
+                End If
+            Next Col
+        Next i
+    End With
+End Sub
 Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -285,9 +334,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = Split(Request, "/")
+        Tmp = split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
     End If
 
 '========== препроцессинг Адаптера =========
@@ -301,7 +350,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = Split(F_rqst, ",")
+        FF = split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -362,9 +411,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
             
-    Tmp = Split(F_rqst, "/")
+    Tmp = split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = Split(Tmp(1), ":")
+    Cols = split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
