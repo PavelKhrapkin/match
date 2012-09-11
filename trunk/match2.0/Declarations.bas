@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   9.9.12
+'   12.9.12
 
 Option Explicit
 
@@ -69,6 +69,7 @@ Public ExRespond As Boolean ' если False - завершение работы
 Public Silent As Boolean    ' если True - не выводить сообщений об ошибках
 
 '=============== База DB_MATCH - файл match.xlsm ==============
+Public Const Header = "Header"              ' лист заголовков (Шапок) и Адаптеров
 Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
 Public Const P_Paid = "P_Paid"              ' лист новых Платежей
 Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
