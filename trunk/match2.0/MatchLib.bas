@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 11.9.2012
+' П.Л.Храпкин, А.Пасс 14.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -17,7 +17,6 @@ Attribute VB_Name = "MatchLib"
 ' - ActiveFilterReset(SheetN)   - сброс и активизация автофильтра листа SheetN
 ' - SheetsCtrlH(SheetN, FromStr, ToStr) - замена текста FromStr на ToStr
 '                                 в листе SheetN
-' - Pnt(SheetN,Col,Criteria,Color,Mode) - окраска на SheetN цветом Color по фильтру
 ' - PerCent(Row, Col)           - форматирование ячейки (Row,Col) с процентами
 ' - CurCode(Row, Col, CurCol)   - формат ячейки (Row,Col) по коду валюты в CurCol
 ' - CurRate(Cur)                - возвращает курс валюты к рублю по коду Cur для We
@@ -102,7 +101,8 @@ Function GetRep(RepName) As TOCmatch
     End If
     
     With DB_MATCH.Sheets(TOC)
-        For i = 4 To EOL(TOC, DB_MATCH)
+'''''        For i = 4 To EOL(TOC, DB_MATCH)
+        For i = 4 To 177
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
         FatalRep "GetRep ", RepName
@@ -296,7 +296,7 @@ Sub InsMyCol(F, Optional FS As String = "")
     
     Dim FF As Range
     Dim i As Integer
-    Set FF = DB_MATCH.Sheets("Header").Range(F)
+    Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
 '---- А может мы уже эту колонку вставляли?
@@ -307,7 +307,7 @@ Sub InsMyCol(F, Optional FS As String = "")
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину и заголовки вставленных колонок
-        For i = 1 To FF.Columns.count
+        For i = 1 To FF.Columns.Count
             .Columns(i).ColumnWidth = FF.Cells(3, i)
             If FF.Cells(2, i) = "V" Then .Cells(1, i) = FF.Cells(1, i)
         Next i
@@ -320,11 +320,11 @@ Sub InsMyCol(F, Optional FS As String = "")
         .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
-        Set FF = DB_MATCH.Sheets("Header").Range(FS)
-        For i = 1 To FF.Columns.count
+        Set FF = DB_MATCH.Sheets(Header).Range(FS)
+        For i = 1 To FF.Columns.Count
             If FF.Cells(1, i) <> "" Then
                 FF.Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - FF.Rows.count + 1, i)
+                    RepTOC.EOL + RepTOC.ResLines - FF.Rows.Count + 1, i)
             End If
         Next i
     End With
@@ -416,7 +416,7 @@ Function AutoFilterReset(SheetN) As Integer
         .SplitRow = 1
     End With
     ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.count
+    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
     Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -430,26 +430,6 @@ Sub SheetsCtrlH(SheetN, FromStr, ToStr)
     Cells.Replace What:=FromStr, Replacement:=ToStr, LookAt:=xlPart, _
         SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
         ReplaceFormat:=False
-End Sub
-Sub Pnt(Col, Criteria, Color, Optional Mode As Integer = 0)
-'
-' подпрограмма выбирает колонку Col по критерию Criteria и окрашивает в Color
-' если Mode = 0 или не указан - окрашиваем весь ряд, иначе только Col
-'   26.1.2012
-'   10.8.12 - заменено Lines на RepTOC.EOL
-
-    AllCol = ActiveSheet.UsedRange.Columns.count
-    Range(Cells(1, 1), Cells(RepTOC.EOL, AllCol)).AutoFilter _
-                            Field:=Col, Criteria1:=Criteria
-    If Mode = 0 Then
-        Range(Cells(2, 2), Cells(RepTOC.EOL, AllCol)).Interior.Color = Color
-    Else
-        Range(Cells(2, Col), Cells(RepTOC.EOL, Col)).Interior.Color = Color
-    End If
-    If Criteria = "Не состоялся" Then   ' "Не состоялся" - перечеркиваем
-        Range(Cells(2, 2), Cells(RepTOC.EOL, AllCol)).Font.Strikethrough = True
-    End If
-    ActiveSheet.UsedRange.AutoFilter Field:=Col
 End Sub
 Sub PerCent(Row, Col)
 '
@@ -544,12 +524,12 @@ Function EOL(ByVal SheetN As String, Optional F As Workbook = Nothing)
     
     EOL = -1
     On Error Resume Next
-    EOL = F.Sheets(SheetN).UsedRange.Rows.count
+    EOL = F.Sheets(SheetN).UsedRange.Rows.Count
     On Error GoTo 0
     If EOL <= 0 Then Exit Function
     
     With F.Sheets(SheetN)
-        AllCol = .UsedRange.Columns.count
+        AllCol = .UsedRange.Columns.Count
         Do
             For i = 1 To AllCol
                 If .Cells(EOL, i) <> "" Then Exit Do
@@ -611,7 +591,7 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
     On Error GoTo 0
     
 ' -- создаем новый лист
-    Sheets.Add After:=Sheets(Sheets.count)  ' создаем новый лист в конце справа
+    Sheets.Add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
     ActiveSheet.Name = SheetN
     ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
    
