@@ -48,50 +48,51 @@ Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
         Next i
     End With
 End Sub
-Sub DogStatus()
-'
-' - DogStatus()     - вставляет в лист Договоров статус из SFD
-'   11.8.12
-'   1.9.12 - StepIn
-
-    StepIn
-    
-    Dim i As Long, N As Long, D_EOL As Long
-    
-    D_EOL = EOL(DOG_SHEET, DB_1C)
-    With DB_1C.Sheets(DOG_SHEET)
-        For i = 2 To D_EOL
-            Progress i / D_EOL
-            N = CSmatch(.Cells(i, DOGCOD_COL), SFD_COD_COL)
-            If N > 0 Then
-'                .Cells(i, DOGSFSTAT_COL) = _
-'                    DB_SFDC.Sheets(SFD).Cells(N, SFD_STATUS_COL)
-                .Cells(i, DOGSFSTAT_COL) = ActiveSheet.Cells(N, SFD_STATUS_COL)
-            End If
-        Next i
-    End With
-End Sub
 Sub ContractPaint()
 '
 ' - ContractPaint() - Раскрашиваем Лист Договоров
 ' 10.8.12
 '  1.9.12 - StepIn
+' 14.9.12 - раскраска с Paint
 
     StepIn
-'    GetRep DOG_SHEET
-    Call AutoFilterReset(DOG_SHEET)
-'    Rows(1).RowHeight = 50
     
-    Pnt DOGSFSTAT_COL, "Закрыт", rgbLightGreen      ' Договоры Закрытые в SF- зеленые
-    Pnt DOGSFSTAT_COL, "Открыт", rgbOrange          ' Открытые Договоры - оранжевые
-    Pnt DOGSFSTAT_COL, "Черновик", rgbLightBlue     ' Черновики - голубые
-    Pnt DOGSFSTAT_COL, "Не состоялся", Antique      ' Не состоялся - Antique
-    Pnt DOGSFSTAT_COL, "Нет в SF", rgbWhite         ' Нет в SF - не окрашиваем
-    Pnt DOGPAID1C_COL, 1, LimeG, 1                  ' Оплаченные - темно зеленый
-    Pnt DOGISINV1C_COL, 1, rgbOlive, 1              ' Выставлен Счет - оливковый
-    Pnt DOG1CSCAN_COL, 1, rgbViolet, 1              ' Отсканировано - фиолетовый
+    Dim D As TOCmatch
+    D = GetRep(DOG_SHEET)
+    Dim i As Long
+    
+    For i = 2 To D.EOL
+        ActiveSheet.Rows(i).Interior.Color = rgbWhite
+        Paint i, DOGSFSTAT_COL, "Закрыт", rgbLightGreen ' Договоры Закрытые в SF- зеленые
+        Paint i, DOGSFSTAT_COL, "Открыт", rgbOrange     ' Открытые Договоры - оранжевые
+        Paint i, DOGSFSTAT_COL, "Черновик", rgbLightBlue ' Черновики - голубые
+        Paint i, DOGSFSTAT_COL, "Не состоялся", Antique ' Не состоялся - Antique
+        Paint i, DOGSFSTAT_COL, "Нет в SF", rgbWhite    ' Нет в SF - не окрашиваем
+        Paint i, DOGPAID1C_COL, "1", LimeG, 1           ' Оплаченные - темно зеленый
+        Paint i, DOGISINV1C_COL, "1", rgbOlive, 1       ' Выставлен Счет - оливковый
+        Paint i, DOG1CSCAN_COL, "1", rgbViolet, 1       ' Отсканировано - фиолетовый
+    Next i
 '-- копируем пятку в Платежи1С
-    Range("Contract_Summary").Copy Destination:=ActiveSheet.Cells(RepTOC.EOL + 1, 1)
+    DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
+            Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
+End Sub
+Sub Paint(iStr As Long, Col As Long, Criteria As String, Color, Optional Mode As Integer = 0)
+'
+' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячеки (iStr,Col) в цвет Color
+'                            при значении Criteria, или вся строка если указано Mode=1
+' 14.9.12
+
+    Const DOG_COLS = 26     ' число колонок в таблице Договоров
+    
+    With ActiveSheet
+        If .Cells(iStr, Col) = Criteria Then
+            If Mode = 1 Then
+                .Cells(iStr, Col).Interior.Color = Color
+            Else
+                Range(Cells(iStr, 2), Cells(iStr, DOG_COLS)).Interior.Color = Color
+            End If
+        End If
+    End With
 End Sub
 Sub Acc1C_Bottom()
 '
@@ -120,7 +121,6 @@ Sub AccPaint()
     Dim R As Range
     
     RepTo = GetRep(ActiveSheet.Name)
-'''    DB_1C.Sheets(RepTo.SheetN).Activate
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
         For i = 2 To RepTo.EOL
             Progress i / RepTo.EOL
