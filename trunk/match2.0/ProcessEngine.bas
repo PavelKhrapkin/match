@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 12.9.12 П.Л.Храпкин
+' 14.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -281,6 +281,7 @@ Sub Adapt(F As String)
 '   Fetch   - строка дополнительных параметров для Адаптера из других Документов
 '
 ' 12.9.12
+' 14.9.12 - если Адаптер не нашел значение - оставляем значение по умолчанию
 
     StepIn
     
@@ -305,11 +306,7 @@ Sub Adapt(F As String)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
-                    If IsErr Then
-                        .Cells(i, Col) = ""
-                    Else
-                        .Cells(i, Col) = Y
-                    End If
+                    If Not IsErr Then .Cells(i, Col) = Y
                 End If
             Next Col
         Next i
@@ -401,9 +398,11 @@ Function FetchDoc(F_rqst, X, IsErr) As String
 ' *             Вторая группа - параметры обработки ошибок Fetch - /W или /0
 ' *  /W             - WARNING в Log, оставлять IsErr=False, если извлечено ""
 ' *  /0             - "" вполне допустимо (например, область в адресе)
+' *  /D             - Default - "" допустим, но IsErr=True для значения по умолчанию
 ' *             Вторая группа отсутствует - выводить Log и IsErr = True
 '
 ' 5.9.12
+' 14.9.12 - работает /D для второй группы - "по умолчанию"
 
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
