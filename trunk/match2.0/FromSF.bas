@@ -21,27 +21,18 @@ Attribute VB_Name = "FromSF"
 '  15.7.12 - match2.0 - все неспецифические действия выполняет MoveToMatch
 '   2.8.12 - сшивание SF c Платежами 1С Шагом PaidSF_Fill
 '  10.8.12 - сшивание SFD c Договорами 1С Шагом DogSF_Fill
+'  17.9.12 - StepIn
 
     Option Explicit    ' Force explicit variable declaration
         
-Sub ShowControlPanel()
-Attribute ShowControlPanel.VB_Description = "8.2.2012 Запуск ShowDBGpanel "
-Attribute ShowControlPanel.VB_ProcData.VB_Invoke_Func = "Q\n14"
-'
-' Вывод управляющей панели с командными кнопками по всем отдельным листам
-'
-' Ctrl/Shift/Q
-'
-'   8.2.2012
-
-    MainControlPanel.Show
-    End
-End Sub
 Sub PaidSF_Fill()
 '
 ' - PaidSF_Fill() - заполнение колонки А листа SF номерами строк - Платежей 1С
 '   2.8.12
+'  17.9.12 - StepIn
 
+    StepIn
+    
     Dim Rep1C As TOCmatch, RepSF As TOCmatch
     Dim PayK As String      'поле SF - код Платежа
     Dim i As Integer
@@ -49,7 +40,7 @@ Sub PaidSF_Fill()
     PublicStepName = ""
     RepSF = GetRep(SF)
     Rep1C = GetRep(PAY_SHEET)
-    DB_1C.Sheets(Rep1C.SheetN).Select
+    DB_1C.Sheets(Rep1C.SheetN).Activate
     With DB_SFDC.Sheets(SF)
         For i = 2 To RepSF.EOL
             Progress i / RepSF.EOL
@@ -62,14 +53,17 @@ Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Int
 '
 ' - DogSFD_Fill() - заполнение колонки А листа SFD номерами строк - Договоров 1С
 '   10.8.12
+'   18.9.12 - StepIn
 
+    StepIn
+    
     Dim Rep1C As TOCmatch, RepSF As TOCmatch
     Dim i As Integer
 
     PublicStepName = ""
     RepSF = GetRep(SheetSF)
     Rep1C = GetRep(Sheet1C)
-    DB_1C.Sheets(Rep1C.SheetN).Select
+    DB_1C.Sheets(Rep1C.SheetN).Activate
     With DB_SFDC.Sheets(SheetSF)
         For i = 2 To RepSF.EOL
             Progress i / RepSF.EOL
@@ -77,6 +71,17 @@ Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Int
         Next i
     End With
 
+End Sub
+Sub ShowControlPanel()
+'
+' Вывод управляющей панели с командными кнопками по всем отдельным листам
+'
+' Ctrl/Shift/Q
+'
+'   8.2.2012
+
+    MainControlPanel.Show
+    End
 End Sub
 Sub Match1C_SF()
 '
@@ -273,8 +278,8 @@ Sub SFaccRep()
     
     ModStart SFacc, "Обновление листа отчета Salesforce по Организациям SFacc"
 
-    LinesOld = Sheets(SFacc).UsedRange.Rows.count ' кол-во строк в старом отчете
-    Lines = Sheets(1).UsedRange.Rows.count        ' кол-во строк в новом отчете
+    LinesOld = Sheets(SFacc).UsedRange.Rows.Count ' кол-во строк в старом отчете
+    Lines = Sheets(1).UsedRange.Rows.Count        ' кол-во строк в новом отчете
     LO = LinesOld - SFresLines
     Ln = Lines - SFresLines
     

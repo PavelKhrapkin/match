@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 14.9.2012
+' П.Л.Храпкин, А.Пасс 19.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -475,8 +475,9 @@ Function CurISO(Cur1C)
 ' возвращает код валюты в стандарте ISO, преобразовав его из вида 1С
 '   18.3.2012
 '    4.9.2012 - адресация Sheets(We)
+'   19.9.12 - по умолчанию CurISO="RUB"
 
-    CurISO = ""
+    CurISO = "RUB"
     On Error Resume Next
     CurISO = WorksheetFunction.VLookup(Cur1C, DB_MATCH.Sheets(We).Range("Currency"), 2, False)
     On Error GoTo 0
