@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 19.9.2012
+' П.Л.Храпкин, А.Пасс 21.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -66,43 +66,53 @@ Function GetRep(RepName) As TOCmatch
 '   12.8.12 - StampR допускает альтернативное положение Штампа, например, "4, 1"
 '   17.8.12 - FatalRep в отдельной подпрограмме; Activate RepName
 '    9.9.12 - запись в Log только в match.xlsm; отладка записи Pass DBs; EOL для sfdc.xlsm
+'   21.9.12 - отладка логики работы с match_environment при перемещении DirDBs
 
-    Dim i As Long
+    Dim i As Long, EOL_TOC As Long
+    Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
     
     If RepName = "" Then Exit Function
     
     If DB_MATCH Is Nothing Then
         Set DB_MATCH = FileOpen(F_MATCH)
-        GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ
+        EOL_TOC = EOL(TOC, DB_MATCH)
+        DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL) = EOL_TOC
+'?'        GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ для проверки штампа
+    Else
+        EOL_TOC = DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL)
+    End If
             
-        DirDBs = DB_MATCH.Path & "\"
-        If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
-            Dim Respond As Integer
-            Respond = MsgBox("Файл <match.xlsx> загружен из необычного места:" _
-                & vbCrLf & vbCrLf & "'" & DirDBs & "'" _
-                & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
-            If Respond <> vbYes Then End
-    '** новый DirDBs запишем в TOCmatch и во вспомогательный файл
-            DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) = DirDBs
-            Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
-            Set F_match_env = Workbooks.Open(F_match_environment)
-                ' при этом все отчеты из TOCmatch должны быть доступны!
-            For i = 8 To EOL(TOC, DB_MATCH)
-                GetRep DB_MATCH.Sheets(TOC).Cells(i, TOC_REPNAME_COL)
-            Next i
-            
-            With F_match_env.Sheets(1)
-                .Cells(1, 1) = Now
-                .Cells(1, 2) = DirDBs
-            End With
-            F_match_env.Close
-            Exit Function
-        End If
+    DirDBs = DB_MATCH.Path & "\"
+    If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
+        Dim Respond As Integer
+        Respond = MsgBox("Файл <match.xlsx> загружен из необычного места:" _
+            & vbCrLf & vbCrLf & "'" & DirDBs & "'" _
+            & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
+        If Respond <> vbYes Then End
+        
+'** новый DirDBs запишем в TOCmatch и во вспомогательный файл
+        DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) = DirDBs
+        Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
+            ' при этом все отчеты из TOCmatch должны быть доступны!
+        Dim rf As String
+        For i = 8 To EOL_TOC
+            rf = DB_MATCH.Sheets(TOC).Cells(i, TOC_REPFILE_COL)
+            If rf <> "" Then FileOpen rf
+        Next i
+        
+        Set F_match_env = Workbooks.Open(F_match_environment)
+        With F_match_env.Sheets(1)
+            .Cells(1, 1) = Now
+            .Cells(1, 2) = DirDBs
+        End With
+        F_match_env.Close
+'''''        Exit Function
     End If
     
     With DB_MATCH.Sheets(TOC)
 '''''        For i = 4 To EOL(TOC, DB_MATCH)
-        For i = 4 To 177
+'''''        For i = 4 To 177
+        For i = TOClineN To EOL_TOC
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
         FatalRep "GetRep ", RepName
@@ -172,7 +182,7 @@ Function CheckStamp(iTOC As Long, _
     Dim Str As Long, StC As Long
     
     Dim RepName As String
-    Dim Txt As String, TestedStamp As String
+    Dim txt As String, TestedStamp As String
     Dim Typ As String
     Dim Continued As String
     Dim i As Long, j As Long
@@ -182,7 +192,7 @@ Function CheckStamp(iTOC As Long, _
     With DB_MATCH.Sheets(TOC)
         SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
         SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
-        Txt = .Cells(iTOC, TOC_STAMP_COL)
+        txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
@@ -204,9 +214,9 @@ Function CheckStamp(iTOC As Long, _
                     TestedStamp = Workbooks(NewRep).Sheets(InSheetN).Cells(Str, StC)
                 End If
                 If Typ = "=" Then
-                    If Txt <> TestedStamp Then GoTo NxtChk
+                    If txt <> TestedStamp Then GoTo NxtChk
                 ElseIf Typ = "I" Then
-                    If InStr(LCase$(TestedStamp), LCase$(Txt)) = 0 Then GoTo NxtChk
+                    If InStr(LCase$(TestedStamp), LCase$(txt)) = 0 Then GoTo NxtChk
                 Else
                     ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
                 End If
