@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 9.9.2012
+' П.Л.Храпкин 20.9.2012
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -21,6 +21,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
 ' 26.8.12 - сброс окраски вместе с очисткой "1" в поле Done
 ' 28.8.12 - сброс Шагов, связанных с использованием загружаемого Документа
+' 20.9.12 - Created Date -- исправлено для отчетов SF
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -67,7 +68,7 @@ RepNameHandle:
     
     With Workbooks(NewRep).Sheets(InSheetN)
         If RepFile = F_SFDC Then
-            Created = Mid(.Cells(Lines + 5, 1), 24)
+            Created = Right(.Cells(Lines + 5, 1), 16)
         ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
             Created = Right$(.Name, 8)
         ElseIf RepName = Acc1C Then
