@@ -7,7 +7,7 @@ Attribute VB_Name = "WriteDL"
 ' - NewContract(Dogovor, MainDog, ContrK) - создание нового договора ContrK в SF
 ' - DogFormat(Wsheet) - форматирование листа Wsheet для вывода в Dogovor.csv
 ' - WriteCSV(SheetN, FileName, ..)  - запись листа SheetN в файл для загрузки DL
-'   20.5.2012 - выделение модуля AddressParse
+'   23.9.2012 - выделение модуля AddressParse
     
 Option Explicit
 
@@ -279,13 +279,13 @@ FoundMainContr:
         End If
     Next i
 End Sub
-Sub WrCSV(SheetN, Directory, FileToWrite, Bat)
+Sub WrCSV(SheetN As String, Directory, FileToWrite, Bat)
 '
 ' S WrCSV(SheetN, Directory, FileToWrite, Bat) - Шаг - запись CSV
-'   19.9.12
+'   23.9.12
 
-    Dim dd
-'''    DB_MATCH.Sheets("NewContract").Activate
+    DB_MATCH.Sheets(SheetN).Activate
+    
     ChDir Directory
     WriteCSV SheetN, FileToWrite
     Shell Bat
@@ -299,6 +299,7 @@ Sub WriteCSV(SheetN, FileName, _
 '    3.2.2012 Optionan Range записываемого массива
 '   13.2.2012 EOL(SheetN), чтобы не писать пустые строки в конце
 '   29.2.2012 bug fix - Cells без Sheets приводил в выводу неправильных листов
+'   23.9.12 - отладка в match 2.0
     
     Dim S, Col
     
@@ -306,12 +307,11 @@ Sub WriteCSV(SheetN, FileName, _
     
     If RowLast = 0 Then RowLast = EOL(SheetN)
     If ColLast = 0 Then
-'        ColLast = DB_MATCH.Sheets(SheetN).UsedRange.Columns.Count
-        ColLast = 22
+        ColLast = ActiveSheet.UsedRange.Columns.Count
     End If
     For S = Row0 To RowLast
         For Col = Col0 To ColLast
-            Print #1, DB_MATCH.Sheets(SheetN).Cells(S, Col);
+            Print #1, ActiveSheet.Cells(S, Col);
             If Col <> ColLast Then Print #1, vbTab;
         Next Col
         Print #1, " "
