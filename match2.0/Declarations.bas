@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   12.9.12
+'   24.9.12
 
 Option Explicit
 
@@ -424,6 +424,12 @@ Public Const AccntUpd = "AccntUpd"      ' лист новых связей Организаций SF и 1С
 
 Public Const ACCUPD_SFID_COL = 1        ' колонка "SFaccId"
 Public Const ACCUPD_1CNAME_COL = 2      ' колонка "Acc1C"
+
+'................ Лист новых Платежей NewPayment ..........................
+Public Const NEW_PAYMENT = "NewPayment" ' лист новых Платежей
+Public Const NEWPAY_DOC_COL = 1         ' Doc - Имя платежного документа
+Public Const NEWPAY_DATE_COL = 2        ' Date - Дата платежа
+Public Const NEWPAY_INV_COL = 3         ' Invoice - Счет
 
 '................ Лист новых Договоров NewContract ..........................
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
