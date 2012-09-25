@@ -12,9 +12,10 @@ Option Explicit
 Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
 '
 ' H SelectionChange Event Handler
-'       9/9/12
+'       25/9/12
 
     If ActiveCell.Value = PROC_START Then
+        TraceStop = False
         ProcStart ActiveSheet.Cells(ActiveCell.Row, PROC_NAME_COL)
     End If
 End Sub

@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 14.9.12 П.Л.Храпкин
+' 26.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -277,11 +277,14 @@ Sub Adapt(F As String)
 '   MyCol   - формулы и раскраска полей от Шапки до Пятки. Если "V" - замена шапки
 '   Width   - ширина колонки
 '   Columns - номер колонки в активном листе- левом в списке Документов в Процессе
+'       - пустое поле Columns - целевое поле остается без изменения
+'       <0  - выход из цикла по колонкам
 '   Адаптер - строка- вызов Адаптера, обрабатывающего Х = <значение по Columns>
 '   Fetch   - строка дополнительных параметров для Адаптера из других Документов
 '
 ' 12.9.12
 ' 14.9.12 - если Адаптер не нашел значение - оставляем значение по умолчанию
+' 26.9.12 - обработка пустых и отрицательных значений Columns
 
     StepIn
     
@@ -307,6 +310,8 @@ Sub Adapt(F As String)
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
                     If Not IsErr Then .Cells(i, Col) = Y
+                ElseIf iX < 0 Then
+                    Exit For
                 End If
             Next Col
         Next i
@@ -318,6 +323,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 '    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
 ' 4.9.12
 ' 6.9.12 - bug fix
+'25.9.12 - Dec(CurRate)
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -367,7 +373,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Case "Dec": Adapter = Dec(X)
     Case "CurISO":
         Adapter = CurISO(X)
-    Case "CurRate": Adapter = CurRate(X)
+    Case "CurRate": Adapter = Dec(CurRate(X))
     Case "Дата":
         If X = "" Then
             Adapter = ""
