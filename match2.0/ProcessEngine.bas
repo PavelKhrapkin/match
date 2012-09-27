@@ -414,7 +414,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     If F_rqst = "" Or X = "" Then GoTo ErrExit
         
     Dim Tmp() As String, Cols() As String, S As String
-    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
+    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
     Tmp = split(F_rqst, "/")
     Doc = Tmp(0)
@@ -446,9 +446,12 @@ Function FetchDoc(F_rqst, X, IsErr) As String
         Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
         
         S = ""
-        On Error Resume Next
-        S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
-        On Error GoTo 0
+        N = CSmatchInRange(X, C1, Rng)
+        If N <> 0 Then S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
+'        S = ""
+'        On Error Resume Next
+'        S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
+'        On Error GoTo 0
     End If
 '--- обработка группы 2 -- если S=""
     If S = "" Then
