@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 21.9.2012
+' П.Л.Храпкин, А.Пасс 27.9.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -557,6 +557,25 @@ Sub RowDel(RowStr As String)
     StepIn
     ActiveSheet.Rows(RowStr).Delete
 End Sub
+Function CSmatchInRange(Val, Col As Long, Rng As Range) As Long
+'
+' - CSmatchInRange(Val,Col,Rng) - Case Sensitive match возвращает номер строки с Val в колонке Col.
+'                   Если Val не найден- возвращает 0. Поиск происходит в Range Rng
+' 27.9.12
+
+    Dim CheckCS
+    Dim N As Long
+    N = 1
+    Do
+        CSmatchInRange = 0
+        On Error Resume Next
+        CSmatchInRange = Application.Match(Val, Range(Rng.Cells(N, Col), Rng.Cells(BIG, Col)), 0) + N - 1
+        CheckCS = Rng.Cells(CSmatchInRange, Col)
+        On Error GoTo 0
+        If IsEmpty(CSmatchInRange) Or Not IsNumeric(CSmatchInRange) Or CSmatchInRange <= 0 Then Exit Function
+        N = CSmatchInRange + 1
+    Loop While Val <> CheckCS
+End Function
 Function CSmatch(Val, Col) As Double
 '
 ' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
@@ -720,19 +739,19 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
 
-    Dim i, DD, MM, yy As Integer
+    Dim i, dd, MM, yy As Integer
     Dim Dat As Date
     Dim D() As String
     
     For i = 1 To EOL(SheetN)
         D = split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
-            DD = D(0)
-            If DD < 1 Or DD > 31 Then GoTo Nxt
+            dd = D(0)
+            If dd < 1 Or dd > 31 Then GoTo Nxt
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
             yy = D(2)
-            Dat = DD & "." & MM & "." & yy
+            Dat = dd & "." & MM & "." & yy
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
 Nxt:
