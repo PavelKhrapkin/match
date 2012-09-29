@@ -30,6 +30,7 @@ Sub PaidSF_Fill()
 ' - PaidSF_Fill() - заполнение колонки А листа SF номерами строк - Платежей 1С
 '   2.8.12
 '  17.9.12 - StepIn
+'  28.9.12 - раскраска красным и голубым колонки Match
 
     StepIn
     
@@ -46,7 +47,12 @@ Sub PaidSF_Fill()
             Progress i / RepSF.EOL
             PayK = .Cells(i, SF_COD_COL)
             .Cells(i, 1) = CSmatch(PayK, PAYCODE_COL)
-        Next i
+            If InStr(.Cells(i, SF_SAIL_COL), "Лидер") <> 0 Then
+                .Cells(i, SF_MATCH_COL).Interior.Color = rgbLightBlue
+            ElseIf .Cells(i, SF_MATCH_COL) = 0 Then
+                .Cells(i, SF_MATCH_COL).Interior.Color = rgbRed
+            End If
+       Next i
     End With
 End Sub
 Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Integer)
@@ -60,7 +66,6 @@ Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Int
     Dim Rep1C As TOCmatch, RepSF As TOCmatch
     Dim i As Integer
 
-    PublicStepName = ""
     RepSF = GetRep(SheetSF)
     Rep1C = GetRep(Sheet1C)
     DB_1C.Sheets(Rep1C.SheetN).Activate

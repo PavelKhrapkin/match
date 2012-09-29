@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   24.9.12
+'   28.9.12
 
 Option Explicit
 
@@ -178,8 +178,10 @@ Public Const ADSKfrSF = "ADSKfrSF"  ' лист отчета по Autodesk
 Public Const SFresLines = 6 'размер пятки отчетов SalesForce
 
 '------------- SF - отчет Saleforce по Платежам --------------------
+Public Const SF_MATCH_COL = 1      ' колонка-Match - номер строки Платежа 1С
 Public Const SF_COD_COL = 2        ' колонка-код Платежа в SF
 Public Const SF_ACC1C_COL = 3      ' колонка-"Имя плательщика в 1С"
+Public Const SF_SAIL_COL = 9       ' колонка- Сотрудник, ответственный за проект
 Public Const SF_PAYID_COL = 18     ' колонка- Id Платежа в SF
     
 '------------- SFD - отчет Saleforce по Договорам ------------------
