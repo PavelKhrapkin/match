@@ -28,6 +28,8 @@ Attribute VB_Name = "MatchLib"
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
+' - CSmatch(Val,Col,Sht)        - Case Sensitive match возвращает номер строки с Val в
+'                                 колонке Col листа Sht. Если Val не найден- возвращает 0.
 ' - ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
 ' - SheetSort(SheetN, Col)      - сортировка листа SheetN по колонке Col
 ' - SheetDedup(SheetN, Col)     - cортировка и дедупликация SheetN по колонке Col
@@ -557,25 +559,6 @@ Sub RowDel(RowStr As String)
     StepIn
     ActiveSheet.Rows(RowStr).Delete
 End Sub
-Function CSmatchInRange(Val, Col As Long, Rng As Range) As Long
-'
-' - CSmatchInRange(Val,Col,Rng) - Case Sensitive match возвращает номер строки с Val в колонке Col.
-'                   Если Val не найден- возвращает 0. Поиск происходит в Range Rng
-' 27.9.12
-
-    Dim CheckCS
-    Dim N As Long
-    N = 1
-    Do
-        CSmatchInRange = 0
-        On Error Resume Next
-        CSmatchInRange = Application.Match(Val, Range(Rng.Cells(N, Col), Rng.Cells(BIG, Col)), 0) + N - 1
-        CheckCS = Rng.Cells(CSmatchInRange, Col)
-        On Error GoTo 0
-        If IsEmpty(CSmatchInRange) Or Not IsNumeric(CSmatchInRange) Or CSmatchInRange <= 0 Then Exit Function
-        N = CSmatchInRange + 1
-    Loop While Val <> CheckCS
-End Function
 Function CSmatch(Val, Col) As Double
 '
 ' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
@@ -593,6 +576,25 @@ Function CSmatch(Val, Col) As Double
         On Error GoTo 0
         If IsEmpty(CSmatch) Or Not IsNumeric(CSmatch) Or CSmatch <= 0 Then Exit Function
         N = CSmatch + 1
+    Loop While Val <> CheckCS
+End Function
+Function CSmatchSht(Val, Col, Sht) As Long
+'
+' - CSmatch(Val,Col,Sht) - Case Sensitive match возвращает номер строки с Val в колонке Col.
+'                   Если Val не найден- возвращает 0. Sht - лист для поиска Val.
+' 27.9.12
+
+    Dim CheckCS
+    Dim N As Long
+    N = 1
+    Do
+        CSmatchSht = 0
+        On Error Resume Next
+        CSmatchSht = Application.Match(Val, Range(Sht.Cells(N, Col), Sht.Cells(BIG, Col)), 0) + N - 1
+        CheckCS = Sht.Cells(CSmatchSht, Col)
+        On Error GoTo 0
+        If IsEmpty(CSmatchSht) Or Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
+        N = CSmatchSht + 1
     Loop While Val <> CheckCS
 End Function
 Sub ClearSheet(SheetN, HDR_Range As Range)
