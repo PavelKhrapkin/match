@@ -6,9 +6,12 @@ Attribute VB_Name = "WriteDL"
 ' - PaymentUpd(PayKod, ContrId) - Update Платежа - запись в SF через Data Loader
 ' - NewContract(Dogovor, MainDog, ContrK) - создание нового договора ContrK в SF
 ' - DogFormat(Wsheet) - форматирование листа Wsheet для вывода в Dogovor.csv
+' S WrCSV(SheetN, Directory, FileToWrite, Bat) - Шаг - запись CSV
 ' - WriteCSV(SheetN, FileName, ..)  - запись листа SheetN в файл для загрузки DL
+'
 '   23.9.2012 - выделение модуля AddressParse
-    
+'   30.9.12
+
 Option Explicit
 
 Const ACC_NEWDOG_COL = 7    ' колонка Клиент
@@ -283,12 +286,23 @@ Sub WrCSV(SheetN As String, Directory, FileToWrite, Bat)
 '
 ' S WrCSV(SheetN, Directory, FileToWrite, Bat) - Шаг - запись CSV
 '   23.9.12
+'   30.9.12 - запись числа новых строк в SheetN в WrProcResult
 
+    Dim NewLines As Long
+    
     DB_MATCH.Sheets(SheetN).Activate
     
-    ChDir Directory
-    WriteCSV SheetN, FileToWrite
-    Shell Bat
+    NewLines = ActiveSheet.Rows.Count
+    If NewLines <= 1 Then
+        ActiveSheet.Delete
+    Else
+        ChDir Directory
+        WriteCSV SheetN, FileToWrite
+        Shell Bat
+        LogWr "WrCSV> в '" & FileToWrite & "' записано " & NewLines & " строк."
+    End If
+    
+    WrProcResult NewLines
 End Sub
 Sub WriteCSV(SheetN, FileName, _
     Optional Row0 As Integer = 1, Optional Col0 As Integer = 1, _
@@ -319,7 +333,6 @@ Sub WriteCSV(SheetN, FileName, _
     Close #1
 '    MsgBox "Записано " & (RowLast - Row0 + 1) & " строк" & vbCrLf & "в файл " & Chr(171) & FileName & Chr(187)
 End Sub
-
 
 Sub WritePaid(FileName)
 '
