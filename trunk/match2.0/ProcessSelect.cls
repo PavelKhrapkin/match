@@ -25,14 +25,7 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
         With ActiveSheet
             i = ActiveCell.Row
             .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
-            If .Cells(i, ActiveCell.Column - 3) = PROC_START Then
-                Do While .Cells(i, PROC_STEP_COL) <> PROC_END
-                    i = i + 1
-                    .Cells(i, PROC_STEPDONE_COL) = ""
-                    .Cells(i, PROC_TIME_COL) = ""
-                    .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
-                Loop
-            End If
+            If .Cells(i, ActiveCell.Column - 3) = PROC_START Then ProcReset i
         End With
     End If
 End Sub
