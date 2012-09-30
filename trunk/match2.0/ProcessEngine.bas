@@ -10,14 +10,14 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 30.9.12 П.Л.Храпкин
+' 1.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
 ' - Exec(Step, iProc)   - вызов Шага Step по строке iProc таблицы Процессов
 ' - ToStep(Proc,[Step]) - возвращает номер строки таблицы Процессов
 ' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd таблицы Процессов
-' - ProcReset(iProc)    - сброс и новый запуск Процесса в строке iProc
+' S ProcReset(Proc)     - сброс и новый запуск Процесса Proc
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
 ' S Adapt(F) - запускает Адаптеры из формы F
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -46,7 +46,7 @@ Sub ProcStart(Proc As String)
     
     With DB_MATCH.Sheets(Process)
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
-        Do While Step <> PROC_END
+        Do While .Cells(i + 1, PROC_STEP_COL) <> PROC_END
             i = i + 1
             Step = .Cells(i, PROC_STEP_COL)
             If TraceStep Then
@@ -69,7 +69,7 @@ Sub ProcStart(Proc As String)
             End If
         Loop
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
-        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
+        .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
     End With
 ''    MS "<*> Процесс " & Proc & " завершен!"
     Exit Sub
@@ -253,12 +253,12 @@ Function ToProcEnd(ByVal iProc As Long) As Long
     
     P = GetRep(Process)
     ToProcEnd = iProc
-    Do While DB_MATCH.Sheets(Process).Cells(ProcEnd, PROC_STEP_COL) <> PROC_END
+    Do While DB_MATCH.Sheets(Process).Cells(ToProcEnd, PROC_STEP_COL) <> PROC_END
         ToProcEnd = ToProcEnd + 1
-        If ToProcEnd >= P.EOL Then GoTo Err
+        If ToProcEnd >= P.EOL Then GoTo ErrExit
     Loop
-    End Function
-Err:
+    Exit Function
+ErrExit:
     ErrMsg FATAL_ERR, "ToProcEnd> не достиг конца Процесса со строки iProc=" & iProc
 End Function
 Sub WrProcResult(NewLine As Long)
@@ -276,16 +276,16 @@ Sub WrProcResult(NewLine As Long)
         .Cells(i, PROC_PREVSTEP_COL).Interior.Color = rgbGreen
     End With
 End Sub
-Sub ProcReset(iProc As Long)
+Sub ProcReset(Proc As String)
 '
-' - ProcReset(iProc)    - сброс и новый запуск Процесса в строке iProc
-' 30.9.12
+' S ProcReset(Proc) - сброс и новый запуск Процесса Proc
+' 1.10.12
 
     Dim i As Long
     
     GetRep Process
     With DB_MATCH.Sheets(Process)
-        i = iProc
+        i = ToStep(Proc)
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Do While .Cells(i, PROC_STEP_COL) <> PROC_END
             i = i + 1
@@ -294,8 +294,19 @@ Sub ProcReset(iProc As Long)
             .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Loop
     
-        ProcStart .Cells(iProc, PROC_NAME_COL)
+        ProcStart Proc
     End With
+End Sub
+Sub CheckProc0(NewProcResult As String)
+'
+' S CheckProc0(NewProcResult)   - проверка, что вспомогательный Процесс не нашел
+'                                 новых "автоматических" записей в SF
+' 1/10/12
+
+    If NewProcResult <> "0" Then
+        ErrMsg FATAL_ERR, PublicProcName & ": CheckProc0> в результате не '0'"
+        End
+    End If
 End Sub
 Sub StepIn()
 '
