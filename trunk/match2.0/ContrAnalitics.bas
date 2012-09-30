@@ -6,7 +6,7 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   6.9.2012
+'   1.10.2012
 
 Option Explicit
 Sub NewContr()
@@ -40,24 +40,31 @@ Sub NewSheet(SheetName As String)
 ' 19.8.12
 '  3.9.12 - StepIn
 '  9.9.12 - displayAlert = False для Delete Sheet
+'  1.10.12 - bug fix
 
     StepIn
     
     Dim HDRform As String
-    Dim i As Long
+    Dim i As Long, Cols As Long
+    Dim Frm As Range
     
     HDRform = "HDR_" & SheetName
     
     With DB_MATCH
+        Set Frm = .Sheets(Header).Range(HDRform)
+        Cols = Frm.Columns.Count
         Application.DisplayAlerts = False
-        .Sheets(RepName).Delete
+        On Error Resume Next
+        .Sheets(SheetName).Delete
+        On Error GoTo 0
         Application.DisplayAlerts = True
-        .Sheets.Add After:=.Sheets(.Sheets.count)
-        .Sheets(.Sheets.count).Name = SheetName
+        .Sheets.Add After:=.Sheets(.Sheets.Count)
+        .Sheets(.Sheets.Count).Name = SheetName
         With .Sheets(SheetName)
             .Tab.Color = rgbLightBlue
-            For i = 1 To Range(HDRform).Columns.count
-                Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
+            For i = 1 To Cols
+''                Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
+                Frm.Columns(i).Copy Destination:=.Cells(1, i)
                 .Columns(i).ColumnWidth = .Cells(3, i)
             Next i
             .Rows(6).Delete
@@ -88,8 +95,8 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
     iNewLine = EOL(SheetNew, DB_MATCH) + 1
 
     With DB_MATCH.Sheets(SheetNew)
-        Set P = Range("HDR_" & SheetNew)
-        For i = 1 To P.Columns.count
+        Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
+        For i = 1 To P.Columns.Count
             X = SheetDB.Cells(DB_Line, P.Cells(4, i))
             
             Y = Adapter(P.Cells(5, i), X, P.Cells(6, i), IsErr)
