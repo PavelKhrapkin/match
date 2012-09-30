@@ -291,10 +291,11 @@ Sub WrCSV(SheetN As String, Directory, FileToWrite, Bat)
     Dim NewLines As Long
     
     DB_MATCH.Sheets(SheetN).Activate
-    
-    NewLines = ActiveSheet.Rows.Count
+    NewLines = EOL(SheetN, DB_MATCH)
     If NewLines <= 1 Then
+        Application.DisplayAlerts = False
         ActiveSheet.Delete
+        Application.DisplayAlerts = True
     Else
         ChDir Directory
         WriteCSV SheetN, FileToWrite
@@ -302,7 +303,7 @@ Sub WrCSV(SheetN As String, Directory, FileToWrite, Bat)
         LogWr "WrCSV> в '" & FileToWrite & "' записано " & NewLines & " строк."
     End If
     
-    WrProcResult NewLines
+    WrProcResult NewLines - 1
 End Sub
 Sub WriteCSV(SheetN, FileName, _
     Optional Row0 As Integer = 1, Optional Col0 As Integer = 1, _
