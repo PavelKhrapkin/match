@@ -13,9 +13,9 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
 '
 ' H SelectionChange Event Handler
 '   25/9/12
-'   30.9.12 - обработка голубой кнопки "Сброс процесса"
+'   1.10.12 - обработка голубой кнопки "Сброс процесса"
 
-    Dim i As Long
+    Dim i As Long, Proc As String
 
     If ActiveCell.Value = PROC_START Then
         TraceStop = False
@@ -24,8 +24,9 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
 '==== Сброс Процесса
         With ActiveSheet
             i = ActiveCell.Row
+            Proc = .Cells(i, PROC_NAME_COL)
             .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
-            If .Cells(i, ActiveCell.Column - 3) = PROC_START Then ProcReset i
+            If .Cells(i, ActiveCell.Column - 3) = PROC_START Then ProcReset Proc
         End With
     End If
 End Sub
