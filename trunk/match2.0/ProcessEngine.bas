@@ -10,12 +10,14 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 26.9.12 П.Л.Храпкин
+' 30.9.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
 ' - Exec(Step, iProc)   - вызов Шага Step по строке iProc таблицы Процессов
 ' - ToStep(Proc,[Step]) - возвращает номер строки таблицы Процессов
+' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd таблицы Процессов
+' - ProcReset(iProc)    - сброс и новый запуск Процесса в строке iProc
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
 ' S Adapt(F) - запускает Адаптеры из формы F
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -242,6 +244,59 @@ MyProc: .Cells(1, PROCESS_NAME_COL) = Proc      'имя Процесса
     ErrMsg FATAL_ERR, "ToStep: Обращение к несуществующему Шагу " & Step _
         & " Процесса " & Proc
 End Function
+Function ToProcEnd(ByVal iProc As Long) As Long
+'
+' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd
+' 30.9.12
+
+    Dim P As TOCmatch
+    
+    P = GetRep(Process)
+    ToProcEnd = iProc
+    Do While DB_MATCH.Sheets(Process).Cells(ProcEnd, PROC_STEP_COL) <> PROC_END
+        ToProcEnd = ToProcEnd + 1
+        If ToProcEnd >= P.EOL Then GoTo Err
+    Loop
+    End Function
+Err:
+    ErrMsg FATAL_ERR, "ToProcEnd> не достиг конца Процесса со строки iProc=" & iProc
+End Function
+Sub WrProcResult(NewLine As Long)
+'
+' - WrProcResult(NewLine)   - запись результата Шага в колонку PrevSter Процесса
+' 30.9.12
+
+    Dim i As Long
+    
+    With DB_MATCH.Sheets(Process)
+        i = ToStep(.Cells(1, PROCESS_NAME_COL))
+        i = ToProcEnd(i)
+    
+        .Cells(i, PROC_PREVSTEP_COL) = NewLine
+        .Cells(i, PROC_PREVSTEP_COL).Interior.Color = rgbGreen
+    End With
+End Sub
+Sub ProcReset(iProc As Long)
+'
+' - ProcReset(iProc)    - сброс и новый запуск Процесса в строке iProc
+' 30.9.12
+
+    Dim i As Long
+    
+    GetRep Process
+    With DB_MATCH.Sheets(Process)
+        i = iProc
+        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+        Do While .Cells(i, PROC_STEP_COL) <> PROC_END
+            i = i + 1
+            .Cells(i, PROC_STEPDONE_COL) = ""
+            .Cells(i, PROC_TIME_COL) = ""
+            .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+        Loop
+    
+        ProcStart .Cells(iProc, PROC_NAME_COL)
+    End With
+End Sub
 Sub StepIn()
 '
 ' - StepIn()    - начало исполнения Шага, т.е. активация и выбор нужных листов
@@ -440,13 +495,13 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Else
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup
         C2 = Cols(1)
-        Dim Lit As String
-        Const A = 64            ' String("A")-1
-        Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
-        Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
-        
+'        Dim Lit As String
+'        Const A = 64            ' String("A")-1
+'        Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
+ '       Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
+ '       Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN)
         S = ""
-        N = CSmatchInRange(X, C1, Rng)
+        N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         If N <> 0 Then S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
 '        S = ""
 '        On Error Resume Next
