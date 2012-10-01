@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 27.9.2012
+' П.Л.Храпкин, А.Пасс 1.10.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -303,6 +303,10 @@ Sub InsMyCol(F, Optional FS As String = "")
 '  26.8.12 - RowHeight шапки как в шаблоне; если строке 2 "V" - копируем шапку
 '  31.8.12 - внедрение StepIn
 '  11.9.12 - перенос форм в Headers файла match.xlsm
+'  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
+
+
+    Const COPY_HDR = "CopyHdr"
 
     StepIn
     
@@ -321,7 +325,7 @@ Sub InsMyCol(F, Optional FS As String = "")
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
             .Columns(i).ColumnWidth = FF.Cells(3, i)
-            If FF.Cells(2, i) = "V" Then .Cells(1, i) = FF.Cells(1, i)
+            If FF.Cells(2, i) = COPY_HDR Then .Cells(1, i) = FF.Cells(1, i)
         Next i
 '---- копируем колонки MyCol от верха до EOL
         For i = 1 To RepTOC.MyCol
