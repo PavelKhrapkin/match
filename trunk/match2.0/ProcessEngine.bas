@@ -437,6 +437,12 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
         Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
         On Error GoTo 0
     Case "Dec": Adapter = Dec(X)
+    Case "GetCol":
+        If X = "" Then
+            Adapter = ""
+        Else
+            Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
+        End If
     Case "CurISO":
         Adapter = CurISO(X)
     Case "CurRate": Adapter = Dec(CurRate(X))
