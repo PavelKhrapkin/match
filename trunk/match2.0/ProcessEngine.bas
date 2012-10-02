@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 1.10.12 П.Л.Храпкин
+' 3.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -390,6 +390,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 ' 4.9.12
 ' 6.9.12 - bug fix
 '25.9.12 - Dec(CurRate)
+' 3.10.12 - Адаптер GetCol с синтаксисом ' GetCol/1C.xlsx,Платежи,5/SF:2:11
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -440,8 +441,11 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Case "GetCol":
         If X = "" Then
             Adapter = ""
-        Else
+        Else                ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
             Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
+            If UBound(Tmp) > 1 Then
+                Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
+            End If
         End If
     Case "CurISO":
         Adapter = CurISO(X)
@@ -512,18 +516,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Else
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup
         C2 = Cols(1)
-'        Dim Lit As String
-'        Const A = 64            ' String("A")-1
-'        Lit = Chr(C1 + A) & ":" & Chr(C2 + A)
- '       Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Range(Lit)
- '       Set Rng = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN)
         S = ""
         N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         If N <> 0 Then S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
-'        S = ""
-'        On Error Resume Next
-'        S = WorksheetFunction.VLookup(X, Rng, C2 - C1 + 1, False)
-'        On Error GoTo 0
     End If
 '--- обработка группы 2 -- если S=""
     If S = "" Then
