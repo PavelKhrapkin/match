@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 1.10.2012
+' П.Л.Храпкин, А.Пасс 3.10.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -744,10 +744,13 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
+'   3.10.12 - GetRep вместо EOL
 
     Dim i, dd, MM, yy As Integer
     Dim Dat As Date
     Dim D() As String
+    
+    Dim R As TOCmatch
     
     For i = 1 To EOL(SheetN)
         D = split(Sheets(SheetN).Cells(i, Col), ".")
