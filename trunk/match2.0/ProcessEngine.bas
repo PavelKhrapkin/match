@@ -313,7 +313,7 @@ Sub StepIn()
 ' - StepIn()    - начало исполнения Шага, т.е. активация и выбор нужных листов
 '   1.9.12
 
-    Const FILE_PARAMS = 5   'максимальное количество файлов в Шаге
+    Const FILE_PARAMS = 5   ' максимальное количество файлов в Шаге
     
     Dim iStep As Integer, i As Long
     Dim P As TOCmatch, S As TOCmatch, Rep As String
@@ -334,9 +334,75 @@ Sub StepIn()
         Next i
     End With
 End Sub
+Sub xAdapt(F As String, WrDoc As String, iLine As Long)
+'
+' - xAdapt(F) - запускает Адаптеры из формы F, обрабатывая данные с экрана
+'   4.10.12
+
+    Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
+    Const PTRN_COLS = 4  ' смещение строки номеров колонок в Шаблоне
+
+    Dim FF As Range                             ' обрабатываемый Шапблон
+    Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
+    Dim iX As Long                              ' номер колонки - значение в строке PTRN_COLS
+    Dim X As String                             ' параметр Адаптера
+    Dim Rqst As String                          ' строка - обращение к Адаптеру
+    Dim F_rqst As String                        '
+    Dim Y As String
+    
+    NewSheet WP
+    
+    Set FF = DB_MATCH.Sheets(WP).Range(F)
+
+    With FF
+        For iRow = 1 To .Rows.Count Step PTRN_LNS
+            For iCol = 1 To .Columns.Count
+                iX = FF(iRow + PTRN_COLS, iCol)
+                If iX > 0 Then
+                    X = ActiveSheet.Cells(i, iX)
+                    Rqst = FF.Cells(5, iCol)
+                    F_rqst = FF.Cells(6, iCol)
+                    
+                    Y = Adapter(Rqst, X, F_rqst, IsErr)
+                    
+                    If Not IsErr Then ActiveSheet.Cells(i, iCol) = Y
+                ElseIf iX < 0 Then
+                    Exit For
+                End If
+            Next iCol
+        Next iRow
+    End With
+    
+'=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
+    
+'''''''''''''''''''''''''''''''''''
+    End '''  остановка VBA ''''''''
+End Sub
+Function AdaptLine(XXX, FF As Range, F_Row As Integer) As Boolean
+'
+'
+'
+            
+    With FF
+        For iCol = 1 To .Columns.Count
+            iX = FF(F_Row + PTRN_COLS, iCol)
+            If iX > 0 Then
+                X = Sht.Cells(i, iX)
+                Rqst = FF.Cells(5, Col)
+                F_rqst = FF.Cells(6, Col)
+                
+                Y = Adapter(Rqst, X, F_rqst, IsErr)
+                
+                If Not IsErr Then .Cells(i, Col) = Y
+            ElseIf iX < 0 Then
+                Exit For
+            End If
+        Next iCol
+    End With
+End Function
 Sub Adapt(F As String)
 '
-' S Adapt(F) - запускает Адаптеры из формы F в match.xlsm
+' S Adapt(F) - запускает Адаптеры из формы F, осуществляя проход по Документу
 '
 ' Форма F имеет вид:
 '   Шапка   - заголовок колонки. Шапка записывается и форматируется Шагом InsMyCol
