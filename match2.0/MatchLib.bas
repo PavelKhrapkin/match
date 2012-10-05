@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 3.10.2012
+' П.Л.Храпкин, А.Пасс 5.10.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -483,7 +483,14 @@ Function CurRate(Cur) As Double
 
     CurRate = 1
     If InStr(LCase(Cur), "руб") > 0 Or Trim(Cur) = "" Then Exit Function
+
+    On Error GoTo Col2
     S = WorksheetFunction.VLookup(Cur, DB_MATCH.Sheets(We).Range("RUB_Rate"), 3, False)
+    GoTo Convert
+GoTo Col2:
+    On Error GoTo 0
+    S = WorksheetFunction.VLookup(Cur, DB_MATCH.Sheets(We).Range("RUB_Rate_2"), 2, False)
+Convert:
     CurRate = Replace(S, ".", ",")
 End Function
 Function CurISO(Cur1C)
@@ -751,8 +758,9 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     Dim D() As String
     
     Dim R As TOCmatch
+    R = GetRep(SheetN)
     
-    For i = 1 To EOL(SheetN)
+    For i = 1 To R.EOL
         D = split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             dd = D(0)
