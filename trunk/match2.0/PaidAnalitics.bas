@@ -6,15 +6,64 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   30.5.2012
+'   6.10.2012
 
 Option Explicit
 
 Const MinNewOpp = 120000
 Const MinNewOppDialog = 200000  ' надо эти параметры запрашивать в форме
+Sub NewPaidOpp()
+'
+' S NewPaidDog()    - новые Платежи по существующим Проектам
+'   6.10.12
+
+    StepIn
+    
+    Dim P As TOCmatch, S As TOCmatch
+    Dim i As Long
+    
+    Dim Dat As Date         'поле - "Дата прих.денег"
+    Dim Acc As String       'поле - "Клиент"
+    Dim Rub As Variant      'поле - "Итог руб"
+    Dim Sale As String      'поле - "Продавец"
+    Dim Good As String      'поле - "Товары" листа Платежей, спецификация
+    Dim T As String         ' = Тип Товара по Спецификации
+    Dim Dogovor As String   'поле - "Договор"
+    Dim MainDog As String   'поле - "Осн.договор"
+    Dim ContrK As String    ' = форма <Осн.договор>/<Договор>
+    Dim OppId As String     ' = Id Проекта в SF
+    
+    P = GetRep(PAY_SHEET)
+    S = GetRep(SFopp)
+    EOL_SFopp = S.EOL
+    With DB_1C.Sheets(PAY_SHEET)
+        For i = 2 To P.EOL
+            Progress i / P.EOL
+            If .Cells(i, PAYINSF_COL) <> 1 _
+                    And .Cells(i, PAYISACC_COL) <> "" _
+                    And .Cells(i, PAYDOC_COL) <> "" Then
+                Acc = Compressor(.Cells(i, PAYACC_COL)) ' Организация
+                Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
+                Sale = .Cells(i, PAYSALE_COL)   ' Продавец
+                Good = .Cells(i, PAYGOOD_COL)   ' Товар
+                T = GoodType(Good)              ' Тип товара по Счету
+                Rub = .Cells(i, PAYRUB_COL)     ' сумма Платежа руб
+                Dogovor = .Cells(i, PAYDOGOVOR_COL)
+                MainDog = Mid(.Cells(i, PAYOSNDOGOVOR_COL), 9)
+                ContrK = ContrCod(Dogovor, MainDog)
+                
+                OppId = IsOpp(Sale, Acc, T, Rub, Dat, ContrK) ' Id Проекта в SF
+
+                If OppId <> "" Then
+                    WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), i
+                End If
+            End If
+        Next i
+    End With
+End Sub
 Sub NewPaidDog()
 '
-' S
+' S NewPaidDog()    - новые плотежи по Договору
 '
     StepIn
     
@@ -46,8 +95,8 @@ Sub PaidHandling()
     Dim Acc As String       'поле - "Клиент"
     Dim Rub As Variant      'поле - "Итог руб"
     Dim Sale As String      'поле - "Продавец"
-    Dim good As String      'поле - "Товары" листа Платежей, спецификация
-    Dim t As String         ' = Тип Товара по Спецификации
+    Dim Good As String      'поле - "Товары" листа Платежей, спецификация
+    Dim T As String         ' = Тип Товара по Спецификации
     Dim Sbs As Boolean      ' = True если Спецификация содержит Подписки
     Dim Dogovor As String   'поле - "Договор"
     Dim MainDog As String   'поле - "Осн.договор"
@@ -92,9 +141,9 @@ Sub PaidHandling()
                     Trim(.Cells(i, PAYSALE_COL)) <> "" Then
                 Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
                 Sale = .Cells(i, PAYSALE_COL)   ' Продавец
-                good = .Cells(i, PAYGOOD_COL)   ' Товар
-                t = GoodType(good)              ' Тип товара по Счету
-                Sbs = IsSubscription(good, t)   ' Подписка?
+                Good = .Cells(i, PAYGOOD_COL)   ' Товар
+                T = GoodType(Good)              ' Тип товара по Счету
+                Sbs = IsSubscription(Good, T)   ' Подписка?
                 Rub = .Cells(i, PAYRUB_COL)     ' сумма Платежа руб
                 Dogovor = .Cells(i, PAYDOGOVOR_COL)
                 MainDog = Mid(.Cells(i, PAYOSNDOGOVOR_COL), 9)
@@ -108,9 +157,9 @@ Sub PaidHandling()
                     
                     ts1 = Timer                     ' tttttttttttttttttttttttttttttttttttttt
                     
-                    OppId = IsOpp(Sale, Acc, t, Rub, Dat, ContrK) ' Id Проекта в SF
+                    OppId = IsOpp(Sale, Acc, T, Rub, Dat, ContrK) ' Id Проекта в SF
                     If OppId = "" Then
-                        NewOpp Acc, ContrK, Dat, Sale, Rub, "RUB", t, Sbs
+                        NewOpp Acc, ContrK, Dat, Sale, Rub, "RUB", T, Sbs
                     Else
             '>>>>  занесение нового Платежа
                         NewPay i, OppNbyId(OppId), ContrId
@@ -287,7 +336,7 @@ Sub NewOpp(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
         End If
     End With
 End Sub
-Function IsOpp(Sale, Account, t, Rub, Dat, ContrCod)
+Function IsOpp(Sale, Account, T, Rub, Dat, ContrCod)
 '
 ' проверка, есть ли в Организации Account не полностью оплаченный проект типа Т.
 ' Если Проект не доплачен на сумму, меньшую Rub - возвращает Id этого проекта.
@@ -309,6 +358,7 @@ Function IsOpp(Sale, Account, t, Rub, Dat, ContrCod)
 '  25.4.12 - Платеж с Договором обрабатывается в отдельном проходе по Проектам
 '  30.5.12 - сообщение о фатальной ошибке "Недопустимый Продавец с Товаром"
 '  31.5.12 - разрешено помещать Платеж в Close Lost Проект
+'   5.10.12- ссылка на We с DB_MATCH
 
     Dim i, OppToPayRub, OppCur, OppN, ContrOpp, OppName, OppId
     Dim OppCloseDate As Date, OppCrDat As Date
@@ -317,14 +367,14 @@ Function IsOpp(Sale, Account, t, Rub, Dat, ContrCod)
     
     IsOpp = ""
     
-    If t = "" Then Exit Function
-    If Not IsRightSale(Sale, t) Then
-        ErrMsg FATAL_ERR, "Недопустимый Продавец " & Sale & " с товаром " & t
+    If T = "" Then Exit Function
+    If Not IsRightSale(Sale, T) Then
+        ErrMsg FATAL_ERR, "Недопустимый Продавец " & Sale & " с товаром " & T
         Exit Function
     End If
     
     Dim SeekOppType As String, OppT As String
-    SeekOppType = WorksheetFunction.VLookup(t, Range("OppTypeRng"), 4, False)
+    SeekOppType = WorksheetFunction.VLookup(T, DB_MATCH.Sheets(We).Range("OppTypeRng"), 4, False)
  
     With DB_SFDC.Sheets(SFopp)
 '-- если Проект связан с Договором -- проверим, что связь с ContrCod есть
@@ -384,7 +434,7 @@ Found:
         LogWr ErMsg & OppId & "(" & OppN & ") Дата " _
             & DDMMYYYY(Dat) & " позже Даты закрытия Проекта " & DDMMYYYY(OppCloseDate)
     If InStr(OppT, SeekOppType) = 0 Then _
-        LogWr ErMsg & OppId & "(" & OppN & ") тип Платежа '" & t _
+        LogWr ErMsg & OppId & "(" & OppN & ") тип Платежа '" & T _
             & "' не соответствует типу Проекта '" & OppT & "'"
 End Function
 Sub ContrOppLink(iPay, ContrK, ContrId, OppId)
@@ -488,6 +538,7 @@ Function GoodType(G) As String
 ' возвращает тип товара G по таблице в We.
 ' если подходящий тип не найден - ошибка и GoodType = ""
 '   19.2.2012
+'   5.10.12 - полная ссылка с DB_MATCH на We
 
     Dim j As Integer
     Dim iG As Range
@@ -495,20 +546,17 @@ Function GoodType(G) As String
     
     GoodType = ""
     If G = "" Then Exit Function
-    For Each iG In Range("Goods").Rows
+    For Each iG In DB_MATCH.Sheets(We).Range("Goods").Rows
         GoodType = iG.Cells(1, 1)
         S = iG.Cells(1, 2)
         Goods = split(S, ",")   ' в Goods список товаров данного типа
-'If GoodType = "О П Л А Т А" Then
-'j = j
-'End If
         For j = 0 To UBound(Goods)
             If InStr(G, Trim(Goods(j))) > 0 Then Exit Function
         Next j
     Next iG
     ErrMsg FATAL_ERR, "Неизвестный тип товара " & G
 End Function
-Function IsSubscription(good, GT) As Boolean
+Function IsSubscription(Good, GT) As Boolean
 '
 ' возвращает True, если товар - подписка/Subscription/Maintanence
 ' в зависимости от типа товара GT. Иначе - поставка лицензии, т.е. False.
@@ -539,7 +587,7 @@ Function IsSubscription(good, GT) As Boolean
     Dim i As Integer
     Dim SbsWords() As String
     Dim LGood As String
-    LGood = LCase$(good)
+    LGood = LCase$(Good)
     
     SbsWords = split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)

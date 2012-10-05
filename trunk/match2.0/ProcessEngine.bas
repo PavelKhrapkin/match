@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 3.10.12 П.Л.Храпкин
+' 6.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -30,6 +30,14 @@ Option Explicit
 Const TRACE_STEP = "Trace"  ' специальный Шаг Trace для трассирования и отладки
 Public TraceStep As Boolean
 Public TraceStop As Boolean
+
+'----- работа с Адаптерами ---------------
+Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
+
+Const PTRN_COLS = 4  ' смещение строки номеров колонок в Шаблоне
+Const PTRN_ADAPT = 5 ' смещение строки вызова Адаптеров в Шаблоне
+Const PTRN_FETCH = 6 ' смещение строки вызова Fetch - извлечения из Док-в в Шаблоне
+Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
 Sub ProcStart(Proc As String)
 '
@@ -334,13 +342,51 @@ Sub StepIn()
         Next i
     End With
 End Sub
+Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
+'
+' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
+'                                            из строки DB_Line листа SheetDB
+'   * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
+'     Эти строки хранятся в Range с именем "HDR_" & SheetNew в Forms или Headers
+'   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
+'   * В строке формы под Адаптером можно указать параметры во внешних Документах
+' 6.9.2012
+
+    Dim P As Range
+    Dim iNewLine As Long    '= номер строки в SheetNew
+    Dim i As Long
+    Dim X As String         '= обрабатываемое значение в SheetDB
+    Dim sX As String        'поле в строке PTRN_COLS Шаблона
+    Dim Y As String         '= результат работы Адаптера
+    Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
+    
+    iNewLine = EOL(SheetNew, DB_MATCH) + 1
+
+    With DB_MATCH.Sheets(SheetNew)
+        Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
+        For i = 1 To P.Columns.Count
+            sX = P.Cells(PTRN_COLS, i)
+            If sX = EXT_PAR Then
+                X = ExtPar
+            Else
+                X = SheetDB.Cells(DB_Line, sX)
+            End If
+            
+            Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
+            
+            If IsErr Then
+                .Rows(iNewLine).Delete
+                Exit For
+            Else
+                .Cells(iNewLine, i) = Y
+            End If
+        Next i
+    End With
+End Sub
 Sub xAdapt(F As String, WrDoc As String, iLine As Long)
 '
 ' - xAdapt(F) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '   4.10.12
-
-    Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
-    Const PTRN_COLS = 4  ' смещение строки номеров колонок в Шаблоне
 
     Dim FF As Range                             ' обрабатываемый Шапблон
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
@@ -360,8 +406,8 @@ Sub xAdapt(F As String, WrDoc As String, iLine As Long)
                 iX = FF(iRow + PTRN_COLS, iCol)
                 If iX > 0 Then
                     X = ActiveSheet.Cells(i, iX)
-                    Rqst = FF.Cells(5, iCol)
-                    F_rqst = FF.Cells(6, iCol)
+                    Rqst = FF.Cells(PTRN_ADAPT, iCol)
+                    F_rqst = FF.Cells(PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
@@ -433,11 +479,11 @@ Sub Adapt(F As String)
         For i = 2 To R.EOL
             Progress i / R.EOL
             For Col = 1 To FF.Columns.Count
-                iX = FF(4, Col)
+                iX = FF(PTRN_COLS, Col)
                 If iX > 0 Then
                     X = .Cells(i, iX)
-                    Rqst = FF.Cells(5, Col)
-                    F_rqst = FF.Cells(6, Col)
+                    Rqst = FF.Cells(PTRN_ADAPT, Col)
+                    F_rqst = FF.Cells(PTRN_FETCH, Col)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
