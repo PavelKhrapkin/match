@@ -143,7 +143,7 @@ Sub Exec(Step, iProc)
 '  26.8.12 - окраска строки в Process для успешно выполненного Шага
 '   1.9.12 - ревизия кода
        
-    Dim Code As String, Proc As String
+    Dim Code As String
     Dim R As TOCmatch       '= обрабатываемый Документ - отчет
             
     If Step = PROC_END Or Step = "" Then Exit Sub
@@ -198,6 +198,43 @@ Sub Exec(Step, iProc)
             Application.Run Code
         End If
 '-- запись отметки о Шаге в TOCmatch и в таблицу Процессов
+        StepOut Step, iProc
+    End With
+End Sub
+Sub StepIn()
+'
+' - StepIn()    - начало исполнения Шага, т.е. активация и выбор нужных листов
+'   1.9.12
+
+    Const FILE_PARAMS = 5   ' максимальное количество файлов в Шаге
+    
+    Dim iStep As Integer, i As Long
+    Dim P As TOCmatch, S As TOCmatch, Rep As String
+    
+    GetRep Process
+    With DB_MATCH.Sheets(Process)
+        PublicProcName = .Cells(1, PROCESS_NAME_COL)
+        PublicStepName = .Cells(1, STEP_NAME_COL)
+        
+        iStep = ToStep(PublicProcName, PublicStepName)
+        
+        For i = FILE_PARAMS To 1 Step -1
+            Rep = .Cells(iStep, i + PROC_REP1_COL - 1)
+            If Rep <> "" Then
+                S = GetRep(Rep)
+                Workbooks(S.RepFile).Sheets(S.SheetN).Activate
+            End If
+        Next i
+    End With
+End Sub
+Sub StepOut(Step, iProc)
+'
+' - StepOut()   - завершение выполнения Шага с записью в TOCmatch
+'   8/10/12
+
+    Dim Proc As String, R As TOCmatch
+    
+    With DB_MATCH.Sheets(Process)
         Application.StatusBar = False
         .Activate
         .Cells(iProc, PROC_STEPDONE_COL) = "1"  ' Done = "1" - Шаг выполнен
@@ -316,32 +353,6 @@ Sub CheckProc0(NewProcResult As String)
         End
     End If
 End Sub
-Sub StepIn()
-'
-' - StepIn()    - начало исполнения Шага, т.е. активация и выбор нужных листов
-'   1.9.12
-
-    Const FILE_PARAMS = 5   ' максимальное количество файлов в Шаге
-    
-    Dim iStep As Integer, i As Long
-    Dim P As TOCmatch, S As TOCmatch, Rep As String
-    
-    GetRep Process
-    With DB_MATCH.Sheets(Process)
-        PublicProcName = .Cells(1, PROCESS_NAME_COL)
-        PublicStepName = .Cells(1, STEP_NAME_COL)
-        
-        iStep = ToStep(PublicProcName, PublicStepName)
-        
-        For i = FILE_PARAMS To 1 Step -1
-            Rep = .Cells(iStep, i + PROC_REP1_COL - 1)
-            If Rep <> "" Then
-                S = GetRep(Rep)
-                Workbooks(S.RepFile).Sheets(S.SheetN).Activate
-            End If
-        Next i
-    End With
-End Sub
 Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
@@ -369,7 +380,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
             If sX = EXT_PAR Then
                 X = ExtPar
             Else
-                X = SheetDB.Cells(DB_Line, sX)
+                X = SheetDB.Cells(DB_Line, CLng(sX))
             End If
             
             Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
@@ -383,35 +394,39 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
         Next i
     End With
 End Sub
-Sub xAdapt(F As String, WrDoc As String, iLine As Long)
+Sub xAdapt(F As String)  ''', WrDoc As String, iLine As Long)
 '
 ' - xAdapt(F) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '   4.10.12
 
-    Dim FF As Range                             ' обрабатываемый Шапблон
+    Dim FF As Range                             ' обрабатываемый Шаблон
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim iX As Long                              ' номер колонки - значение в строке PTRN_COLS
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
     Dim F_rqst As String                        '
     Dim Y As String
+    Dim IsErr As Boolean
+    Dim iLine As Long                           ' номер строки в ActiveSheet
     
     NewSheet WP
     
     Set FF = DB_MATCH.Sheets(WP).Range(F)
-
+    
     With FF
+        iLine = .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
         For iRow = 1 To .Rows.Count Step PTRN_LNS
             For iCol = 1 To .Columns.Count
                 iX = FF(iRow + PTRN_COLS, iCol)
                 If iX > 0 Then
-                    X = ActiveSheet.Cells(i, iX)
+                
+                    X = ActiveSheet.Cells(iLine, iX)
                     Rqst = FF.Cells(PTRN_ADAPT, iCol)
                     F_rqst = FF.Cells(PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
-                    If Not IsErr Then ActiveSheet.Cells(i, iCol) = Y
+                    If Not IsErr Then ActiveSheet.Cells(iLine, iCol) = Y
                 ElseIf iX < 0 Then
                     Exit For
                 End If
@@ -423,6 +438,27 @@ Sub xAdapt(F As String, WrDoc As String, iLine As Long)
     
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
+'''''''''''''''''''''''''''''''''''
+End Sub
+Sub xAdapt_Continue(Button As String)
+'
+' * xAdapt_Continue(Button) - продолжение работы Adapt после нажатия кнопки Button
+'                             Сюда передается управления из WP_Select_Button.
+' 8/10/12
+
+    Dim Step As String, iLine As Long
+        
+    iLine = ActiveSheet.Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
+    
+    Select Case Button
+    Case "STOP":
+        Step = DB_MATCH.Sheets(Process).Cells(STEP_NAME_COL, 1)
+        StepOut Step, ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
+    Case "->":
+        WP_PdOpp WP, iLine
+    Case "NewOpp":
+    Case "Проект":
+    End Select
 End Sub
 Function AdaptLine(XXX, FF As Range, F_Row As Integer) As Boolean
 '
