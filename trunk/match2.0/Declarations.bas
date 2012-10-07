@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   5.10.12
+'   8.10.12
 
 Option Explicit
 
@@ -478,7 +478,8 @@ Public Const NEWSN_CONTRADSK_COL = 2    ' ContrADSK
 Public Const NEWSN_ACCN_COL = 3         ' ФссТ
 
 '----------------------------------------------------------------------------
-Public Const WP = "WP"          ' лист WP
+Public Const WP = "WP"                  ' лист WP
+Public Const WP_CONTEXT_LINE = 4, WP_CONTEXT_COL = 4
 
 '****************** Лист We - Словари, таблицы *************************
 Public Const We = "We"  ' Лист: наши юр.лица, Продавцы, коды валют, типы товаров
