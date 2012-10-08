@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 6.10.12 П.Л.Храпкин
+' 8.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -394,10 +394,11 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
         Next i
     End With
 End Sub
-Sub xAdapt(F As String)  ''', WrDoc As String, iLine As Long)
+Sub xAdapt(F As String, iLine As Long)
 '
-' - xAdapt(F) - запускает Адаптеры из формы F, обрабатывая данные с экрана
-'   4.10.12
+' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
+'                      по строке номер iLine в ActiveSheet
+'   8.10.12
 
     Dim FF As Range                             ' обрабатываемый Шаблон
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
@@ -407,22 +408,19 @@ Sub xAdapt(F As String)  ''', WrDoc As String, iLine As Long)
     Dim F_rqst As String                        '
     Dim Y As String
     Dim IsErr As Boolean
-    Dim iLine As Long                           ' номер строки в ActiveSheet
     
     NewSheet WP
     
-    Set FF = DB_MATCH.Sheets(WP).Range(F)
-    
-    With FF
-        iLine = .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
-        For iRow = 1 To .Rows.Count Step PTRN_LNS
-            For iCol = 1 To .Columns.Count
-                iX = FF(iRow + PTRN_COLS, iCol)
+    With DB_MATCH.Sheets(WP)
+        .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
+        For iRow = 2 To .UsedRange.Rows.Count Step PTRN_LNS
+            For iCol = 4 To .UsedRange.Columns.Count
+                iX = .Cells(iRow + PTRN_COLS, iCol)
                 If iX > 0 Then
                 
                     X = ActiveSheet.Cells(iLine, iX)
-                    Rqst = FF.Cells(PTRN_ADAPT, iCol)
-                    F_rqst = FF.Cells(PTRN_FETCH, iCol)
+                    Rqst = .Cells(iRow + PTRN_ADAPT, iCol)
+                    F_rqst = .Cells(iRow + PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
