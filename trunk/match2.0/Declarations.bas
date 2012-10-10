@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'   8.10.12
+'  10.10.12
 
 Option Explicit
 
@@ -17,12 +17,14 @@ Public Const F_1C = "1C.xlsx"
 Public Const F_SFDC = "SFDC.xlsx"
 Public Const F_ADSK = "ADSK.xlsm"
 Public Const F_STOCK = "Stock.xlsx"
+Public Const F_TMP = "W_TMP.xlsm"   '.xlsm потому, что содержит макросы
 
 Public DB_MATCH As Workbook 'отчеты и таблицы match
 Public DB_1C As Workbook    'отчеты 1C
 Public DB_SFDC As Workbook  'отчеты Salesforce
 Public DB_ADSK As Workbook  'отчеты Autodesk
 Public DB_STOCK As Workbook 'отчеты по Складу и Заказам
+Public DB_TMP As Workbook   'рабочий файл для записи "голубых" листов и WP
 
 '==================== Процессы на листе Process ====================
 Public Const Process = "Process"    'Каталог и контекст всех процессов

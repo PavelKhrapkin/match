@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 10.10.12 П.Л.Храпкин
+' 11.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -400,7 +400,9 @@ Sub xAdapt(F As String, iLine As Long)
 '
 ' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '                      по строке номер iLine в ActiveSheet
-'   10.10.12
+'   11.10.12
+
+    Const WP_PROTOTYPE = "WP_Prototype"
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
@@ -411,18 +413,28 @@ Sub xAdapt(F As String, iLine As Long)
     Dim F_rqst As String                        '
     Dim Y As String
     Dim IsErr As Boolean
+        
+    Set DB_TMP = FileOpen(F_TMP)
+    Application.DisplayAlerts = False
+    On Error Resume Next
+    DB_TMP.Sheets(WP).Delete
+    On Error GoTo 0
+    Application.DisplayAlerts = True
     
-    NewSheet WP
+    DB_MATCH.Activate
+    DB_MATCH.Sheets("WP_Prototype").Copy Before:=DB_TMP.Sheets(1)
+    ActiveSheet.Name = WP
     
-    With DB_MATCH.Sheets(WP)
+    With DB_TMP.Sheets(WP)
+        .Rows("1:4").Delete
+        .Tab.Color = rgbBlue
+        
+''        Code = "'" & DirDBs & F_MATCH & "'!" & Step
+
+        .Cells(1, 1) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         For iRow = 2 To .UsedRange.Rows.Count Step PTRN_LNS
             PtrnType = .Cells(iRow + 1, 2)
-''            If iRow = 2 Then
-''                PtrnType = .Cells(3, 2)
-''            Else
-''                PtrnType = .Cells(iRow + 1, 2)
-''            End If
             
             R = GetRep(.Cells(iRow + 1, 1))
             Workbooks(R.RepFile).Sheets(R.SheetN).Activate
@@ -478,6 +490,8 @@ Sub xAdapt_Continue(Button As String)
 
     Dim Step As String, iLine As Long
         
+    GetRep (Process)
+    DB_MATCH.Activate
     iLine = ActiveSheet.Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
     
     Select Case Button
