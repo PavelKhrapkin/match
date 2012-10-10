@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 8.10.12 П.Л.Храпкин
+' 10.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -34,6 +34,8 @@ Public TraceStop As Boolean
 '----- работа с Адаптерами ---------------
 Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
 
+Const PTRN_VALUE = 2 ' смещение строки - значения - Value в Шаблоне
+Const PTRN_WIDTH = 3 ' смещение строки - ширина колонок в Шаблоне
 Const PTRN_COLS = 4  ' смещение строки номеров колонок в Шаблоне
 Const PTRN_ADAPT = 5 ' смещение строки вызова Адаптеров в Шаблоне
 Const PTRN_FETCH = 6 ' смещение строки вызова Fetch - извлечения из Док-в в Шаблоне
@@ -398,10 +400,11 @@ Sub xAdapt(F As String, iLine As Long)
 '
 ' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '                      по строке номер iLine в ActiveSheet
-'   8.10.12
+'   10.10.12
 
-    Dim FF As Range                             ' обрабатываемый Шаблон
+    Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
+    Dim PtrnType As String                      ' поле Тип Шаблона
     Dim iX As Long                              ' номер колонки - значение в строке PTRN_COLS
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
@@ -414,21 +417,50 @@ Sub xAdapt(F As String, iLine As Long)
     With DB_MATCH.Sheets(WP)
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         For iRow = 2 To .UsedRange.Rows.Count Step PTRN_LNS
+            PtrnType = .Cells(iRow + 1, 2)
+''            If iRow = 2 Then
+''                PtrnType = .Cells(3, 2)
+''            Else
+''                PtrnType = .Cells(iRow + 1, 2)
+''            End If
+            
+            R = GetRep(.Cells(iRow + 1, 1))
+            Workbooks(R.RepFile).Sheets(R.SheetN).Activate
             For iCol = 4 To .UsedRange.Columns.Count
                 iX = .Cells(iRow + PTRN_COLS, iCol)
                 If iX > 0 Then
-                
-                    X = ActiveSheet.Cells(iLine, iX)
+
+'''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
+'''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
+'''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
+'''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
+            
+                    Select Case PtrnType
+                    Case "Кнопки":
+                        '''' не написан
+                    Case "iLine":
+                        X = ActiveSheet.Cells(iLine, iX)
+                    Case "Шаблон":
+                        X = .Cells(iRow + 2, iX)
+                    Case "SelectOpp":
+ '''                       еще не написан
+                    Case Else:
+                        ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+                    End Select
                     Rqst = .Cells(iRow + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow + PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
-                    If Not IsErr Then ActiveSheet.Cells(iLine, iCol) = Y
+                    If Not IsErr Then .Cells(iRow + PTRN_VALUE, iCol) = Y
                 ElseIf iX < 0 Then
                     Exit For
                 End If
             Next iCol
+            .Rows(iRow + PTRN_COLS).Hidden = True
+            .Rows(iRow + PTRN_ADAPT).Hidden = True
+            .Rows(iRow + PTRN_WIDTH).Hidden = True
+            .Rows(iRow + PTRN_FETCH).Hidden = True
         Next iRow
     End With
     
@@ -462,7 +494,7 @@ Function AdaptLine(XXX, FF As Range, F_Row As Integer) As Boolean
 '
 '
 '
-            
+
     With FF
         For iCol = 1 To .Columns.Count
             iX = FF(F_Row + PTRN_COLS, iCol)
