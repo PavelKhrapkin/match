@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 11.10.12 П.Л.Храпкин
+' 12.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -32,6 +32,8 @@ Public TraceStep As Boolean
 Public TraceStop As Boolean
 
 '----- работа с Адаптерами ---------------
+Const WP_CONTEXT_LINE = 8, WP_CONTEXT_COL = 4   ' ячейка передачи iLine
+
 Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
 
 Const PTRN_VALUE = 2 ' смещение строки - значения - Value в Шаблоне
@@ -429,17 +431,18 @@ Sub xAdapt(F As String, iLine As Long)
         .Rows("1:4").Delete
         .Tab.Color = rgbBlue
         
-''        Code = "'" & DirDBs & F_MATCH & "'!" & Step
-
         .Cells(1, 1) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
-        For iRow = 2 To .UsedRange.Rows.Count Step PTRN_LNS
-            PtrnType = .Cells(iRow + 1, 2)
+        For iRow = 1 To .UsedRange.Rows.Count Step PTRN_LNS
+            PtrnType = .Cells(iRow, 2)
             
-            R = GetRep(.Cells(iRow + 1, 1))
-            Workbooks(R.RepFile).Sheets(R.SheetN).Activate
-            For iCol = 4 To .UsedRange.Columns.Count
-                iX = .Cells(iRow + PTRN_COLS, iCol)
+            If PtrnType <> "Кнопки" Then
+                R = GetRep(.Cells(iRow, 1))
+                Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+            End If
+            
+            For iCol = 5 To .UsedRange.Columns.Count
+                iX = .Cells(iRow - 1 + PTRN_COLS, iCol)
                 If iX > 0 Then
 
 '''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
@@ -453,26 +456,26 @@ Sub xAdapt(F As String, iLine As Long)
                     Case "iLine":
                         X = ActiveSheet.Cells(iLine, iX)
                     Case "Шаблон":
-                        X = .Cells(iRow + 2, iX)
+                        X = .Cells(iRow - 1 + PTRN_VALUE, iX)
                     Case "SelectOpp":
  '''                       еще не написан
                     Case Else:
                         ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
                     End Select
-                    Rqst = .Cells(iRow + PTRN_ADAPT, iCol)
-                    F_rqst = .Cells(iRow + PTRN_FETCH, iCol)
+                    Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+                    F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
-                    If Not IsErr Then .Cells(iRow + PTRN_VALUE, iCol) = Y
+                    If Not IsErr Then .Cells(iRow - 1 + PTRN_VALUE, iCol) = Y
                 ElseIf iX < 0 Then
                     Exit For
                 End If
             Next iCol
-            .Rows(iRow + PTRN_COLS).Hidden = True
-            .Rows(iRow + PTRN_ADAPT).Hidden = True
-            .Rows(iRow + PTRN_WIDTH).Hidden = True
-            .Rows(iRow + PTRN_FETCH).Hidden = True
+            .Rows(iRow - 1 + PTRN_COLS).Hidden = True
+            .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
+            .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
+            .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
     End With
     
@@ -583,6 +586,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 ' 6.9.12 - bug fix
 '25.9.12 - Dec(CurRate)
 ' 3.10.12 - Адаптер GetCol с синтаксисом ' GetCol/1C.xlsx,Платежи,5/SF:2:11
+'12.10.12 - Адаптер GoodType(X)
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -639,6 +643,8 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
                 Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
             End If
         End If
+    Case "GoodType":
+        Adapter = GoodType(X)
     Case "CurISO":
         Adapter = CurISO(X)
     Case "CurRate": Adapter = Dec(CurRate(X))
