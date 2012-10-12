@@ -40,8 +40,8 @@ Sub NewPaidOpp()
         For i = 2 To P.EOL
             Progress i / P.EOL
             If .Cells(i, PAYINSF_COL) <> 1 _
-                    And .Cells(i, PAYISACC_COL) <> "" _
-                    And .Cells(i, PAYDOC_COL) <> "" Then
+                    And Trim(.Cells(i, PAYISACC_COL)) <> "" _
+                    And Trim(.Cells(i, PAYDOC_COL)) <> "" Then
                 Acc = Compressor(.Cells(i, PAYACC_COL)) ' Организация
                 Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
                 Sale = .Cells(i, PAYSALE_COL)   ' Продавец
@@ -55,7 +55,7 @@ Sub NewPaidOpp()
                 OppId = IsOpp(Sale, Acc, T, Rub, Dat, ContrK) ' Id Проекта в SF
 
                 If OppId <> "" Then
-                    WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), i
+                    WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), i, OppId
                 End If
             End If
         Next i
@@ -436,6 +436,51 @@ Found:
     If InStr(OppT, SeekOppType) = 0 Then _
         LogWr ErMsg & OppId & "(" & OppN & ") тип Платежа '" & T _
             & "' не соответствует типу Проекта '" & OppT & "'"
+End Function
+Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolean
+'
+'
+'
+
+    OppSelect = False
+    
+'''    ContrK = ContrCod(Dogovor, MainDog)
+''''&&&&&&&&&& ????????????????????? &&&&&&&&&&&&&&
+    With DB_SFDC.Sheets(SFopp)
+        If .Cells(iOpp, SFOPP_ACC1C_COL) = Account Then
+            GoTo Found
+'''            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
+'''            OppT = .Cells(iOpp, SFOPP_TYP_COL)
+'''            OppCur = .Cells(iOpp, SFOPP_TO_PAY_CUR_COL)
+'''            OppToPayRub = .Cells(iOpp, SFOPP_TO_PAY_VAL_COL) * CurRate(OppCur)
+'''            OppCloseDate = .Cells(iOpp, SFOPP_CLOSEDATE_COL)
+'''            OppId = .Cells(iOpp, SFOPP_OPPID_COL)
+'''            If InStr(OppT, SeekOppType) <> 0 _
+'''                    And IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) _
+'''                    And OppToPayRub >= Rub _
+'''                    And Dat <= OppCloseDate Then
+'''                If .Cells(iOpp, SFOPP_PROBABILITY_COL) <> 0 Then
+'''                    GoTo Found
+'''                Else
+'''                    Msg = "В Организации '" & Account & "'" _
+'''                        & vbCrLf & vbCrLf & "есть Проект Closed/Lost" _
+'''                        & vbCrLf & vbCrLf & OppName _
+'''                        & vbCrLf & vbCrLf & "Используем его его?"
+'''                    Respond = MsgBox(Msg, vbYesNoCancel)
+'''                    If Respond = vbCancel Then ExRespond = False
+'''                    If Respond = vbYes Then
+'''                        ErrMsg WARNING, "!! Необходим пересмотр проекта " & OppN _
+'''                            & vbCrLf & vbCrLf & "В него занемен Платеж!"
+'''                        GoTo Found
+'''                    End If
+'''                End If
+'''            End If
+        End If
+    End With
+    Exit Function
+
+Found:
+    OppSelect = True
 End Function
 Sub ContrOppLink(iPay, ContrK, ContrId, OppId)
 '

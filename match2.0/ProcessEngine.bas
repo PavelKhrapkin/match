@@ -405,6 +405,7 @@ Sub xAdapt(F As String, iLine As Long)
 '   11.10.12
 
     Const WP_PROTOTYPE = "WP_Prototype"
+    Const PTRN_SELECT = "Select"
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
@@ -415,6 +416,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim F_rqst As String                        '
     Dim Y As String
     Dim IsErr As Boolean
+    Dim iSelect As Long, WP_Row As Long
         
     Set DB_TMP = FileOpen(F_TMP)
     Application.DisplayAlerts = False
@@ -436,42 +438,52 @@ Sub xAdapt(F As String, iLine As Long)
         For iRow = 1 To .UsedRange.Rows.Count Step PTRN_LNS
             PtrnType = .Cells(iRow, 2)
             
+            R.EOL = -1                      ' инициализация EOL на случай Select
             If PtrnType <> "Кнопки" Then
                 R = GetRep(.Cells(iRow, 1))
                 Workbooks(R.RepFile).Sheets(R.SheetN).Activate
             End If
-            
-            For iCol = 5 To .UsedRange.Columns.Count
-                iX = .Cells(iRow - 1 + PTRN_COLS, iCol)
-                If iX > 0 Then
-
-'''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
-'''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
-'''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
-'''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
-            
-                    Select Case PtrnType
-                    Case "Кнопки":
-                        '''' не написан
-                    Case "iLine":
-                        X = ActiveSheet.Cells(iLine, iX)
-                    Case "Шаблон":
-                        X = .Cells(iRow - 1 + PTRN_VALUE, iX)
-                    Case "SelectOpp":
- '''                       еще не написан
-                    Case Else:
-                        ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
-                    End Select
-                    Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
-                    F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
-                    
-                    Y = Adapter(Rqst, X, F_rqst, IsErr)
-                    
-                    If Not IsErr Then .Cells(iRow - 1 + PTRN_VALUE, iCol) = Y
-                ElseIf iX < 0 Then
-                    Exit For
-                End If
-            Next iCol
+        '--- SelectLoop
+            iSelect = 2
+            WP_Row = iRow - 1 + PTRN_VALUE
+            If PtrnType = PTRN_SELECT Then WP_Row = iRow + PTRN_LNS
+            Do
+                For iCol = 5 To .UsedRange.Columns.Count
+                    iX = .Cells(iRow - 1 + PTRN_COLS, iCol)
+                    If iX > 0 Then
+    
+    '''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
+    '''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
+    '''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
+    '''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
+                
+                        Select Case PtrnType
+                        Case "Кнопки":
+                            '''' не написан
+                        Case "iLine":
+                            X = ActiveSheet.Cells(iLine, iX)
+                        Case "Шаблон":
+                            X = .Cells(iRow - 1 + PTRN_VALUE, iX)
+                        Case PTRN_SELECT:
+                            X = .Cells(CLng(.Cells(iRow - 1 + PTRN_COLS, 3)), iX)
+                         Case Else:
+                            ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+                        End Select
+                        Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+                        F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+                        
+                        Y = Adapter(Rqst, X, F_rqst, IsErr)
+                        
+                        If Not IsErr Then .Cells(WP_Row, iCol) = Y
+                    ElseIf iX < 0 Then
+                        Exit For
+                    End If
+                Next iCol
+                iSelect = iSelect + 1
+                WP_Row = WP_Row + 1
+                If WP_Row - iRow = 1 Then WP_Row = iRow + PTRN_LNS
+            Loop While PtrnType = PTRN_SELECT And iSelect <= R.EOL
+                
             .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
@@ -654,6 +666,20 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
         Else
             Adapter = DDMMYYYY(X)
         End If
+    Case "OppFilter":
+        With DB_TMP.Sheets(WP)
+            Const SEL_REF = 21
+            Dim b As Long
+            b = .Cells(SEL_REF + 2, 3)
+            For i = .Cells(SEL_REF, 4) To EOL_SF
+                If OppFilter(i, .Cells(b, Par(0)), .Cells(b, Par(1)), _
+                        .Cells(b, Par(2)), .Cells(b, Par(3)), .Cells(b, Par(4)), _
+                        .Cells(b, Par(5)), .Cells(b, Par(6))) Then
+                    Adapter = i
+                    Exit For
+                End If
+            Next i
+        End With
     Case Else
         ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
     End Select
