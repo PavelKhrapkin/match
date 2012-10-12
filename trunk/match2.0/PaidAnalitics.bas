@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   6.10.2012
+'   13.10.2012
 
 Option Explicit
 
