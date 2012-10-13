@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 12.10.12 П.Л.Храпкин
+' 13.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -402,7 +402,7 @@ Sub xAdapt(F As String, iLine As Long)
 '
 ' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '                      по строке номер iLine в ActiveSheet
-'   11.10.12
+'   13.10.12
 
     Const WP_PROTOTYPE = "WP_Prototype"
     Const PTRN_SELECT = "Select"
@@ -465,7 +465,7 @@ Sub xAdapt(F As String, iLine As Long)
                         Case "Шаблон":
                             X = .Cells(iRow - 1 + PTRN_VALUE, iX)
                         Case PTRN_SELECT:
-                            X = .Cells(CLng(.Cells(iRow - 1 + PTRN_COLS, 3)), iX)
+                            X = .Cells(CLng(.Cells(iRow - 1 + PTRN_COLS, 4)), iX)
                          Case Else:
                             ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
                         End Select
@@ -479,9 +479,8 @@ Sub xAdapt(F As String, iLine As Long)
                         Exit For
                     End If
                 Next iCol
-                iSelect = iSelect + 1
+                If PtrnType = PTRN_SELECT Then iSelect = .Cells(iRow - 1 + PTRN_VALUE, 4)
                 WP_Row = WP_Row + 1
-                If WP_Row - iRow = 1 Then WP_Row = iRow + PTRN_LNS
             Loop While PtrnType = PTRN_SELECT And iSelect <= R.EOL
                 
             .Rows(iRow - 1 + PTRN_COLS).Hidden = True
@@ -668,9 +667,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
         End If
     Case "OppFilter":
         With DB_TMP.Sheets(WP)
-            Const SEL_REF = 21
+            Const SEL_REF = 20
             Dim b As Long
-            b = .Cells(SEL_REF + 2, 3)
+            b = .Cells(SEL_REF + 2, 4)
             For i = .Cells(SEL_REF, 4) To EOL_SF
                 If OppFilter(i, .Cells(b, Par(0)), .Cells(b, Par(1)), _
                         .Cells(b, Par(2)), .Cells(b, Par(3)), .Cells(b, Par(4)), _
