@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 13.10.12 П.Л.Храпкин
+' 14.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -472,16 +472,19 @@ Sub xAdapt(F As String, iLine As Long)
                         Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                         F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                         
-                        Y = Adapter(Rqst, X, F_rqst, IsErr)
+                        Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL)
                         
                         If Not IsErr Then .Cells(WP_Row, iCol) = Y
                     ElseIf iX < 0 Then
                         Exit For
                     End If
                 Next iCol
-                If PtrnType = PTRN_SELECT Then iSelect = .Cells(iRow - 1 + PTRN_VALUE, 4)
+                If PtrnType = PTRN_SELECT Then
+                    iSelect = .Cells(WP_Row, iCol)
+                    .Cells(iRow - 1 + PTRN_VALUE, 4) = iSelect
+                End If
                 WP_Row = WP_Row + 1
-            Loop While PtrnType = PTRN_SELECT And iSelect <= R.EOL
+            Loop While PtrnType = PTRN_SELECT And iSelect < R.EOL
                 
             .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
@@ -589,7 +592,7 @@ Sub Adapt(F As String)
         Next i
     End With
 End Sub
-Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
+Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
 '    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
@@ -598,6 +601,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
 '25.9.12 - Dec(CurRate)
 ' 3.10.12 - Адаптер GetCol с синтаксисом ' GetCol/1C.xlsx,Платежи,5/SF:2:11
 '12.10.12 - Адаптер GoodType(X)
+'14.10.12 - Адаптер OppFilter для Шаблона типа Select
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -668,12 +672,15 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr) As String
     Case "OppFilter":
         With DB_TMP.Sheets(WP)
             Const SEL_REF = 20
-            Dim b As Long
+            Dim b As Long, A(0 To 6) As Long
             b = .Cells(SEL_REF + 2, 4)
-            For i = .Cells(SEL_REF, 4) To EOL_SF
-                If OppFilter(i, .Cells(b, Par(0)), .Cells(b, Par(1)), _
-                        .Cells(b, Par(2)), .Cells(b, Par(3)), .Cells(b, Par(4)), _
-                        .Cells(b, Par(5)), .Cells(b, Par(6))) Then
+            For i = 0 To UBound(A)
+                A(i) = CLng(Par(i))
+            Next i
+            For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
+                If OppFilter(i, .Cells(b, A(0)), .Cells(b, A(1)), _
+                        .Cells(b, A(2)), .Cells(b, A(3)), .Cells(b, A(4)), _
+                        .Cells(b, A(5)), .Cells(b, A(6))) Then
                     Adapter = i
                     Exit For
                 End If
