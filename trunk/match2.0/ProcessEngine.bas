@@ -410,6 +410,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim PtrnType As String                      ' поле Тип Шаблона
+    Dim sX() As String                          ' строка - выражение с аргументом Х
     Dim iX As Long                              ' номер колонки - значение в строке PTRN_COLS
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
@@ -449,6 +450,8 @@ Sub xAdapt(F As String, iLine As Long)
             If PtrnType = PTRN_SELECT Then WP_Row = iRow + PTRN_LNS
             Do
                 For iCol = 5 To .UsedRange.Columns.Count
+                    sX = split(.Cells(iRow - 1 + PTRN_COLS, iCol), "/")
+                    If UBound(sX) > 0 Then iX = sX(0)
                     iX = .Cells(iRow - 1 + PTRN_COLS, iCol)
                     If iX > 0 Then
     
@@ -465,7 +468,7 @@ Sub xAdapt(F As String, iLine As Long)
                         Case "Шаблон":
                             X = .Cells(iRow - 1 + PTRN_VALUE, iX)
                         Case PTRN_SELECT:
-                            X = .Cells(CLng(.Cells(iRow - 1 + PTRN_COLS, 4)), iX)
+                            X = ActiveSheet.Cells(CLng(Cells(WP_Row, 5)), iX)
                          Case Else:
                             ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
                         End Select
@@ -474,7 +477,20 @@ Sub xAdapt(F As String, iLine As Long)
                         
                         Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL)
                         
-                        If Not IsErr Then .Cells(WP_Row, iCol) = Y
+                        If Not IsErr Then
+                            .Cells(WP_Row, iCol) = Y
+                            If UBound(sX) > 0 Then
+                                Select Case sX(1)
+                                Case "CopyVal":
+                                    .Cells(iRow - 1 + PTRN_COLS, iCol).Copy .Cells(WP_Row, iCol)
+                                Case "":
+                                Case Else
+                                    ErrMsg FATAL_ERR, "xAdapt> неправильный Шаблон в [" _
+                                        & iRow - 1 + PTRN_COLS & ", " & iCol & "]"
+                                    End
+                                End Select
+                            End If
+                        End If
                     ElseIf iX < 0 Then
                         Exit For
                     End If
@@ -482,6 +498,7 @@ Sub xAdapt(F As String, iLine As Long)
                 If PtrnType = PTRN_SELECT Then
                     iSelect = .Cells(WP_Row, iCol)
                     .Cells(iRow - 1 + PTRN_VALUE, 4) = iSelect
+                    .Rows(iRow - 1 + PTRN_COLS).Hidden = True
                 End If
                 WP_Row = WP_Row + 1
             Loop While PtrnType = PTRN_SELECT And iSelect < R.EOL
@@ -685,6 +702,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
                     Exit For
                 End If
             Next i
+            ActiveSheet.Cells(i, 5) = X
         End With
     Case Else
         ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
