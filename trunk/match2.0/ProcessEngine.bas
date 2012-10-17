@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 14.10.12 П.Л.Храпкин
+' 18.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -418,6 +418,8 @@ Sub xAdapt(F As String, iLine As Long)
     Dim Y As String
     Dim IsErr As Boolean
     Dim iSelect As Long, WP_Row As Long
+    Dim Nopp As Long
+    Dim WP_Prototype_Lines As Long
         
     Set DB_TMP = FileOpen(F_TMP)
     Application.DisplayAlerts = False
@@ -436,7 +438,8 @@ Sub xAdapt(F As String, iLine As Long)
         
         .Cells(1, 1) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
-        For iRow = 1 To .UsedRange.Rows.Count Step PTRN_LNS
+        WP_Prototype_Lines = .UsedRange.Rows.Count - 4
+        For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
             PtrnType = .Cells(iRow, 2)
             
             R.EOL = -1                      ' инициализация EOL на случай Select
@@ -451,8 +454,8 @@ Sub xAdapt(F As String, iLine As Long)
             Do
                 For iCol = 5 To .UsedRange.Columns.Count
                     sX = split(.Cells(iRow - 1 + PTRN_COLS, iCol), "/")
-                    If UBound(sX) > 0 Then iX = sX(0)
-                    iX = .Cells(iRow - 1 + PTRN_COLS, iCol)
+                    iX = 0
+                    If UBound(sX) >= 0 Then iX = sX(0)
                     If iX > 0 Then
     
     '''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
@@ -468,7 +471,8 @@ Sub xAdapt(F As String, iLine As Long)
                         Case "Шаблон":
                             X = .Cells(iRow - 1 + PTRN_VALUE, iX)
                         Case PTRN_SELECT:
-                            X = ActiveSheet.Cells(CLng(Cells(WP_Row, 5)), iX)
+                            Nopp = .Cells(WP_Row, 5)
+                            If Nopp > 0 Then X = ActiveSheet.Cells(Nopp, iX)
                          Case Else:
                             ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
                         End Select
@@ -477,12 +481,16 @@ Sub xAdapt(F As String, iLine As Long)
                         
                         Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL)
                         
+                        If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
                         If Not IsErr Then
                             .Cells(WP_Row, iCol) = Y
+                            
                             If UBound(sX) > 0 Then
                                 Select Case sX(1)
-                                Case "CopyVal":
-                                    .Cells(iRow - 1 + PTRN_COLS, iCol).Copy .Cells(WP_Row, iCol)
+                                Case "CopyToVal":
+                                    .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
+                                Case "CopyFrVal":
+                                    .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
                                 Case "":
                                 Case Else
                                     ErrMsg FATAL_ERR, "xAdapt> неправильный Шаблон в [" _
@@ -496,20 +504,24 @@ Sub xAdapt(F As String, iLine As Long)
                     End If
                 Next iCol
                 If PtrnType = PTRN_SELECT Then
-                    iSelect = .Cells(WP_Row, iCol)
+                    iSelect = .Cells(WP_Row, 5)
+                    If iSelect < 0 Then Exit Do
                     .Cells(iRow - 1 + PTRN_VALUE, 4) = iSelect
-                    .Rows(iRow - 1 + PTRN_COLS).Hidden = True
+                    .Cells(iRow - 1 + PTRN_COLS, 3) = .Cells(iRow - 1 + PTRN_COLS, 3) + 1
+                    .Rows(iRow - 1 + PTRN_VALUE).Hidden = True
                 End If
                 WP_Row = WP_Row + 1
-            Loop While PtrnType = PTRN_SELECT And iSelect < R.EOL
+                                                ' для Шаблона Select выход из цикла происходит
+            Loop While PtrnType = PTRN_SELECT   '.. по достижению Адаптером OppFilter EOL SFopp
                 
-            .Rows(iRow - 1 + PTRN_COLS).Hidden = True
+OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
     End With
     
+
 '=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
     
 '''''''''''''''''''''''''''''''''''
@@ -619,6 +631,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
 ' 3.10.12 - Адаптер GetCol с синтаксисом ' GetCol/1C.xlsx,Платежи,5/SF:2:11
 '12.10.12 - Адаптер GoodType(X)
 '14.10.12 - Адаптер OppFilter для Шаблона типа Select
+'18.10.12 - в OppFilter обработка EOL
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
@@ -694,6 +707,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
             For i = 0 To UBound(A)
                 A(i) = CLng(Par(i))
             Next i
+            Adapter = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
             For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
                 If OppFilter(i, .Cells(b, A(0)), .Cells(b, A(1)), _
                         .Cells(b, A(2)), .Cells(b, A(3)), .Cells(b, A(4)), _
@@ -702,8 +716,8 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
                     Exit For
                 End If
             Next i
-            ActiveSheet.Cells(i, 5) = X
         End With
+
     Case Else
         ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
     End Select
