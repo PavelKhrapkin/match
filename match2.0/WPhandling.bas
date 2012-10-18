@@ -9,7 +9,7 @@ Option Explicit
 
 Sub WP_PdOpp(Frm As String, Optional InitialPayRow = 2)
 '
-' S WP_PaidOpp(Form)    - обработка Платежей по проектам на листе WP
+' S WP_PdOpp(Frm[,InitialPayRow])    - обработка Платежей по проектам на листе WP
 '
 '   8.10.12
 
@@ -24,10 +24,7 @@ Sub WP_PdOpp(Frm As String, Optional InitialPayRow = 2)
         For i = InitialPayRow To P.EOL
             If .Cells(i, PAYINSF_COL) <> 1 _
                     And .Cells(i, PAYISACC_COL) <> "" Then
-                With DB_MATCH.Sheets(WP)
-                    .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = i
-                    xAdapt Frm
-                End With
+                xAdapt Frm, i
             End If
         Next i
     End With

@@ -32,84 +32,6 @@ Sub NewContr()
         Next i
     End With
 End Sub
-Sub NewSheet(SheetName As String)
-'
-' S NewSheet(SheetName, HDRform) - создает новый лист SheetName
-'       Название шапки нового листа берется из названия SheetName,
-'       а ширина колонок шапки- из третьей cтроки формы
-' 19.8.12
-'  3.9.12 - StepIn
-'  9.9.12 - displayAlert = False для Delete Sheet
-'  1.10.12 - bug fix
-
-    StepIn
-    
-    Dim HDRform As String
-    Dim i As Long, Cols As Long
-    Dim Frm As Range
-    
-    HDRform = "HDR_" & SheetName
-    
-    With DB_MATCH
-        Set Frm = .Sheets(Header).Range(HDRform)
-        Cols = Frm.Columns.Count
-        Application.DisplayAlerts = False
-        On Error Resume Next
-        .Sheets(SheetName).Delete
-        On Error GoTo 0
-        Application.DisplayAlerts = True
-        .Sheets.Add After:=.Sheets(.Sheets.Count)
-        .Sheets(.Sheets.Count).Name = SheetName
-        With .Sheets(SheetName)
-            .Tab.Color = rgbLightBlue
-            For i = 1 To Cols
-''                Range(HDRform).Columns(i).Copy Destination:=.Cells(1, i)
-                Frm.Columns(i).Copy Destination:=.Cells(1, i)
-                .Columns(i).ColumnWidth = .Cells(3, i)
-            Next i
-            .Rows(6).Delete
-            .Rows(5).Delete
-            .Rows(4).Delete
-            .Rows(3).Delete
-            .Rows(2).Delete
-        End With
-    End With
-End Sub
-Sub WrNewSheet(SheetNew, SheetDB, DB_Line)
-'
-' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
-'                                            из строки DB_Line листа SheetDB
-'   * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
-'     Эти строки хранятся в Range с именем "HDR_" & SheetNew в Forms или Headers
-'   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
-'   * В строке формы под Адаптером можно указать параметры во внешних Документах
-' 5.9.2012
-
-    Dim P As Range
-    Dim iNewLine As Long    '= номер строки в SheetNew
-    Dim i As Long
-    Dim X As String         '= обрабатываемое значение в SheetDB
-    Dim Y As String         '= результат работы Адаптера
-    Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
-    
-    iNewLine = EOL(SheetNew, DB_MATCH) + 1
-
-    With DB_MATCH.Sheets(SheetNew)
-        Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
-        For i = 1 To P.Columns.Count
-            X = SheetDB.Cells(DB_Line, P.Cells(4, i))
-            
-            Y = Adapter(P.Cells(5, i), X, P.Cells(6, i), IsErr)
-            
-            If IsErr Then
-                .Rows(iNewLine).Delete
-                Exit For
-            Else
-                .Cells(iNewLine, i) = Y
-            End If
-        Next i
-    End With
-End Sub
 Sub ContrPass()
 '
 ' Проход по отчету Договоров и обзор/создание соответствующих Проектов
@@ -118,7 +40,7 @@ Sub ContrPass()
     Dim Contr As Range
     Dim i, OppN, OppIs, OppNew, NoOpp As Integer
     Dim IsGenOpp As Integer
-    Dim DogSFstat, ContrK, ContrId, OppTyp, t, Stage As String
+    Dim DogSFstat, ContrK, ContrId, OppTyp, T, Stage As String
     Dim Acc, Dat, Sale, DogValue, DogCur, OppStage As String
     Dim VendorSF, Vendor1C As String
     
@@ -199,7 +121,7 @@ Function OppForDog(iDog) As Boolean
 
     Dim OppLnk As String        ' номер Проекта, с которым можно связать Договор
     Dim Acc, Dat, Sale, DogValue, DogCur As String  ' параметры нового Проекта
-    Dim Stage, t As String      ' Этап и Тип нового Проекта по Договору
+    Dim Stage, T As String      ' Этап и Тип нового Проекта по Договору
     Dim ContrK As String        ' Код Договора в форме Осн/Договор
     
     Dim t0, Tend
@@ -213,9 +135,9 @@ Function OppForDog(iDog) As Boolean
         DogCur = CurISO(.Cells(iDog, DOGCUR1C_COL))
         DogValue = .Cells(iDog, DOGSUM1C_COL) * CurRate(DogCur)
         ContrK = .Cells(iDog, DOGCOD_COL)
-        t = OppT(.Cells(iDog, VENDOR1C_COL), Sale)
+        T = OppT(.Cells(iDog, VENDOR1C_COL), Sale)
            
-        OppLnk = IsOpp(Sale, Acc, t, DogValue, Dat, ContrK)
+        OppLnk = IsOpp(Sale, Acc, T, DogValue, Dat, ContrK)
     
         If OppLnk = "" Then     ' есть подходящий Проект, куда войдет Договор?
                                     '---- нет - создаем новый Проект

@@ -523,7 +523,7 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
     
 
 '=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
-    
+    DB_TMP.Shetts(WP).Activate
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
@@ -536,8 +536,8 @@ Sub xAdapt_Continue(Button As String)
 
     Dim Step As String, iLine As Long
         
-    GetRep (Process)
-    DB_MATCH.Activate
+''    GetRep (Process)
+''    DB_MATCH.Activate
     iLine = ActiveSheet.Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
     
     Select Case Button
@@ -545,7 +545,8 @@ Sub xAdapt_Continue(Button As String)
         Step = DB_MATCH.Sheets(Process).Cells(STEP_NAME_COL, 1)
         StepOut Step, ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
     Case "->":
-        WP_PdOpp WP, iLine
+'        iLine = WP_TMP.Sheets(WP).Cells(12, 4)
+        WP_PdOpp WP, iLine + 1
     Case "NewOpp":
     Case "Проект":
     End Select
