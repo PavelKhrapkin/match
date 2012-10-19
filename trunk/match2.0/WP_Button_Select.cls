@@ -10,20 +10,25 @@ Attribute VB_Exposed = True
 Option Explicit
 
 Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
+'----------------------------------------------------------------
+' WP_Button_Select.cls  ЗАПИСЫВАЕТСЯ в WP_PROTOTYPE
 '
-' H SelectionChange Event Handler
+' H  SelectionChange Event Handler
 '   11.10.12
+'   20.10.12 - добавлена обработка кнопок Шаблона Select
 
     Dim i As Long, Proc As String
 
     With ActiveCell
+        i = .Column
         If .Row = 1 Then
-            i = .Column
             With ActiveSheet
                 If i >= .Cells(1, 3) And i <= .Cells(1, 4) Then
-                    Application.Run "'" & .Cells(1, 1), ActiveCell.Value
+                    Application.Run "'" & ActiveSheet.Cells(1, 1), .Value, .Row
                 End If
             End With
+        ElseIf .Row >= 25 And i = 10 Then
+            Application.Run "'" & ActiveSheet.Cells(1, 1), .Value, .Row
         End If
     End With
 End Sub

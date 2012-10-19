@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 18.10.12 П.Л.Храпкин
+' 20.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -366,6 +366,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 '   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
 '   * В строке формы под Адаптером можно указать параметры во внешних Документах
 ' 6.9.2012
+' 20.10.12 - обработка "голубых" листов в DB_TMP
 
     Dim P As Range
     Dim iNewLine As Long    '= номер строки в SheetNew
@@ -375,9 +376,9 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
-    iNewLine = EOL(SheetNew, DB_MATCH) + 1
+    iNewLine = EOL(SheetNew, DB_TMP) + 1
 
-    With DB_MATCH.Sheets(SheetNew)
+    With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
             sX = P.Cells(PTRN_COLS, i)
@@ -523,56 +524,47 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
     
 
 '=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
-    DB_TMP.Shetts(WP).Activate
+    DB_TMP.Sheets(WP).Activate
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
 End Sub
-Sub xAdapt_Continue(Button As String)
+Sub xAdapt_Continue(Button As String, iRow As Long)
 '
 ' * xAdapt_Continue(Button) - продолжение работы Adapt после нажатия кнопки Button
 '                             Сюда передается управления из WP_Select_Button.
 ' 8/10/12
+' 20.10.12 - обработка кнопок "Занести"
 
-    Dim Step As String, iLine As Long
+    Dim Proc As String, Step As String, iLine As Long
         
-''    GetRep (Process)
-''    DB_MATCH.Activate
     iLine = ActiveSheet.Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
     
     Select Case Button
     Case "STOP":
-        Step = DB_MATCH.Sheets(Process).Cells(STEP_NAME_COL, 1)
-        StepOut Step, ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
+        GetRep (Process)
+        DB_MATCH.Activate
+        Proc = DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL)
+        Step = DB_MATCH.Sheets(Process).Cells(1, STEP_NAME_COL)
+        iLine = ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
+        StepOut Step, iLine
+        ProcStart Proc
+        End
     Case "->":
 '        iLine = WP_TMP.Sheets(WP).Cells(12, 4)
         WP_PdOpp WP, iLine + 1
     Case "NewOpp":
     Case "Проект":
+'-------- Обработка кликов на кнопках строк Select
+    Case "Занести":
+        Dim OppId As String
+        OppId = ActiveSheet.Cells(iRow, 6)
+        Set DB_1C = FileOpen(F_1C)
+        Set DB_MATCH = FileOpen(F_MATCH)
+        WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iRow, OppId
+        WP_PdOpp WP, iLine + 1
     End Select
 End Sub
-Function AdaptLine(XXX, FF As Range, F_Row As Integer) As Boolean
-'
-'
-'
-
-    With FF
-        For iCol = 1 To .Columns.Count
-            iX = FF(F_Row + PTRN_COLS, iCol)
-            If iX > 0 Then
-                X = Sht.Cells(i, iX)
-                Rqst = FF.Cells(5, Col)
-                F_rqst = FF.Cells(6, Col)
-                
-                Y = Adapter(Rqst, X, F_rqst, IsErr)
-                
-                If Not IsErr Then .Cells(i, Col) = Y
-            ElseIf iX < 0 Then
-                Exit For
-            End If
-        Next iCol
-    End With
-End Function
 Sub Adapt(F As String)
 '
 ' S Adapt(F) - запускает Адаптеры из формы F, осуществляя проход по Документу
