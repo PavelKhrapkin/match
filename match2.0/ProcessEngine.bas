@@ -359,12 +359,14 @@ Sub CheckProc0(NewProcResult As String)
 End Sub
 Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 '
-' - WrNewSheet(SheetNew, SheetDB, DB_Line) - записывает новый рекорд в лист SheetNew
-'                                            из строки DB_Line листа SheetDB
+' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
+'                               в лист SheetNew из строки DB_Line листа SheetDB
 '   * Имя и Параметры для обработки передаются в Адаптер в виде текстовых строк.
 '     Эти строки хранятся в Range с именем "HDR_" & SheetNew в Forms или Headers
 '   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
 '   * В строке формы под Адаптером можно указать параметры во внешних Документах
+'   * Если в Шаблоне в строке PTRN_COLS указано "ExtPar", необходимо указать
+'                                              параметр ExtPar = IdOpp
 ' 6.9.2012
 ' 20.10.12 - обработка "голубых" листов в DB_TMP
 
@@ -557,11 +559,15 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
     Case "Проект":
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
-        Dim OppId As String
-        OppId = ActiveSheet.Cells(iRow, 6)
+        Dim OppId As String, iPayment As Long
+        With ActiveSheet
+            OppId = .Cells(iRow, 6)
+            iPayment = .Cells(8, 4)
+        End With
+        Set DB_TMP = FileOpen(F_TMP)
         Set DB_1C = FileOpen(F_1C)
         Set DB_MATCH = FileOpen(F_MATCH)
-        WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iRow, OppId
+        WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iPayment, OppId
         WP_PdOpp WP, iLine + 1
     End Select
 End Sub
