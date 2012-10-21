@@ -405,7 +405,11 @@ Sub xAdapt(F As String, iLine As Long)
 '
 ' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
 '                      по строке номер iLine в ActiveSheet
-'   13.10.12
+'   21.10.12
+''''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
+''''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
+''''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
+''''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
 
     Const WP_PROTOTYPE = "WP_Prototype"
     Const PTRN_SELECT = "Select"
@@ -457,20 +461,24 @@ Sub xAdapt(F As String, iLine As Long)
             Do
                 For iCol = 5 To .UsedRange.Columns.Count
                     sX = split(.Cells(iRow - 1 + PTRN_COLS, iCol), "/")
+'                    If Left(sX(0), 1) = "#" Then
+'                        iX = Mid(sX(0), 1)
+'                        X = .Cells(WP_Row, iX)
+'                    End If
                     iX = 0
                     If UBound(sX) >= 0 Then iX = sX(0)
+                    If Left(sX(0), 1) = "#" Then iX = Mid(sX(0), 1)
                     If iX > 0 Then
-    
-    '''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
-    '''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
-    '''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
-    '''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
-                
                         Select Case PtrnType
                         Case "Кнопки":
-                            '''' не написан
+                            'ничего делать не надо
                         Case "iLine":
-                            X = ActiveSheet.Cells(iLine, iX)
+                            If Left(sX(0), 1) = "#" Then
+                                iX = Mid(sX(0), 1)
+                                X = .Cells(WP_Row, iX)
+                            Else
+                                X = ActiveSheet.Cells(iLine, iX)
+                            End If
                         Case "Шаблон":
                             X = .Cells(iRow - 1 + PTRN_VALUE, iX)
                         Case PTRN_SELECT:
@@ -479,6 +487,7 @@ Sub xAdapt(F As String, iLine As Long)
                          Case Else:
                             ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
                         End Select
+                        
                         Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                         F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                         
@@ -620,6 +629,35 @@ Sub Adapt(F As String)
         Next i
     End With
 End Sub
+''''''Function X_Parse(X_rqst As String) As String
+'''''''
+''''''' -  X_Parse(X_rqst)    - разбор строки Х - параметра Адаптера
+''''''' 22.10.12
+''''''
+''''''    sX = split(X_rqst, "/")
+''''''    If Left(sX(0), 1) = "#" Then
+''''''        iX = Mid(sX(0), 1)
+''''''        X_Parse = .Cells(WP_Row, iX)      !!!!
+''''''    Else
+''''''        iX = 0
+''''''        If UBound(sX) >= 0 Then iX = sX(0)
+''''''        If iX > 0 Then
+''''''            Select Case PtrnType                    PtrnType !!
+''''''            Case "Кнопки":
+''''''                'ничего делать не надо
+''''''            Case "iLine":
+''''''                X_Parse = ActiveSheet.Cells(iLine, iX)    iLine !!
+''''''            Case "Шаблон":
+''''''                X_Parse = .Cells(iRow - 1 + PTRN_VALUE, iX)   iRow !!!
+''''''            Case PTRN_SELECT:
+''''''                Nopp = .Cells(WP_Row, 5)            WP_Row !!
+''''''                If Nopp > 0 Then X_Parse = ActiveSheet.Cells(Nopp, iX)
+''''''             Case Else:
+''''''                ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+''''''            End Select
+''''''        End If
+''''''    End If
+''''''End Function
 Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -649,12 +687,18 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
         If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
     End If
 
-'========== препроцессинг Адаптера =========
+'======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
     Select Case AdapterName
     Case "MainContract":
         X = Trim(Replace(X, "Договор", ""))
     Case "<>0":
         If X = "0" Then X = ""
+    Case "ContrK":
+        Const PAY_REF = 8
+        Dim MainDog As String, iPay As Long
+        iPay = DB_TMP.Sheets(WP).Cells(PAY_REF, 4)
+        MainDog = DB_1C.Sheets(PAY_SHEET).Cells(iPay, CLng(Par(0)))
+        X = ContrCod(X, MainDog)
     End Select
     
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
@@ -689,8 +733,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
         End If
     Case "GoodType":
         Adapter = GoodType(X)
-    Case "CurISO":
-        Adapter = CurISO(X)
+    Case "CurISO":  Adapter = CurISO(X)
     Case "CurRate": Adapter = Dec(CurRate(X))
     Case "Дата":
         If X = "" Then
@@ -698,10 +741,14 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
         Else
             Adapter = DDMMYYYY(X)
         End If
+    Case "ContrK":  Adapter = X
+    Case "ForceTxt":
+        Adapter = "'" & X
     Case "OppFilter":
         With DB_TMP.Sheets(WP)
             Const SEL_REF = 20
             Dim b As Long, A(0 To 6) As Long
+    ' проверить есть ли Проект связанный с Договором
             b = .Cells(SEL_REF + 2, 4)
             For i = 0 To UBound(A)
                 A(i) = CLng(Par(i))
