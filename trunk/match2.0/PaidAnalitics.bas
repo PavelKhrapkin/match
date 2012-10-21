@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   13.10.2012
+'   21.10.2012
 
 Option Explicit
 
@@ -318,16 +318,29 @@ Found:
 End Function
 Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolean
 '
-'
-'
+' - OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) - јдаптер Select
+'                   iOpp - номер строки в SFopp, остальные параметры из платежа
+'                   ¬озвращает False если строки iSFopp не соответствует параметрам
+' 21.10.12
 
+    Dim ContrK As String, IdSFopp As String, iSFD As Long
     OppFilter = False
-    
-'''    ContrK = ContrCod(Dogovor, MainDog)
-''''&&&&&&&&&& ????????????????????? &&&&&&&&&&&&&&
-    With DB_SFDC.Sheets(SFopp)
-        If .Cells(iOpp, SFOPP_ACC1C_COL) = Account Then
-            GoTo Found
+        
+    With DB_SFDC
+        If .Sheets(SFopp).Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
+        
+        ContrK = ContrCod(Dogovor, MainDog)
+        If ContrK = "" Then GoTo Found
+        
+        IdSFopp = .Sheets(SFopp).Cells(iOpp, SFOPP_OPPID_COL)
+        iSFD = CSmatchSht(IdSFopp, SFD_CONTRID_COL, SFD)
+        If iSFD > 0 Then
+            If .Sheets(SFD).Cells(iSFD, SFD_COD_COL) = ContrK Then GoTo Found
+        End If
+    End With
+    Exit Function
+
+
 '''            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
 '''            OppT = .Cells(iOpp, SFOPP_TYP_COL)
 '''            OppCur = .Cells(iOpp, SFOPP_TO_PAY_CUR_COL)
@@ -355,8 +368,6 @@ Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolea
 '''                End If
 '''            End If
         End If
-    End With
-    Exit Function
 
 Found:
     OppFilter = True
