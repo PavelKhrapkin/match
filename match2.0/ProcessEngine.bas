@@ -629,35 +629,60 @@ Sub Adapt(F As String)
         Next i
     End With
 End Sub
-''''''Function X_Parse(X_rqst As String) As String
-'''''''
-''''''' -  X_Parse(X_rqst)    - разбор строки Х - параметра Адаптера
-''''''' 22.10.12
-''''''
-''''''    sX = split(X_rqst, "/")
-''''''    If Left(sX(0), 1) = "#" Then
-''''''        iX = Mid(sX(0), 1)
-''''''        X_Parse = .Cells(WP_Row, iX)      !!!!
-''''''    Else
-''''''        iX = 0
-''''''        If UBound(sX) >= 0 Then iX = sX(0)
-''''''        If iX > 0 Then
-''''''            Select Case PtrnType                    PtrnType !!
-''''''            Case "Кнопки":
-''''''                'ничего делать не надо
-''''''            Case "iLine":
-''''''                X_Parse = ActiveSheet.Cells(iLine, iX)    iLine !!
-''''''            Case "Шаблон":
-''''''                X_Parse = .Cells(iRow - 1 + PTRN_VALUE, iX)   iRow !!!
-''''''            Case PTRN_SELECT:
-''''''                Nopp = .Cells(WP_Row, 5)            WP_Row !!
-''''''                If Nopp > 0 Then X_Parse = ActiveSheet.Cells(Nopp, iX)
-''''''             Case Else:
-''''''                ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
-''''''            End Select
-''''''        End If
-''''''    End If
-''''''End Function
+Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
+'
+' -  X_Parse(iRow, iCol, PutToRow, PutToCol)    - разбор строки Х - параметра Адаптера
+'   здесь [iRow,iCol]       - адрес ячейки Шаблона для разбора, ссылка на номер колонки
+'       [PutToRow,PutToCol] - адрес ячейки, куда поместить результат Адаптера
+'
+' в поле Шаблона возможна конструкция #6/CopyToVal,5/Form
+'  * знак # означает, что адресуется не колонка в ActiveSheet, а колонка самого Шаблона
+'
+' 22.10.12
+
+    Dim X_rqst As String, sX() As String
+    Dim iX As Long, WProw As Long
+    
+    With WP_TMP.Sheets(WP)
+        WP_Row = iRow - 1 + PTRN_VALUE
+        
+        PutToCol = WProw: PutToCol = iCol
+        
+        X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
+        
+        sX = split(X_rqst, "/")
+        If Left(sX(0), 1) = "#" Then
+            iX = Mid(sX(0), 1)
+        Else
+            iX = 0
+            If UBound(sX) >= 0 Then iX = sX(0)
+            If iX > 0 Then
+                Select Case .Cells(iRow, 2)
+                Case "Кнопки", "Шаблон": GoTo GetFromWP
+                Case "iLine":
+                    WP_Row = iLine
+                    GoTo GerFromActiveSheet
+                Case PTRN_SELECT:
+                    WP_Row = WP_Row + .Cell(WP_Row + 2, 3) + 3  ' учтем номер строки в Select
+                    Nopp = .Cells(WP_Row, 5)
+                    If Nopp > 0 Then X_Parse = ActiveSheet.Cells(Nopp, iX)
+                 Case Else:
+                    ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+                End Select
+            End If
+        End If
+
+GetFromWP:
+        X = ""
+        If iX > 0 Then X_Parse = .Cells(WP_Row, iX)
+        GoTo Ex
+    End With
+    
+GerFromActiveSheet:
+    X = ""
+    If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
+Ex: Exit Function
+End Function
 Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
