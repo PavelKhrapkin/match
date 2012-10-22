@@ -16,6 +16,7 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
 ' H  SelectionChange Event Handler
 '   11.10.12
 '   20.10.12 - добавлена обработка кнопок Ўаблона Select
+'   22.10.12 - DirDBs сдвинуто в €чейку [1,5]
 
     Dim i As Long, Proc As String
 
@@ -24,11 +25,11 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
         If .Row = 1 Then
             With ActiveSheet
                 If i >= .Cells(1, 3) And i <= .Cells(1, 4) Then
-                    Application.Run "'" & ActiveSheet.Cells(1, 1), .Value, .Row
+                    Application.Run "'" & ActiveSheet.Cells(1, 5), .Value, .Row
                 End If
             End With
         ElseIf .Row >= 25 And i = 10 Then
-            Application.Run "'" & ActiveSheet.Cells(1, 1), .Value, .Row
+            Application.Run "'" & ActiveSheet.Cells(1, 5), .Value, .Row
         End If
     End With
 End Sub
