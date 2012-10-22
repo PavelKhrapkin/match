@@ -329,6 +329,7 @@ Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolea
     With DB_SFDC
         If .Sheets(SFopp).Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
         
+        If DB_TMP.Sheets(WP).Cells(20, 3) = "" Then GoTo Found
         ContrK = ContrCod(Dogovor, MainDog)
         If ContrK = "" Then GoTo Found
         
@@ -367,7 +368,7 @@ Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolea
 '''                    End If
 '''                End If
 '''            End If
-        End If
+'''        End If
 
 Found:
     OppFilter = True
