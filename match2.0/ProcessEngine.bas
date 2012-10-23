@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 20.10.12 П.Л.Храпкин
+' 23.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -423,7 +423,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim F_rqst As String                        '
     Dim Y As String
     Dim IsErr As Boolean
-    Dim iSelect As Long, WP_Row As Long
+    Dim iSelect As Long     '''', WP_Row As Long
 ''    Dim Nopp As Long
     Dim WP_Prototype_Lines As Long
     
@@ -445,7 +445,7 @@ Sub xAdapt(F As String, iLine As Long)
         
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
-        WP_Prototype_Lines = .UsedRange.Rows.Count - 4
+        WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
             PtrnType = .Cells(iRow, 2)
             
@@ -463,7 +463,7 @@ Sub xAdapt(F As String, iLine As Long)
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
                     
                     If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
@@ -471,13 +471,13 @@ Sub xAdapt(F As String, iLine As Long)
                     If Not IsErr And X <> "" Then .Cells(PutToRow, PutToCol) = Y
                 Next iCol
                 If PtrnType = PTRN_SELECT Then
-                    iSelect = .Cells(WP_Row, 5)
-                    If iSelect < 0 Then Exit Do
+                    iSelect = .Cells(iRow + CLng(.Cells(iRow + 3, 3)) + 5, 5)
+                    If iSelect < 0 Then Exit Do         ' выход по EOL фильтруемого Документа
                     .Cells(iRow - 1 + PTRN_VALUE, 4) = iSelect
                     .Cells(iRow - 1 + PTRN_COLS, 3) = .Cells(iRow - 1 + PTRN_COLS, 3) + 1
                     .Rows(iRow - 1 + PTRN_VALUE).Hidden = True
                 End If
-                WP_Row = WP_Row + 1
+'''                WP_Row = WP_Row + 1
                                                 ' для Шаблона Select выход из цикла происходит
             Loop While PtrnType = PTRN_SELECT   '.. по достижению Адаптером OppFilter EOL SFopp
                 
@@ -486,6 +486,10 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
+        For iCol = 1 To 9
+'            .Columns(iCol).Hidden = True
+        Next iCol
+        
     End With
     
 
@@ -602,7 +606,7 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
     Dim X_rqst As String, sX() As String
     Dim PtrnType As String
     Dim iX As Long, WP_Row As Long
-    Dim Nopp As Long                    ' номер строки при Select
+    Dim HashFlag As Boolean: HashFlag = False
     
     X_Parse = ""
     
@@ -610,7 +614,7 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
         WP_Row = iRow - 1 + PTRN_VALUE
         
         PtrnType = .Cells(iRow, 2)
-        If PtrnType = PTRN_SELECT Then WP_Row = iRow + PTRN_LNS
+        If PtrnType = PTRN_SELECT Then WP_Row = iRow + PTRN_LNS + .Cells(iRow + 3, 3) - 1
         
         PutToRow = WP_Row: PutToCol = iCol
         
@@ -618,39 +622,56 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
         
         If X_rqst = "" Then GoTo Ex
         sX = split(X_rqst, "/")
+        
         If Left(sX(0), 1) = "#" Then
-            iX = Mid(sX(0), 2)
-        Else
-            iX = 0
-            If UBound(sX) >= 0 Then iX = sX(0)
-            If iX > 0 Then
-                Select Case PtrnType
-                Case "Кнопки", "Шаблон": GoTo GetFromWP
-                Case "iLine":
-                    WP_Row = iLine
-                    GoTo GerFromActiveSheet
-                Case PTRN_SELECT:
-                    WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1 ' учтем номер строки в Select
-                    WP_Row = .Cells(WP_Row, 5)
-                    GoTo GerFromActiveSheet
-                 Case Else:
-                    ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
-                End Select
-            End If
+            sX(0) = Mid(sX(0), 2)
+            HashFlag = True
         End If
-''                            If UBound(sX) > 0 Then
-''                                Select Case sX(1)
-''                                Case "CopyToVal":
-''                                    .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
-''                                Case "CopyFrVal":
-''                                    .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
-''                                Case "":
-''                                Case Else
-''                                    ErrMsg FATAL_ERR, "xAdapt> неправильный Шаблон в [" _
-''                                        & iRow - 1 + PTRN_COLS & ", " & iCol & "]"
-''                                    End
-''                                End Select
-''                            End If
+        
+        iX = 0
+        If UBound(sX) >= 0 Then iX = sX(0)
+        If iX > 0 Then
+            Select Case PtrnType
+            Case "Кнопки", "Шаблон": GoTo GetFromWP
+            Case "iLine":
+                WP_Row = iLine
+                If HashFlag Then GoTo GetFromWP
+                GoTo GerFromActiveSheet
+            Case PTRN_SELECT:
+                If HashFlag Then WP_Row = .Cells(PutToRow, 5)
+                GoTo GerFromActiveSheet
+             Case Else:
+                ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+            End Select
+        End If
+'''''        If Left(sX(0), 1) = "#" Then
+'''''            iX = Mid(sX(0), 2)
+'''''        Else
+'''''            iX = 0
+'''''            If UBound(sX) >= 0 Then iX = sX(0)
+'''''            If iX > 0 Then
+'''''                Select Case PtrnType
+'''''                Case "Кнопки", "Шаблон": GoTo GetFromWP
+'''''                Case "iLine":
+'''''                    WP_Row = iLine
+'''''                    GoTo GerFromActiveSheet
+'''''                Case PTRN_SELECT:
+'''''                    WP_Row = .Cells(PutToRow, 5)
+'''''                    GoTo GerFromActiveSheet
+'''''                 Case Else:
+'''''                    ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+'''''                End Select
+'''''            End If
+'''''        End If
+        If UBound(sX) > 0 Then
+            Select Case sX(1)
+            Case "":
+            Case Else
+                ErrMsg FATAL_ERR, "xAdapt> неправильный Шаблон в [" _
+                    & iRow - 1 + PTRN_COLS & ", " & iCol & "]"
+                End
+            End Select
+        End If
 
 GetFromWP:
         If iX > 0 Then X_Parse = .Cells(WP_Row, iX)
@@ -661,7 +682,7 @@ GerFromActiveSheet:
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
 Ex: Exit Function
 End Function
-Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
+Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRow, Optional iCol) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
 '    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
@@ -672,11 +693,13 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
 '12.10.12 - Адаптер GoodType(X)
 '14.10.12 - Адаптер OppFilter для Шаблона типа Select
 '18.10.12 - в OppFilter обработка EOL
+'23.10.12 - CopyToVal и CopyFrVal
 
     Dim FF() As String, Tmp() As String, Cols() As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
     Dim F() As String
     Dim i As Long, Par() As String
+    Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
     X = Trim(X)
@@ -718,39 +741,45 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
     End If
 
 '******* выполнение Адаптера с параметрами Par ******
-    Select Case AdapterName
-    Case "", "MainContract": Adapter = X
-    Case "Мы", "Продавец_в_SF", "Vendor":
-        On Error GoTo AdapterFailure
-        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
-        On Error GoTo 0
-    Case "Dec": Adapter = Dec(X)
-    Case "GetCol":
-        If X = "" Then
-            Adapter = ""
-        Else                ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
-            Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
-            If UBound(Tmp) > 1 Then
-                Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
+    With DB_TMP.Sheets(WP)
+        Select Case AdapterName
+        Case "", "MainContract": Adapter = X
+        Case "Мы", "Продавец_в_SF", "Vendor":
+            On Error GoTo AdapterFailure
+            Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
+            On Error GoTo 0
+        Case "Dec": Adapter = Dec(X)
+        Case "GetCol":
+            If X = "" Then
+                Adapter = ""
+            Else                ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
+                Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
+                If UBound(Tmp) > 1 Then
+                    Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
+                End If
             End If
-        End If
-    Case "GoodType":
-        Adapter = GoodType(X)
-    Case "CurISO":  Adapter = CurISO(X)
-    Case "CurRate": Adapter = Dec(CurRate(X))
-    Case "Дата":
-        If X = "" Then
-            Adapter = ""
-        Else
-            Adapter = DDMMYYYY(X)
-        End If
-    Case "ContrK":  Adapter = X
-    Case "ForceTxt":
-        Adapter = "'" & X
-    Case "OppFilter":
-        With DB_TMP.Sheets(WP)
+        Case "GoodType":
+            Adapter = GoodType(X)
+        Case "CurISO":  Adapter = CurISO(X)
+        Case "CurRate": Adapter = Dec(CurRate(X))
+        Case "Дата":
+            If X = "" Then
+                Adapter = ""
+            Else
+                Adapter = DDMMYYYY(X)
+            End If
+        Case "ContrK":  Adapter = X
+        Case "ForceTxt":
+            Adapter = "'" & X
+        Case "CopyToVal":
+            WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
+            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
+        Case "CopyFrVal":
+            WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
+            .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
+        Case "OppFilter":
             Const SEL_REF = 20
-    ' проверить есть ли Проект связанный с Договором
+        ' проверить есть ли Проект связанный с Договором
             Dim IdSFopp As String
             IdSFopp = .Cells(SEL_REF, 3)
             If IdSFopp = "" Then
@@ -770,12 +799,18 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc) As String
                 Next i
             Else
     ' вывести один единственный Проект
+                MsgBox "УРА! Один единственный Проект"
+                Stop
+                Dim Rdoc As TOCmatch
+                Rdoc = GetRep(Doc)
+                Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+                
             End If
-        End With
-
-    Case Else
-        ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
-    End Select
+    
+        Case Else
+            ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
+        End Select
+    End With
     Exit Function
     
 AdapterFailure:
