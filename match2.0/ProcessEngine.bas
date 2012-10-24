@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 23.10.12 П.Л.Храпкин
+' 25.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -598,6 +598,8 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
 '  * знак # означает, что адресуется не колонка в ActiveSheet, а колонка самого Шаблона
 '
 ' 22.10.12
+' 25.10.12 - иправления в связи с HashFlag=True
+
 ''''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
 ''''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
 ''''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
@@ -634,35 +636,20 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
             Select Case PtrnType
             Case "Кнопки", "Шаблон": GoTo GetFromWP
             Case "iLine":
-                WP_Row = iLine
                 If HashFlag Then GoTo GetFromWP
+                WP_Row = iLine
                 GoTo GerFromActiveSheet
             Case PTRN_SELECT:
-                If HashFlag Then WP_Row = .Cells(PutToRow, 5)
+                If HashFlag Then
+                    WP_Row = iRow + PTRN_VALUE - 1
+                    GoTo GetFromWP
+                End If
+                WP_Row = .Cells(PutToRow, 5)
                 GoTo GerFromActiveSheet
              Case Else:
                 ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
             End Select
         End If
-'''''        If Left(sX(0), 1) = "#" Then
-'''''            iX = Mid(sX(0), 2)
-'''''        Else
-'''''            iX = 0
-'''''            If UBound(sX) >= 0 Then iX = sX(0)
-'''''            If iX > 0 Then
-'''''                Select Case PtrnType
-'''''                Case "Кнопки", "Шаблон": GoTo GetFromWP
-'''''                Case "iLine":
-'''''                    WP_Row = iLine
-'''''                    GoTo GerFromActiveSheet
-'''''                Case PTRN_SELECT:
-'''''                    WP_Row = .Cells(PutToRow, 5)
-'''''                    GoTo GerFromActiveSheet
-'''''                 Case Else:
-'''''                    ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
-'''''                End Select
-'''''            End If
-'''''        End If
         If UBound(sX) > 0 Then
             Select Case sX(1)
             Case "":
@@ -694,10 +681,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '14.10.12 - Адаптер OppFilter для Шаблона типа Select
 '18.10.12 - в OppFilter обработка EOL
 '23.10.12 - CopyToVal и CopyFrVal
+'25.10.12 - очистка переменных, оставшихся от прежних редакций
 
-    Dim FF() As String, Tmp() As String, Cols() As String
-    Dim Doc As String, C1 As Long, C2 As Long, Rng As Range
-    Dim F() As String
+    Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
@@ -801,10 +787,11 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     ' вывести один единственный Проект
                 MsgBox "УРА! Один единственный Проект"
                 Stop
-                Dim Rdoc As TOCmatch
+                Dim Rdoc As TOCmatch, Doc As String
+                Doc = .Cells(iRow, 1)
                 Rdoc = GetRep(Doc)
                 Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
-                
+                If Adapter = .Cells(20, 4) Then Adapter = "-1"
             End If
     
         Case Else
