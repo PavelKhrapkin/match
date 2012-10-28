@@ -549,7 +549,6 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
 '        iPayment = WP_TMP.Sheets(WP).Cells(12, 4)
         WP_PdOpp WP, iPayment + 1
     Case "NewOpp":
-        Stop
         WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
@@ -752,7 +751,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     With DB_TMP.Sheets(WP)
         Select Case AdapterName
         Case "", "MainContract": Adapter = X
-        Case "Мы", "Продавец_в_SF", "Vendor":
+        Case "Мы", "Продавцы", "Продавец_в_SF", "Vendor":
             On Error GoTo AdapterFailure
             Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
             On Error GoTo 0
@@ -776,7 +775,13 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Else
                 Adapter = DDMMYYYY(X)
             End If
-        Case "ContrK":  Adapter = X
+        Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
+        Case "DogVal":
+            Dim Vpaid As Long, Vinv As Long, Vdog As Long
+            Vpaid = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Vinv = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
+            Vdog = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
+            Adapter = Max(Vpaid, Vinv, Vdog)
         Case "ForceTxt":
             Adapter = "'" & X
         Case "CopyToVal":
@@ -817,7 +822,14 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             End If
         Case "NewOppName":
     ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
-            Stop
+            Dim Typ As String, Dogovor As String, Dat As String
+            Typ = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Dogovor = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
+            MainDog = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
+            Dogovor = ContrCod(Dogovor, MainDog)
+            Dat = .Cells(WP_PAYMENT_LINE, CLng(Par(3)))
+            Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
+            
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select
