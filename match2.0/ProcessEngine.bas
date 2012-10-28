@@ -33,6 +33,7 @@ Public TraceStop As Boolean
 
 '----- работа с Адаптерами ---------------
 Const WP_CONTEXT_LINE = 8, WP_CONTEXT_COL = 4   ' ячейка передачи iLine
+Const WP_PAYMENT_LINE = 8                       ' строка Платежа в WP
 
 Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
 
@@ -373,8 +374,9 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 ' 6.9.2012
 ' 26.10.12 - обработка "голубых" листов в DB_TMP
 ' 27.10.12 - использование TOCmatch для "голубых" листов
+' 28.10.12 - параметр SheetDB - передается в виде String
 
-    Dim Rnew As TOCmatch        '', Rdoc As TOCmatch
+    Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
 '    Dim iNewLine As Long    '= номер строки в SheetNew
     Dim i As Long
@@ -387,7 +389,8 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 '''    Rnew.EOL = Rnew.EOL + 1
     Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
     Rnew.Made = "WrNewSheet"
-'    Rdoc = GetRep(SheetDB)
+    Rdoc = GetRep(SheetDB)
+    
 ''    iNewLine = EOL(SheetNew, DB_TMP) + 1
 
 ''    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
@@ -398,7 +401,7 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
             If sX = EXT_PAR Then
                 X = ExtPar
             Else
-                X = SheetDB.Cells(DB_Line, CLng(sX))
+                X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
             End If
             
             Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
@@ -407,11 +410,14 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
                 .Rows(Rnew.EOL).Delete
                 Exit For
             Else
-                .Cells(iNewLine, i) = Y
+                .Cells(Rnew.EOL, i) = Y
             End If
         Next i
     End With
-    If Not IsErr Then WrTOC
+    If Not IsErr Then
+        RepTOC = Rnew
+        WrTOC
+    End If
 End Sub
 Sub xAdapt(F As String, iLine As Long)
 '
@@ -544,7 +550,7 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
         WP_PdOpp WP, iPayment + 1
     Case "NewOpp":
         Stop
-        WrNewSheet NEW_OPP, PAY_SHEET, iPayment
+        WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
         WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iPayment, OppId
@@ -809,7 +815,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                 .Cells(25, 10).Interior.Color = rgbBlue
                 If Adapter = .Cells(20, 4) Then Adapter = "-1"
             End If
-    
+        Case "NewOppName":
+    ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
+            Stop
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select
