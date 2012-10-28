@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 25.10.12 П.Л.Храпкин
+' 26.10.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -142,7 +142,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         Exit Function
     End If
 End Function
-Sub Exec(Step, iProc)
+Sub Exec(Step As String, iProc)
 '
 ' - Exec(Step, iProc) - вызов Шага Step по строке iProc таблицы Процессов
 '   7.8.12
@@ -233,10 +233,11 @@ Sub StepIn()
         Next i
     End With
 End Sub
-Sub StepOut(Step, iProc)
+Sub StepOut(Step As String, iProc)
 '
 ' - StepOut()   - завершение выполнения Шага с записью в TOCmatch
 '   8/10/12
+'  28.10.12 - более аккуратная работа с TOCmatch по документам, обрабатываемым в Шаге
 
     Dim Proc As String, R As TOCmatch
     
@@ -250,7 +251,7 @@ Sub StepOut(Step, iProc)
         .Cells(1, 1) = Now
         Proc = .Cells(1, PROCESS_NAME_COL)              'имя Процесса
         If Proc = "" Then Exit Sub
-        R = GetRep(.Cells(ToStep(Proc), PROC_REP1_COL)) 'обрабатываемый Документ
+        R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
         R.Made = Step
         R.Dat = Now
         RepTOC = R
@@ -370,18 +371,26 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 '   * Если в Шаблоне в строке PTRN_COLS указано "ExtPar", необходимо указать
 '                                              параметр ExtPar = IdOpp
 ' 6.9.2012
-' 20.10.12 - обработка "голубых" листов в DB_TMP
+' 26.10.12 - обработка "голубых" листов в DB_TMP
+' 27.10.12 - использование TOCmatch для "голубых" листов
 
+    Dim Rnew As TOCmatch        '', Rdoc As TOCmatch
     Dim P As Range
-    Dim iNewLine As Long    '= номер строки в SheetNew
+'    Dim iNewLine As Long    '= номер строки в SheetNew
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
-    iNewLine = EOL(SheetNew, DB_TMP) + 1
+    Rnew = GetRep(SheetNew)
+'''    Rnew.EOL = Rnew.EOL + 1
+    Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
+    Rnew.Made = "WrNewSheet"
+'    Rdoc = GetRep(SheetDB)
+''    iNewLine = EOL(SheetNew, DB_TMP) + 1
 
+''    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
@@ -395,13 +404,14 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
             Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
             
             If IsErr Then
-                .Rows(iNewLine).Delete
+                .Rows(Rnew.EOL).Delete
                 Exit For
             Else
                 .Cells(iNewLine, i) = Y
             End If
         Next i
     End With
+    If Not IsErr Then WrTOC
 End Sub
 Sub xAdapt(F As String, iLine As Long)
 '
@@ -506,37 +516,42 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
 ' 8/10/12
 ' 20.10.12 - обработка кнопок "Занести"
 
-    Dim Proc As String, Step As String, iLine As Long
+    Dim Proc As String, Step As String
+    Dim iPayment As Long, OppId As String
         
-    iLine = ActiveSheet.Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
+'---- извлекаем контектст из листа WP, то есть строки Платежа, Проекта -----
+    With ActiveSheet
+        iPayment = .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
+        OppId = .Cells(iRow, 6)
+    End With
+    
+    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
+    If DB_1C Is Nothing Then Set DB_1C = FileOpen(F_1C)
+    If DB_MATCH Is Nothing Then Set DB_MATCH = FileOpen(F_MATCH)
     
     Select Case Button
     Case "STOP":
-        GetRep (Process)
+'        GetRep (Process)
         DB_MATCH.Activate
         Proc = DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL)
         Step = DB_MATCH.Sheets(Process).Cells(1, STEP_NAME_COL)
-        iLine = ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
-        StepOut Step, iLine
+        iPayment = ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
+        StepOut Step, iPayment
         ProcStart Proc
         End
     Case "->":
-'        iLine = WP_TMP.Sheets(WP).Cells(12, 4)
-        WP_PdOpp WP, iLine + 1
+'        iPayment = WP_TMP.Sheets(WP).Cells(12, 4)
+        WP_PdOpp WP, iPayment + 1
     Case "NewOpp":
-    Case "Проект":
+        Stop
+        WrNewSheet NEW_OPP, PAY_SHEET, iPayment
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
-        Dim OppId As String, iPayment As Long
-        With ActiveSheet
-            OppId = .Cells(iRow, 6)
-            iPayment = .Cells(8, 4)
-        End With
-        Set DB_TMP = FileOpen(F_TMP)
-        Set DB_1C = FileOpen(F_1C)
-        Set DB_MATCH = FileOpen(F_MATCH)
         WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iPayment, OppId
-        WP_PdOpp WP, iLine + 1
+        WP_PdOpp WP, iPayment + 1
+    Case "Связать  ->"
+        Stop
+        WrNewSheet DOG_UPDATE, PAY_SHEET, iPayment
     End Select
 End Sub
 Sub Adapt(F As String)
@@ -727,6 +742,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     End If
 
 '******* выполнение Адаптера с параметрами Par ******
+'    Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(WP)
         Select Case AdapterName
         Case "", "MainContract": Adapter = X
@@ -785,12 +801,12 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                 Next i
             Else
     ' вывести один единственный Проект
-                MsgBox "УРА! Один единственный Проект"
-                Stop
                 Dim Rdoc As TOCmatch, Doc As String
                 Doc = .Cells(iRow, 1)
                 Rdoc = GetRep(Doc)
                 Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+                .Cells(25, 10) = "Занести"
+                .Cells(25, 10).Interior.Color = rgbBlue
                 If Adapter = .Cells(20, 4) Then Adapter = "-1"
             End If
     

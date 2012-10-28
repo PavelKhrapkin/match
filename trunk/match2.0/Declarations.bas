@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  11.10.12
+'  28.10.12
 
 Option Explicit
 
@@ -73,13 +73,13 @@ Public Silent As Boolean    ' если True - не выводить сообщений об ошибках
 '=============== База DB_MATCH - файл match.xlsm ==============
 Public Const Header = "Header"              ' лист заголовков (Шапок) и Адаптеров
 Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
-Public Const P_Paid = "P_Paid"              ' лист новых Платежей
-Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
-Public Const NewContract = "NewContract"            ' лист новых Договоров
-Public Const NewContractLnk = "NewContractLnk"      ' лист связок Договоров с Проектами
-Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
-Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
-Public Const ADSKstatistics = "ADSKstatistics"      ' имя листа статистики по ADSK
+'''Public Const P_Paid = "P_Paid"              ' лист новых Платежей
+'''Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
+'''Public Const NewContract = "NewContract"            ' лист новых Договоров
+'''Public Const NewContractLnk = "NewContractLnk"      ' лист связок Договоров с Проектами
+'''Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
+'''Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
+'''Public Const ADSKstatistics = "ADSKstatistics"      ' имя листа статистики по ADSK
 
 Public EOL_PaySheet     ' последняя строка отчета 1С по Платежам без пятки
 Public EOL_DogSheet     ' последняя строка отчета 1С по Договорам без пятки
@@ -136,6 +136,7 @@ Public Const TOC_PAR_6_COL = 20         ' колонка Штампа Параметр 6
 
 Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
+Public Const TOC_FORMNAME = TOC_PAR_2_COL       ' колонка - Имя Шаблона
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
 
 Public Const TOCstart = 4       ' первая строка TOCmatch - вначале служебная часть
@@ -154,9 +155,10 @@ Type TOCmatch
 ''''    StampType As String 'не изм.-  Тип Штампа: строка (=) или подстрока (I)
 ''''    StampR As Long      'не изм.-  строка Штампа: (+EOL)
 ''''    StampC As Long      'не изм.-  колонка Штампа: (+MyCol)
-    CreateDat As Date   '=изм.только MoveToMatch -  дата и время создания отчета
-    ParChech As String  'не изм.-   <>"" - след.строка - доп.Штамп
-    Loader As String    'не изм.-   Loader отчета
+    CreateDat As Date   '=изм.только MoveToMatch и NewSheet -  дата и время создания отчета
+''''    ParChech As String  'не изм.-   <>"" - след.строка - доп.Штамп
+''''    Loader As String    'не изм.-   Loader отчета
+    FormName As String  'не изм.-   Название формы - Шаблона
 End Type
 
 Public RepTOC As TOCmatch   ' структура TOCmatch
@@ -431,11 +433,14 @@ Public Const ACCUPD_1CNAME_COL = 2      ' колонка "Acc1C"
 
 '................ Лист новых Платежей NewPayment ..........................
 Public Const NEW_PAYMENT = "NewPayment" ' лист новых Платежей
+
 Public Const NEWPAY_DOC_COL = 1         ' Doc - Имя платежного документа
 Public Const NEWPAY_DATE_COL = 2        ' Date - Дата платежа
 Public Const NEWPAY_INV_COL = 3         ' Invoice - Счет
 
 '................ Лист новых Договоров NewContract ..........................
+Public Const NEW_CONTRACT = "NewPayment" ' лист новых Договоров
+
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
 Public Const NEWDOG_DATE_COL = 2        ' Date - Дата подписания
 Public Const NEWDOG_WE_COL = 3          ' We - наша фирма
@@ -458,7 +463,10 @@ Public Const NEWDOG_ACCINDEX_COL = 19   ' индекс
 Public Const NEWDOG_ACCSTATE_COL = 20   ' область
 Public Const NEWDOG_ACCCOUNTRY_COL = 21 ' страна
 
-'................ Лист новых Проектов O_NewOpp ..........................
+Public Const DOG_UPDATE = "UpdateContract" ' лист изменений Договоров
+'................ Лист новых Проектов NewOpp ..........................
+Public Const NEW_OPP = "NewOpp"         '"голубой" лист новых Проектов
+
 Public Const NEWOPP_ACCID_COL = 1       ' AccId
 Public Const NEWOPP_OPPNAME_COL = 2     ' OppName
 Public Const NEWOPP_CLOSDATE_COL = 3    ' CloseDate
