@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 5.10.2012
+' П.Л.Храпкин, А.Пасс 28.10.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -69,6 +69,7 @@ Function GetRep(RepName) As TOCmatch
 '   17.8.12 - FatalRep в отдельной подпрограмме; Activate RepName
 '    9.9.12 - запись в Log только в match.xlsm; отладка записи Pass DBs; EOL для sfdc.xlsm
 '   21.9.12 - отладка логики работы с match_environment при перемещении DirDBs
+'   27.10.12 - работа с "голубыми" листами в TOCmatch
 
     Dim i As Long, EOL_TOC As Long
     Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
@@ -129,8 +130,7 @@ FoundRep:
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
         RepTOC.EOL = .Cells(i, TOC_EOL_COL)
         RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
-        RepTOC.ParChech = .Cells(i, TOC_PARCHECK_COL)
-        RepTOC.Loader = .Cells(i, TOC_REPLOADER_COL)
+        RepTOC.FormName = .Cells(i, TOC_FORMNAME)
     End With
     
 '---- проверка штампа ----------
@@ -152,6 +152,9 @@ FoundRep:
         Case F_STOCK:
             Set DB_STOCK = FileOpen(.RepFile)
             RepStock = RepTOC
+        Case F_TMP:
+            Set DB_TMP = FileOpen(.RepFile)
+''            RepWP = RepTOC
         Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
         End Select
             
@@ -179,6 +182,7 @@ Function CheckStamp(iTOC As Long, _
 ' 18.8.12 - CheckStamp оформлена как Bolean Function для использования в MoveToMatch
 '           Optional параметры используются только для MoveToMatch
 ' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
+' 27.10.12 - помимо типов Штампа "=" и "I", введено "N" - Штамп не проверять
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -196,6 +200,7 @@ Function CheckStamp(iTOC As Long, _
         SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
+        If Typ = "N" Then GoTo Ex
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
@@ -224,7 +229,7 @@ Function CheckStamp(iTOC As Long, _
                 End If
             
                 If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-                Exit Function
+Ex:             Exit Function
 NxtChk:
             Next j
         Next i
@@ -261,6 +266,7 @@ Sub WrTOC()
 '  12.8.12 - "серые" колонки описывающие Штамп не записываем
 '  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
 '   2.9.12 - дополнительные ограничения записи в TOCmatch
+' 28.10.12 - записывает в TOCmatch дату создания CreateDat
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых Документов
@@ -285,7 +291,7 @@ FoundRep:
 '''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
 '''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
 '''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
-'''        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
+        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
 '''        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
@@ -486,8 +492,9 @@ Function CurRate(Cur) As Double
 
     On Error GoTo Col2
     S = WorksheetFunction.VLookup(Cur, DB_MATCH.Sheets(We).Range("RUB_Rate"), 3, False)
+    On Error GoTo 0
     GoTo Convert
-GoTo Col2:
+Col2:
     On Error GoTo 0
     S = WorksheetFunction.VLookup(Cur, DB_MATCH.Sheets(We).Range("RUB_Rate_2"), 2, False)
 Convert:

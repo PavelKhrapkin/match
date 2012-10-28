@@ -6,7 +6,7 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
-'   19.10.2012
+'   27.10.2012
 
 Option Explicit
 
@@ -21,21 +21,22 @@ Sub NewSheet(SheetName As String)
 '  9.9.12 - displayAlert = False для Delete Sheet
 '  1.10.12 - bug fix
 ' 19.10.12 - перемещение "голубых" листов в WP_TMP
+' 27.10.12 - ведение "голубых" листов в общей таблице TOCmatch
 
     StepIn
     
-    Dim HDRform As String
+    Dim R As TOCmatch
     Dim i As Long, Cols As Long, W As String
     Dim Frm As Range
     
-    HDRform = "HDR_" & SheetName
+    R = GetRep(SheetName)
     
     On Error GoTo NoHdr
-    Set Frm = DB_MATCH.Sheets(Header).Range(HDRform)
+    Set Frm = DB_MATCH.Sheets(Header).Range(R.FormName)
     Cols = Frm.Columns.Count
     On Error GoTo 0
     
-    Set DB_TMP = FileOpen(F_TMP)
+    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP
 '-- уничтожаем прежний одноименный лист
         Application.DisplayAlerts = False
@@ -58,10 +59,19 @@ Sub NewSheet(SheetName As String)
             Next i
         End With
     End With
+'-- записываем в TOCmatch данные по новому листу
+    R.EOL = EOL(R.SheetN, DB_TMP)
+    If R.EOL <> 1 Then GoTo ErrHdr
+    R.CreateDat = Now
+    WrTOC           ' остальные поля в TOCmatch запишет StepOut
     Exit Sub
 NoHdr:
-    ErrMsg FATAL_ERR, "NewSheet> Нет Шаблона (шапки) '" & HDRform _
+    ErrMsg FATAL_ERR, "NewSheet> Нет Шаблона (шапки) '" & R.FormName _
         & "' для листа " & SheetName
+    End
+ErrHdr:
+    ErrMsg FATAL_ERR, "NewSheet> Ошибка Шаблона (шапки) '" & R.FormName _
+        & "' для листа " & SheetName & " -- неправильный EOL"
     End
 End Sub
 Sub NewPay(i, OppN, ContrId)
