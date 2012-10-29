@@ -615,6 +615,25 @@ Function CSmatchSht(Val, Col, Sht) As Long
         N = CSmatchSht + 1
     Loop While Val <> CheckCS
 End Function
+Function CSmatchRng(Val, Col, Rng) As Long
+'
+' - CSmatch(Val,Col,Rng) - Case Sensitive match возвращает номер строки с Val в колонке Col.
+'                   Если Val не найден- возвращает 0. Rng - Range для поиска Val.
+' 29.10.12
+
+    Dim CheckCS
+    Dim N As Long
+    N = 1
+    Do
+        CSmatchSht = 0
+        On Error Resume Next
+        CSmatchRng = Application.Match(Val, Rng, 0) + N - 1
+        CheckCS = Rng.Cells(CSmatchRng, Col)
+        On Error GoTo 0
+        If IsEmpty(CSmatchRng) Or Not IsNumeric(CSmatchRng) Or CSmatchRng <= 0 Then Exit Function
+        N = CSmatchRng + 1
+    Loop While Val <> CheckCS
+End Function
 Sub ClearSheet(SheetN, HDR_Range As Range)
 '
 ' Полная очистка SheetN и перенос в него заголовка из листа Нeader.HDR_Range
