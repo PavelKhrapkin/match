@@ -742,7 +742,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     End If
 
 '******* выполнение Адаптера с параметрами Par ******
-'    Set DB_TMP = FileOpen(F_TMP)
+    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(WP)
         Select Case AdapterName
         Case "", "MainContract": Adapter = X
@@ -827,10 +827,10 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
         Case "TypOpp":
     ' -- распознавание типа Проекта по типу и спецификации Товара
-            Dim Good As String
+            Dim good As String
             Stop
-            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-            Adapter = TypOpp(X, Good)
+            good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Adapter = TypOpp(X, good)
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select
