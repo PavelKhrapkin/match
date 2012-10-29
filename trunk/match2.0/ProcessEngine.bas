@@ -393,19 +393,23 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
             sX = P.Cells(PTRN_COLS, i)
-            If sX = EXT_PAR Then
-                X = ExtPar
+            If sX <> "" Then
+                If sX = EXT_PAR Then
+                    X = ExtPar
+                Else
+                    X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
+                End If
+                
+                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
+                
+                If IsErr Then
+                    .Rows(Rnew.EOL).Delete
+                    Exit For
+                Else
+                    .Cells(Rnew.EOL, i) = Y
+                End If
             Else
-                X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
-            End If
-            
-            Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
-            
-            If IsErr Then
-                .Rows(Rnew.EOL).Delete
-                Exit For
-            Else
-                .Cells(Rnew.EOL, i) = Y
+                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!????????????????!!!!!!!!!!!!
             End If
         Next i
     End With
@@ -498,11 +502,10 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
         For iCol = 1 To 9
-'            .Columns(iCol).Hidden = True
+            .Columns(iCol).Hidden = True
         Next iCol
         
     End With
-    
 
 '=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
     DB_TMP.Sheets(WP).Activate
@@ -545,6 +548,7 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
         WP_PdOpp WP, iPayment + 1
     Case "NewOpp":
         WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
+        WP_PdOpp WP, iPayment + 1
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
         WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iPayment, OppId
@@ -827,10 +831,10 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
         Case "TypOpp":
     ' -- распознавание типа Проекта по типу и спецификации Товара
-            Dim good As String
-            Stop
-            good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-            Adapter = TypOpp(X, good)
+            Dim Good As String
+'            Stop
+            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Adapter = TypOpp(X, Good)
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select

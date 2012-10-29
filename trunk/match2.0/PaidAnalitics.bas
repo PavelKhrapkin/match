@@ -546,13 +546,13 @@ Function IsWork(ByVal Good As String) As Boolean
 '    Next iG
 '
     Good = LCase(Good)
-    Wokabulary = Range("WorksTable").Cells(1, 2)
+    Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
     Wrd = split(LCase(Wokabulary), ",")
-    IsWorks = True
+    IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
         If InStr(Good, Trim(Wrd(i))) > 0 Then Exit Function
     Next i
-    IsWorks = False
+    IsWork = False
 End Function
 Function TypOpp(GoodType, Good) As String
 '
