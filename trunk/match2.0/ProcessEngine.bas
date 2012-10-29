@@ -378,7 +378,6 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
 
     Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
-'    Dim iNewLine As Long    '= номер строки в SheetNew
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
@@ -386,14 +385,10 @@ Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
     Rnew = GetRep(SheetNew)
-'''    Rnew.EOL = Rnew.EOL + 1
     Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
     Rnew.Made = "WrNewSheet"
     Rdoc = GetRep(SheetDB)
     
-''    iNewLine = EOL(SheetNew, DB_TMP) + 1
-
-''    If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
@@ -777,11 +772,12 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             End If
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "DogVal":
-            Dim Vpaid As Long, Vinv As Long, Vdog As Long
+            Dim Vpaid As Long, Vinv As Long, Vdog As Long, DogCur As String
             Vpaid = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
             Vinv = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
-            Vdog = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
-            Adapter = Max(Vpaid, Vinv, Vdog)
+            DogCur = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
+            Vdog = .Cells(WP_PAYMENT_LINE, CLng(Par(3))) * CurRate(DogCur)
+            Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
         Case "ForceTxt":
             Adapter = "'" & X
         Case "CopyToVal":
@@ -829,7 +825,12 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Dogovor = ContrCod(Dogovor, MainDog)
             Dat = .Cells(WP_PAYMENT_LINE, CLng(Par(3)))
             Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
-            
+        Case "TypOpp":
+    ' -- распознавание типа Проекта по типу и спецификации Товара
+            Dim Good As String
+            Stop
+            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Adapter = TypOpp(X, Good)
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select

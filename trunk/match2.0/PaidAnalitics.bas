@@ -159,7 +159,7 @@ Sub PaidHandling()
                     
                     OppId = IsOpp(Sale, Acc, T, Rub, Dat, ContrK) ' Id Проекта в SF
                     If OppId = "" Then
-                        NewOpp Acc, ContrK, Dat, Sale, Rub, "RUB", T, Sbs
+                        NEWOPP Acc, ContrK, Dat, Sale, Rub, "RUB", T, Sbs
                     Else
             '>>>>  занесение нового Платежа
                         NewPay i, OppNbyId(OppId), ContrId
@@ -532,5 +532,52 @@ Function IsSubscription(Good, GT) As Boolean
             Exit Function
         End If
     Next i
+End Function
+Function IsWork(ByVal Good As String) As Boolean
+'
+' - IsWork(Good)    - возвращает True, если
+' 29.10.12
+
+    Dim Wrd() As String, Wokabulary As String, i As Long
     
+'    For Each iG In Range("WorksTable").Rows
+'        Ent = split(LCase$(Good), ",")
+'
+'    Next iG
+'
+    Good = LCase(Good)
+    Wokabulary = Range("WorksTable").Cells(1, 2)
+    Wrd = split(LCase(Wokabulary), ",")
+    IsWorks = True
+    For i = LBound(Wrd) To UBound(Wrd)
+        If InStr(Good, Trim(Wrd(i))) > 0 Then Exit Function
+    Next i
+    IsWorks = False
+End Function
+Function TypOpp(GoodType, Good) As String
+'
+' - TypeOpp(GoodType, Good) - классификация типа Проекта по типу и спецификации товара
+'
+' 29.10.12
+    
+    Dim WeRange As Range, i As Long, iG As Range
+    Set WeRange = DB_MATCH.Sheets(We).Range("GoodSbs")
+    
+    TypOpp = ""
+    For Each iG In WeRange.Rows
+        If iG.Cells(1, 1) = GoodType Then
+            TypOpp = iG.Cells(1, 11)
+            If TypOpp <> "" Then Exit Function
+            If IsWork(Good) Then
+                TypOpp = "Работа"
+                Exit Function
+            End If
+            If IsSubscription(Good, GoodType) Then
+                TypOpp = "Подписка"
+            Else
+                TypOpp = "Лицензии"
+            End If
+            Exit For
+        End If
+    Next iG
 End Function
