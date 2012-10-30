@@ -6,7 +6,7 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   1.10.2012
+'   31.10.2012
 
 Option Explicit
 Sub NewContr()
@@ -14,6 +14,7 @@ Sub NewContr()
 ' S NewContr()  - просмотр Договоров 1С для занесения в SF новых через DL
 ' 18.8.2012
 '  3.9.12 - StepIn
+' 31.10.10 - fix Call WrNewSheet
 
     StepIn
     
@@ -27,7 +28,7 @@ Sub NewContr()
         For i = 2 To Dog.EOL
             Progress i / Dog.EOL
             If .Cells(i, DOGIDSF_COL) = "" And .Cells(i, DOGISACC_COL) <> "" Then
-                WrNewSheet NewContract, DB_1C.Sheets(DOG_SHEET), i
+                WrNewSheet NewContract, DOG_SHEET, i
             End If
         Next i
     End With

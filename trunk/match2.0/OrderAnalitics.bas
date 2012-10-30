@@ -6,7 +6,7 @@ Attribute VB_Name = "OrderAnalitics"
 '         StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
 ' [*] OrderPass()     - проход по листу Заказов Orders
 '
-'   4.9.2012
+'   31.10.2012
 
 Option Explicit
 Sub GetInv1C(InvCol As Integer, PayN_Col As Integer, _
@@ -16,7 +16,7 @@ Sub GetInv1C(InvCol As Integer, PayN_Col As Integer, _
 '      StrInvCol,DateCol,[Str2Inv])    найденным по строкам, содержащих Счет и по дате.
 ' ----- ПАРАМЕТРЫ, ЗАПИСЫВАЕМЫЕ В ТАБЛИЦУ ПРОЦЕССОВ -------
 ' 1.InvCol      - номер колонки в MyCol, куда вставляется найденная строка - Счет 1С
-' 2.PayN_Col    - номер колонки в MyCol, куда всталяют найденный номер строки с Платежах 1С
+' 2.PayN_Col    - номер колонки в MyCol, куда вставляют найденный номер строки с Платежах 1С
 ' 3.StrInvCol   - номер колонки в Заказах - "Номер счета 1С"
 ' 4.DateCol     - номер колонки - привязка к Дате Счета 1С
 ' 5.[Str2InvCol]- альтернативная колонка с текстом Счета 1С
@@ -226,6 +226,7 @@ Sub NewOrd()
 '
 ' S NewOrder - запись Новых Заказов в лист NewOrderList для загрузки в SF
 '   5.9.12
+' 31.10.12 - fix call WrNewSheet
 
     StepIn
 
@@ -238,7 +239,7 @@ Sub NewOrd()
         For i = 2 To Ord.EOL
             Progress i / Ord.EOL
             If .Cells(i, OL_IDSFORDER_COL) = "" And .Cells(i, OL_IDSF_COL) <> "" Then
-                WrNewSheet NewOrderList, DB_STOCK.Sheets(OrderList), i
+                WrNewSheet NewOrderList, OrderList, i
             End If
         Next i
     End With
