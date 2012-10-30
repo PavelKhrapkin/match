@@ -10,7 +10,7 @@ Attribute VB_Name = "WriteDL"
 ' - WriteCSV(SheetN, FileName, ..)  - запись листа SheetN в файл для загрузки DL
 '
 '   23.9.2012 - выделение модуля AddressParse
-'   30.9.12
+'   31.10.12
 
 Option Explicit
 
@@ -287,15 +287,18 @@ Sub WrCSV(SheetN As String, Directory, FileToWrite, Bat)
 ' S WrCSV(SheetN, Directory, FileToWrite, Bat) - Шаг - запись CSV
 '   23.9.12
 '   30.9.12 - запись числа новых строк в SheetN в WrProcResult
+'   19.10.12 - использование WP_TMP
+'   31.10/12 - не стираем лист CSV
 
     Dim NewLines As Long
     
-    DB_MATCH.Sheets(SheetN).Activate
-    NewLines = EOL(SheetN, DB_MATCH)
+    Set DB_TMP = FileOpen(F_TMP)
+    DB_TMP.Sheets(SheetN).Activate
+    NewLines = EOL(SheetN, DB_TMP)
     If NewLines <= 1 Then
-        Application.DisplayAlerts = False
-        ActiveSheet.Delete
-        Application.DisplayAlerts = True
+'        Application.DisplayAlerts = False
+'        ActiveSheet.Delete
+'        Application.DisplayAlerts = True
     Else
         ChDir Directory
         WriteCSV SheetN, FileToWrite

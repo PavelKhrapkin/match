@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   21.10.2012
+'   31.10.2012
 
 Option Explicit
 
@@ -16,6 +16,7 @@ Sub NewPaidOpp()
 '
 ' S NewPaidDog()    - новые Платежи по существующим Проектам
 '   6.10.12
+'  31.10.12 - fix Call WrNewSheet
 
     StepIn
     
@@ -26,7 +27,7 @@ Sub NewPaidOpp()
     Dim Acc As String       'поле - "Клиент"
     Dim Rub As Variant      'поле - "Итог руб"
     Dim Sale As String      'поле - "Продавец"
-    Dim Good As String      'поле - "Товары" листа Платежей, спецификация
+    Dim good As String      'поле - "Товары" листа Платежей, спецификация
     Dim T As String         ' = Тип Товара по Спецификации
     Dim Dogovor As String   'поле - "Договор"
     Dim MainDog As String   'поле - "Осн.договор"
@@ -45,8 +46,8 @@ Sub NewPaidOpp()
                 Acc = Compressor(.Cells(i, PAYACC_COL)) ' Организация
                 Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
                 Sale = .Cells(i, PAYSALE_COL)   ' Продавец
-                Good = .Cells(i, PAYGOOD_COL)   ' Товар
-                T = GoodType(Good)              ' Тип товара по Счету
+                good = .Cells(i, PAYGOOD_COL)   ' Товар
+                T = GoodType(good)              ' Тип товара по Счету
                 Rub = .Cells(i, PAYRUB_COL)     ' сумма Платежа руб
                 Dogovor = .Cells(i, PAYDOGOVOR_COL)
                 MainDog = Mid(.Cells(i, PAYOSNDOGOVOR_COL), 9)
@@ -55,7 +56,7 @@ Sub NewPaidOpp()
                 OppId = IsOpp(Sale, Acc, T, Rub, Dat, ContrK) ' Id Проекта в SF
 
                 If OppId <> "" Then
-                    WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), i, OppId
+                    WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
                 End If
             End If
         Next i
@@ -65,6 +66,8 @@ Sub NewPaidDog()
 '
 ' S NewPaidDog()    - новые плотежи по Договору
 '
+' 31.10.21 fix Call WrNewSheet
+
     StepIn
     
     Dim P As TOCmatch
@@ -76,7 +79,7 @@ Sub NewPaidDog()
             Progress i / P.EOL
             If .Cells(i, PAYISACC_COL) <> "" And .Cells(i, PAYINSF_COL) = "" Then
                 If .Cells(i, PAYDOGOVOR_COL) <> "" Then
-                    WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), i
+                    WrNewSheet NEW_PAYMENT, PAY_SHEET, i
                 End If
             End If
         Next i
@@ -95,7 +98,7 @@ Sub PaidHandling()
     Dim Acc As String       'поле - "Клиент"
     Dim Rub As Variant      'поле - "Итог руб"
     Dim Sale As String      'поле - "Продавец"
-    Dim Good As String      'поле - "Товары" листа Платежей, спецификация
+    Dim good As String      'поле - "Товары" листа Платежей, спецификация
     Dim T As String         ' = Тип Товара по Спецификации
     Dim Sbs As Boolean      ' = True если Спецификация содержит Подписки
     Dim Dogovor As String   'поле - "Договор"
@@ -141,9 +144,9 @@ Sub PaidHandling()
                     Trim(.Cells(i, PAYSALE_COL)) <> "" Then
                 Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
                 Sale = .Cells(i, PAYSALE_COL)   ' Продавец
-                Good = .Cells(i, PAYGOOD_COL)   ' Товар
-                T = GoodType(Good)              ' Тип товара по Счету
-                Sbs = IsSubscription(Good, T)   ' Подписка?
+                good = .Cells(i, PAYGOOD_COL)   ' Товар
+                T = GoodType(good)              ' Тип товара по Счету
+                Sbs = IsSubscription(good, T)   ' Подписка?
                 Rub = .Cells(i, PAYRUB_COL)     ' сумма Платежа руб
                 Dogovor = .Cells(i, PAYDOGOVOR_COL)
                 MainDog = Mid(.Cells(i, PAYOSNDOGOVOR_COL), 9)
@@ -322,17 +325,21 @@ Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolea
 '                   iOpp - номер строки в SFopp, остальные параметры из платежа
 '                   Возвращает False если строки iSFopp не соответствует параметрам
 ' 21.10.12
+' 31.10.12 - добавлен фильтр по SalesTeam
 
-    Dim ContrK As String, IdSFopp As String, iSFD As Long
+    Dim ContrK As String, IdSFopp As String, iSFD As Long, OppN As Long
     OppFilter = False
         
     With DB_SFDC
-        If .Sheets(SFopp).Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
-        
+        With .Sheets(SFopp)
+            If .Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
+            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
+            If Not IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) Then Exit Function
+        End With
+            
         If DB_TMP.Sheets(WP).Cells(20, 3) = "" Then GoTo Found
         ContrK = ContrCod(Dogovor, MainDog)
         If ContrK = "" Then GoTo Found
-        
         IdSFopp = .Sheets(SFopp).Cells(iOpp, SFOPP_OPPID_COL)
         iSFD = CSmatchSht(IdSFopp, SFD_CONTRID_COL, SFD)
         If iSFD > 0 Then
@@ -492,7 +499,7 @@ Function GoodType(G) As String
     Next iG
     ErrMsg FATAL_ERR, "Неизвестный тип товара " & G
 End Function
-Function IsSubscription(Good, GT) As Boolean
+Function IsSubscription(good, GT) As Boolean
 '
 ' возвращает True, если товар - подписка/Subscription/Maintanence
 ' в зависимости от типа товара GT. Иначе - поставка лицензии, т.е. False.
@@ -507,7 +514,7 @@ Function IsSubscription(Good, GT) As Boolean
     IsSubscription = False
     
     Sbs = ""
-    For Each iG In Range("GoodSbs").Rows
+    For Each iG In DB_MATCH.Sheets(We).Range("GoodSbs").Rows
         If iG.Cells(1, 1) = GT Then
             Sbs = iG.Cells(1, SBSCOL)
             Exit For
@@ -523,7 +530,7 @@ Function IsSubscription(Good, GT) As Boolean
     Dim i As Integer
     Dim SbsWords() As String
     Dim LGood As String
-    LGood = LCase$(Good)
+    LGood = LCase$(good)
     
     SbsWords = split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)
@@ -533,7 +540,7 @@ Function IsSubscription(Good, GT) As Boolean
         End If
     Next i
 End Function
-Function IsWork(ByVal Good As String) As Boolean
+Function IsWork(ByVal good As String) As Boolean
 '
 ' - IsWork(Good)    - возвращает True, если
 ' 29.10.12
@@ -545,16 +552,16 @@ Function IsWork(ByVal Good As String) As Boolean
 '
 '    Next iG
 '
-    Good = LCase(Good)
+    good = LCase(good)
     Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
     Wrd = split(LCase(Wokabulary), ",")
     IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
-        If InStr(Good, Trim(Wrd(i))) > 0 Then Exit Function
+        If InStr(good, Trim(Wrd(i))) > 0 Then Exit Function
     Next i
     IsWork = False
 End Function
-Function TypOpp(GoodType, Good) As String
+Function TypOpp(GoodType, good) As String
 '
 ' - TypeOpp(GoodType, Good) - классификация типа Проекта по типу и спецификации товара
 '
@@ -568,11 +575,11 @@ Function TypOpp(GoodType, Good) As String
         If iG.Cells(1, 1) = GoodType Then
             TypOpp = iG.Cells(1, 11)
             If TypOpp <> "" Then Exit Function
-            If IsWork(Good) Then
+            If IsWork(good) Then
                 TypOpp = "Работа"
                 Exit Function
             End If
-            If IsSubscription(Good, GoodType) Then
+            If IsSubscription(good, GoodType) Then
                 TypOpp = "Подписка"
             Else
                 TypOpp = "Лицензии"
