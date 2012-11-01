@@ -361,7 +361,7 @@ Sub CheckProc0(NewProcResult As String)
         End
     End If
 End Sub
-Sub WrNewSheet(SheetNew, SheetDB, DB_Line, Optional ExtPar As String)
+Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, Optional ExtPar As String)
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -551,7 +551,7 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
         WP_PdOpp WP, iPayment + 1
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
-        WrNewSheet NEW_PAYMENT, DB_1C.Sheets(PAY_SHEET), iPayment, OppId
+        WrNewSheet NEW_PAYMENT, PAY_SHEET, iPayment, OppId
         WP_PdOpp WP, iPayment + 1
     Case "Связать  ->"
         Stop
@@ -657,14 +657,14 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
             Case "iLine":
                 If HashFlag Then GoTo GetFromWP
                 WP_Row = iLine
-                GoTo GerFromActiveSheet
+                GoTo GetFromActiveSheet
             Case PTRN_SELECT:
                 If HashFlag Then
                     WP_Row = iRow + PTRN_VALUE - 1
                     GoTo GetFromWP
                 End If
                 WP_Row = .Cells(PutToRow, 5)
-                GoTo GerFromActiveSheet
+                GoTo GetFromActiveSheet
              Case Else:
                 ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
             End Select
@@ -684,7 +684,7 @@ GetFromWP:
         GoTo Ex
     End With
     
-GerFromActiveSheet:
+GetFromActiveSheet:
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
 Ex: Exit Function
 End Function
@@ -831,10 +831,10 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
         Case "TypOpp":
     ' -- распознавание типа Проекта по типу и спецификации Товара
-            Dim Good As String
+            Dim good As String
 '            Stop
-            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-            Adapter = TypOpp(X, Good)
+            good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+            Adapter = TypOpp(X, good)
         Case Else
             ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
         End Select
