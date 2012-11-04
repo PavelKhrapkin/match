@@ -2,8 +2,10 @@ Attribute VB_Name = "From1C"
 '---------------------------------------------------------------------------
 ' Макросы для загрузки отчетов из 1С
 '
-' S SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
-'               записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
+' S ContractPaint() - Раскрашиваем Лист Договоров
+' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячеки (iStr,Col) в цвет Color
+' - Acc1C_Bottom()  - перенос первыx трех строк Acc1С в пятку
+' S AccPaid()       - окраска колонки А - Организация есть в SF
 '<*> From1Cpayment  - заменяет лист отчета из 1С "Приход денег на счета"
 ' -  SFmatchFill(SheetN)  - заполнение связей листа SheetN по SFDC
 ' -  CSmatch(Val,Col,[SheetN],[DB]) - Case Sensitive match возвращает номер строки
@@ -12,48 +14,19 @@ Attribute VB_Name = "From1C"
 '<*> From1Caccount  - заменяет лист отчета 1С "Клиенты .." новым из 1С
 '(*) FromStock      - замена Складской Книги в листе Stock
 '
-' 31.8.2012 П.Л.Храпкин match 2.0
+'!Х! SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
+'               записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
+'
+' 4.11.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
-Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
-'
-' S SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
-'       записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
-' 8.8.12
-' 31.8.12 - внедрение StepIn
-
-    StepIn
-    
-    Dim DocTo As String ' имя входного Документа - отчета
-    Dim RepFr As TOCmatch, RepTo As TOCmatch
-    Dim Val
-    Dim i As Integer, N As Integer
-    
-    DocTo = ActiveSheet.Name
-    RepTo = GetRep(ActiveSheet.Name)
-    Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN).Activate
-    RepFr = GetRep(DocFr)
-    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
-        Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Activate
-        For i = 2 To RepTo.EOL
-            Progress i / RepTo.EOL                                  'ActiveSheet = SFacc
-            Val = .Cells(i, ColVal)                                 'писать надо в 1C -- Val
-            N = CSmatch(Val, ColFr)
-            If N > 0 Then
-'                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
-                .Cells(i, ColTo) = ActiveSheet.Cells(N, ColFrId)
-            Else
-                .Cells(i, ColTo) = ""
-            End If
-        Next i
-    End With
-End Sub
 Sub ContractPaint()
 '
-' - ContractPaint() - Раскрашиваем Лист Договоров
+' S ContractPaint() - Раскрашиваем Лист Договоров
 ' 10.8.12
 '  1.9.12 - StepIn
 ' 14.9.12 - раскраска с Paint
+'  4.11.12 - флаг "Не отсканировано" - красный
 
     StepIn
     
@@ -71,6 +44,7 @@ Sub ContractPaint()
         Paint i, DOGPAID1C_COL, "1", LimeG, 1           ' Оплаченные - темно зеленый
         Paint i, DOGISINV1C_COL, "1", rgbOlive, 1       ' Выставлен Счет - оливковый
         Paint i, DOG1CSCAN_COL, "1", rgbViolet, 1       ' Отсканировано - фиолетовый
+        Paint i, DOG1CSCAN_COL, "0", rgbRed, 1          ' НЕ Отсканировано - красный
     Next i
 '-- копируем пятку в Платежи1С
     DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
@@ -211,7 +185,42 @@ Sub PaymentPaint()
             
         Next i
 '-- копируем пятку в Платежи1С
-        Range("Payment_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
+        DB_MATCH.Sheets(Header).Range("Payment_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
     End With
 '    ModEnd REP_1C_P_PAINT
 End Sub
+Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
+'
+' Х SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
+'       записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
+' 8.8.12
+' 31.8.12 - внедрение StepIn
+'  3.11.12 -- УДАЛИТЬ - Заменено Адаптером
+
+    StepIn
+    
+    Dim DocTo As String ' имя входного Документа - отчета
+    Dim RepFr As TOCmatch, RepTo As TOCmatch
+    Dim Val
+    Dim i As Integer, N As Integer
+    
+    DocTo = ActiveSheet.Name
+    RepTo = GetRep(ActiveSheet.Name)
+    Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN).Activate
+    RepFr = GetRep(DocFr)
+    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
+        Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Activate
+        For i = 2 To RepTo.EOL
+            Progress i / RepTo.EOL                                  'ActiveSheet = SFacc
+            Val = .Cells(i, ColVal)                                 'писать надо в 1C -- Val
+            N = CSmatch(Val, ColFr)
+            If N > 0 Then
+'                .Cells(i, ColTo) = Workbooks(RepFr.RepFile).Sheets(RepFr.SheetN).Cells(N, ColFrId)
+                .Cells(i, ColTo) = ActiveSheet.Cells(N, ColFrId)
+            Else
+                .Cells(i, ColTo) = ""
+            End If
+        Next i
+    End With
+End Sub
+

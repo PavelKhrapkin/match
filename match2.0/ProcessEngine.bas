@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 26.10.12 П.Л.Храпкин
+' 2.11.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -424,14 +424,13 @@ Sub xAdapt(F As String, iLine As Long)
 '                      по строке номер iLine в ActiveSheet
 '   21.10.12
 '   23.10.12 - X_Parse вынесен в отдельную подпрограмму
+'    2.11.12 - вызов NewOpp если Select не нашел ни одного Проекта
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim PtrnType As String                      ' поле Тип Шаблона
-''    Dim sX() As String                          ' строка - выражение с аргументом Х
-''    Dim iX As Long                              ' номер колонки - значение в строке PTRN_COLS
     Dim PutToRow As Long, PutToCol As Long
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
@@ -439,7 +438,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim Y As String
     Dim IsErr As Boolean
     Dim iSelect As Long     '''', WP_Row As Long
-''    Dim Nopp As Long
+    Dim i As Long
     Dim WP_Prototype_Lines As Long
     
         
@@ -501,14 +500,17 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
-        For iCol = 1 To 9
-            .Columns(iCol).Hidden = True
-        Next iCol
+        For i = 1 To 9
+            .Columns(i).Hidden = True
+        Next i
         
     End With
-
-'=====  СОХРАНЕНИЕ КОНТЕКСТА ====================
     DB_TMP.Sheets(WP).Activate
+    
+    If iSelect = 2 And Y = "-1" Then
+       xAdapt_Continue "NewOpp", 1
+    End If
+
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
@@ -777,10 +779,20 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "DogVal":
             Dim Vpaid As Long, Vinv As Long, Vdog As Long, DogCur As String
+            Dim sDog As String
             Vpaid = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
             Vinv = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
             DogCur = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
-            Vdog = .Cells(WP_PAYMENT_LINE, CLng(Par(3))) * CurRate(DogCur)
+            Vdog = 0
+            sDog = Trim(.Cells(WP_PAYMENT_LINE, CLng(Par(3))))
+            If sDog <> "" Then
+                If Not IsNumeric(sDog) Then
+                    ErrMsg FATAL_ERR, "Не числовое значение в Договоре Платежа WP"
+                    Stop
+                    End
+                End If
+                Vdog = CDbl(sDog) * CurRate(DogCur)
+            End If
             Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
         Case "ForceTxt":
             Adapter = "'" & X

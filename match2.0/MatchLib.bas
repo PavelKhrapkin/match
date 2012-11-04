@@ -2,14 +2,14 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 28.10.2012
+' П.Л.Храпкин, А.Пасс 4.11.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
 ' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
-' S InsMyCol(F)                 - вставляем колонки в лист слева по шаблону в F
+' S InsMyCol(F[,FS])            - вставляем колонки в лист слева по шаблону F и пятку из FS
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
@@ -297,9 +297,9 @@ FoundRep:
         .Cells(1, 1) = Now
     End With
 End Sub
-Sub InsMyCol(F, Optional FS As String = "")
+Sub InsMyCol(F As String, Optional FS As String = "")
 '
-' S InsMyCol(F) - вставляем колонки в лист слева по шаблону F и пятку из FS
+' S InsMyCol(F [,FS]) - вставляем колонки в лист слева по шаблону F и пятку из FS
 '
 '   * Если заголовок колонки шаблона пятки пустой - пропускаем
 '   * Если в строке 2 шапки шаблона "V" - переписываем шапку из шаблона
@@ -310,22 +310,25 @@ Sub InsMyCol(F, Optional FS As String = "")
 '  31.8.12 - внедрение StepIn
 '  11.9.12 - перенос форм в Headers файла match.xlsm
 '  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
+'  4.11.12 - Запуск Adapt непосредственно из InsMyCol; использование R=GetRep(SFD)
 
 
     Const COPY_HDR = "CopyHdr"
 
     StepIn
     
+    Dim R As TOCmatch   'R - структура TOCmatch для SFD
     Dim FF As Range
     Dim i As Integer
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
-    With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
+    R = GetRep(SFD)
+    With Workbooks(R.RepFile).Sheets(R.SheetN)
 '---- А может мы уже эту колонку вставляли?
         If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
 
 '---- вставляем колонки по числу MyCol
-        For i = 1 To RepTOC.MyCol
+        For i = 1 To R.MyCol
             .Cells(1, 1).EntireColumn.Insert
         Next i
 '---- задаем ширину и заголовки вставленных колонок
@@ -334,19 +337,21 @@ Sub InsMyCol(F, Optional FS As String = "")
             If FF.Cells(2, i) = COPY_HDR Then .Cells(1, i) = FF.Cells(1, i)
         Next i
 '---- копируем колонки MyCol от верха до EOL
-        For i = 1 To RepTOC.MyCol
+        For i = 1 To R.MyCol
             FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             FF.Cells(2, i).Copy Destination:=.Cells(2, i)
         Next i
         .Rows(1).RowHeight = FF.Rows(1).RowHeight
-        .Range(.Cells(2, 1), .Cells(RepTOC.EOL, RepTOC.MyCol)).FillDown
+        .Range(.Cells(2, 1), .Cells(R.EOL, R.MyCol)).FillDown
+'---- исполняем Адаптеры по Шаблону F
+        Adapt F
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
         Set FF = DB_MATCH.Sheets(Header).Range(FS)
         For i = 1 To FF.Columns.Count
             If FF.Cells(1, i) <> "" Then
                 FF.Columns(i).Copy Destination:=.Cells( _
-                    RepTOC.EOL + RepTOC.ResLines - FF.Rows.Count + 1, i)
+                    R.EOL + R.ResLines - FF.Rows.Count + 1, i)
             End If
         Next i
     End With
@@ -613,25 +618,6 @@ Function CSmatchSht(Val, Col, Sht) As Long
         On Error GoTo 0
         If IsEmpty(CSmatchSht) Or Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
         N = CSmatchSht + 1
-    Loop While Val <> CheckCS
-End Function
-Function CSmatchRng(Val, Col, Rng) As Long
-'
-' - CSmatch(Val,Col,Rng) - Case Sensitive match возвращает номер строки с Val в колонке Col.
-'                   Если Val не найден- возвращает 0. Rng - Range для поиска Val.
-' 29.10.12
-
-    Dim CheckCS
-    Dim N As Long
-    N = 1
-    Do
-        CSmatchSht = 0
-        On Error Resume Next
-        CSmatchRng = Application.Match(Val, Rng, 0) + N - 1
-        CheckCS = Rng.Cells(CSmatchRng, Col)
-        On Error GoTo 0
-        If IsEmpty(CSmatchRng) Or Not IsNumeric(CSmatchRng) Or CSmatchRng <= 0 Then Exit Function
-        N = CSmatchRng + 1
     Loop While Val <> CheckCS
 End Function
 Sub ClearSheet(SheetN, HDR_Range As Range)
