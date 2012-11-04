@@ -310,8 +310,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '  31.8.12 - внедрение StepIn
 '  11.9.12 - перенос форм в Headers файла match.xlsm
 '  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
-'  4.11.12 - Запуск Adapt непосредственно из InsMyCol; использование R=GetRep(SFD)
-
+'  4.11.12 - использование R=GetRep(SFD)
 
     Const COPY_HDR = "CopyHdr"
 
@@ -343,8 +342,6 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         Next i
         .Rows(1).RowHeight = FF.Rows(1).RowHeight
         .Range(.Cells(2, 1), .Cells(R.EOL, R.MyCol)).FillDown
-'---- исполняем Адаптеры по Шаблону F
-        Adapt F
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
         Set FF = DB_MATCH.Sheets(Header).Range(FS)
