@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 2.11.12 П.Л.Храпкин
+' 4.11.12 П.Л.Храпкин
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -482,7 +482,17 @@ Sub xAdapt(F As String, iLine As Long)
                     If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
-                    If Not IsErr And X <> "" Then .Cells(PutToRow, PutToCol) = Y
+                    If Not IsErr And X <> "" Then
+                        If .Cells(iRow + PTRN_WIDTH - 1, iCol) = "Dbl" _
+                                And Y <> "" Then
+                            Dim YY As Double
+                            YY = Y
+                            .Cells(PutToRow, PutToCol) = YY
+                            .Cells(PutToRow, PutToCol).FormatNumber = "0,00"
+                        Else
+                            .Cells(PutToRow, PutToCol) = Y
+                        End If
+                    End If
                 Next iCol
                 If PtrnType = PTRN_SELECT Then
                     iSelect = .Cells(iRow + CLng(.Cells(iRow + 3, 3)) + 5, 5)
@@ -877,6 +887,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
 '
 ' 5.9.12
 ' 14.9.12 - работает /D для второй группы - "по умолчанию"
+' 4.11.12 - Fetch возвращает номер строки в случае <Doc>/C1:№
 
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
@@ -906,11 +917,17 @@ Function FetchDoc(F_rqst, X, IsErr) As String
         End If
         S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
     Else
-'--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup
-        C2 = Cols(1)
+'--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup или №
+        If IsNumeric(Cols(1)) Then C2 = Cols(1)
         S = ""
         N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
-        If N <> 0 Then S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
+        If N <> 0 Then
+            If Cols(1) = "№" Then
+                S = N
+            Else
+                S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
+            End If
+        End If
     End If
 '--- обработка группы 2 -- если S=""
     If S = "" Then
