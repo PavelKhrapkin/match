@@ -484,11 +484,11 @@ Sub xAdapt(F As String, iLine As Long)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
                         If .Cells(iRow + PTRN_WIDTH - 1, iCol) = "Dbl" _
-                                And Y <> "" Then
+                                And IsNumeric(Y) Then
                             Dim YY As Double
                             YY = Y
                             .Cells(PutToRow, PutToCol) = YY
-                            .Cells(PutToRow, PutToCol).FormatNumber = "0,00"
+                            .Cells(PutToRow, PutToCol).NumberFormat = "#,##0.00"
                         Else
                             .Cells(PutToRow, PutToCol) = Y
                         End If
