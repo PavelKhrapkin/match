@@ -17,7 +17,7 @@ Attribute VB_Name = "From1C"
 '!Х! SFlnkFill(RepFr,ColFr,ColFrId, ColVal, ColTo) - "сшивает" отчет в DocFr с DocTo,
 '               записывая в колонку ColTo Id рекорда, найденного по значению в ColFr
 '
-' 4.11.2012 П.Л.Храпкин match 2.0
+' 8.11.2012 П.Л.Храпкин match 2.0
 
 Option Explicit
 Sub ContractPaint()
@@ -34,6 +34,8 @@ Sub ContractPaint()
     D = GetRep(DOG_SHEET)
     Dim i As Long
     
+    ScreenUpdate False
+    
     For i = 2 To D.EOL
         ActiveSheet.Rows(i).Interior.Color = rgbWhite
         Paint i, DOGSFSTAT_COL, "Закрыт", rgbLightGreen ' Договоры Закрытые в SF- зеленые
@@ -46,6 +48,9 @@ Sub ContractPaint()
         Paint i, DOG1CSCAN_COL, "1", rgbViolet, 1       ' Отсканировано - фиолетовый
         Paint i, DOG1CSCAN_COL, "0", rgbRed, 1          ' НЕ Отсканировано - красный
     Next i
+    
+    ScreenUpdate True
+    
 '-- копируем пятку в Платежи1С
     DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
             Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
@@ -94,6 +99,8 @@ Sub AccPaint()
     Dim RepTo As TOCmatch
     Dim R As Range
     
+    ScreenUpdate False
+    
     RepTo = GetRep(ActiveSheet.Name)
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
         For i = 2 To RepTo.EOL
@@ -106,6 +113,8 @@ Sub AccPaint()
             End If
         Next i
     End With
+    
+    ScreenUpdate True
 End Sub
 
 Sub testCSmatch()
@@ -172,22 +181,16 @@ Sub PaymentPaint()
                     .Cells(i, PAYGOOD_COL).Interior.Color = rgbPink
                 End If
             End If
-'-- окраска колонки А - Организация есть в SF
-''            If .Cells(i, PAYISACC_COL) = "1" Then
-''                .Cells(i, PAYISACC_COL).Interior.Color = rgbYellow
-''            Else
-''                .Cells(i, PAYISACC_COL).Interior.Color = rgbRed
-''            End If
             
 '-- скрываем нал
             Doc = Trim(.Cells(i, PAYDOC_COL))
             If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then .Rows(i).Hidden = True
-            
         Next i
+
 '-- копируем пятку в Платежи1С
         DB_MATCH.Sheets(Header).Range("Payment_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
     End With
-'    ModEnd REP_1C_P_PAINT
+    
 End Sub
 Sub SFlnkFill(DocFr, ColFr, ColFrId, ColVal, ColTo)
 '

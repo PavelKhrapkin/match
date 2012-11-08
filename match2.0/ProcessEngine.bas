@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 4.11.12 П.Л.Храпкин
+' 9.11.12 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -218,6 +218,8 @@ Sub StepIn()
     Dim iStep As Integer, i As Long
     Dim P As TOCmatch, S As TOCmatch, Rep As String
     
+    ScreenUpdate False
+    
     GetRep Process
     With DB_MATCH.Sheets(Process)
         PublicProcName = .Cells(1, PROCESS_NAME_COL)
@@ -239,8 +241,11 @@ Sub StepOut(Step As String, iProc)
 ' - StepOut()   - завершение выполнения Шага с записью в TOCmatch
 '   8/10/12
 '  28.10.12 - более аккуратная работа с TOCmatch по документам, обрабатываемым в Шаге
+'   9.11.12 - имя Документа пустое?
 
     Dim Proc As String, R As TOCmatch
+    
+    ScreenUpdate True
     
     With DB_MATCH.Sheets(Process)
         Application.StatusBar = False
@@ -250,7 +255,8 @@ Sub StepOut(Step As String, iProc)
         .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
         .Cells(1, STEP_NAME_COL) = ""
         .Cells(1, 1) = Now
-        Proc = .Cells(1, PROCESS_NAME_COL)              'имя Процесса
+        If .Cells(iProc, PROC_REP1_COL) = "" Then Exit Sub  'имя Документа пустое?
+        Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
         If Proc = "" Then Exit Sub
         R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
         R.Made = Step
@@ -425,6 +431,7 @@ Sub xAdapt(F As String, iLine As Long)
 '   21.10.12
 '   23.10.12 - X_Parse вынесен в отдельную подпрограмму
 '    2.11.12 - вызов NewOpp если Select не нашел ни одного Проекта
+'    9.11.12 - работа с Named Range WP
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -440,22 +447,30 @@ Sub xAdapt(F As String, iLine As Long)
     Dim iSelect As Long     '''', WP_Row As Long
     Dim i As Long
     Dim WP_Prototype_Lines As Long
-    
-        
+            
+'---- Создаем заново лист WP
     Set DB_TMP = FileOpen(F_TMP)
-    Application.DisplayAlerts = False
-    On Error Resume Next
-    DB_TMP.Sheets(WP).Delete
-    On Error GoTo 0
-    Application.DisplayAlerts = True
+    With DB_TMP
+        Application.DisplayAlerts = False
+        On Error Resume Next
+        .Sheets(WP).Delete
+        On Error GoTo 0
+        Application.DisplayAlerts = True
     
-    DB_MATCH.Activate
-    DB_MATCH.Sheets("WP_Prototype").Copy Before:=DB_TMP.Sheets(1)
-    ActiveSheet.Name = WP
-    
+        .Sheets.Add Before:=.Sheets(1)
+        .Sheets(1).Name = WP
+    End With
+'----- Заполняем WP
     With DB_TMP.Sheets(WP)
-        .Rows("1:4").Delete
         .Tab.Color = rgbBlue
+        
+        Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
+        FF.Copy .Cells(1, 1)
+'---- задаем ширину и заголовки вставленных колонок
+        For i = 1 To FF.Columns.Count
+            .Columns(i).ColumnWidth = FF.Cells(3, i)
+            .Cells(1, i) = FF.Cells(1, i)
+        Next i
         
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
@@ -557,14 +572,17 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
         End
     Case "->":
 '        iPayment = WP_TMP.Sheets(WP).Cells(12, 4)
-        WP_PdOpp WP, iPayment + 1
+        WP_Paid WP, iPayment + 1
     Case "NewOpp":
         WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
-        WP_PdOpp WP, iPayment + 1
+        WP_Paid WP, iPayment + 1
+    Case "NewAcc":
+!!!!        WrNewSheet NEW_ACC, WP, WP_PAYMENT_LINE
+        WP_Paid WP, iPayment + 1
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
         WrNewSheet NEW_PAYMENT, PAY_SHEET, iPayment, OppId
-        WP_PdOpp WP, iPayment + 1
+        WP_Paid WP, iPayment + 1
     Case "Связать  ->"
         Stop
         WrNewSheet DOG_UPDATE, PAY_SHEET, iPayment

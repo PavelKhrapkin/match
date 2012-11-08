@@ -6,23 +6,25 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   31.10.2012
+'   9.11.2012
 
 Option Explicit
-Sub NewContr()
+Sub NewContr(NewContract As String)
 '
 ' S NewContr()  - просмотр Договоров 1С для занесения в SF новых через DL
 ' 18.8.2012
 '  3.9.12 - StepIn
 ' 31.10.10 - fix Call WrNewSheet
+'  9.11.12 - вызов NewSheet из NewContr
 
     StepIn
     
     Dim Dog As TOCmatch
     Dim i As Long
     
+    NewSheet NewContract
+    
     Dog = GetRep(DOG_SHEET)
-''    NewSheet NewContract
 
     With DB_1C.Sheets(DOG_SHEET)
         For i = 2 To Dog.EOL

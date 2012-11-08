@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 4.11.2012
+' П.Л.Храпкин, А.Пасс 9.11.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -168,10 +168,12 @@ Sub FatalRep(SubName, RepName)
 '
 ' - FatalRep(SubName, RepName) - сообщение о фатальной ошибке при запросе RepName
 ' 17.8.12
+' 9.8.12 -- более ясная диагностика по не найденному Штампу
 
-    ErrMsg FATAL_ERR, SubName & "> Запрос не существующего в ТОС отчета " & RepName
+    ErrMsg FATAL_ERR, SubName & "> Не найден Штамп в Документе " & RepName _
+        & vbCrLf & vbCrLf & "Этот Документ надо загрузить в match заново!"
     Stop
-    End
+'    End
 End Sub
 Function CheckStamp(iTOC As Long, _
     Optional NewRep As String = "", Optional NewRepEOL, Optional IsSF, _
@@ -310,7 +312,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '  31.8.12 - внедрение StepIn
 '  11.9.12 - перенос форм в Headers файла match.xlsm
 '  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
-'  4.11.12 - использование R=GetRep(SFD)
+'  4.11.12 - использование R=GetRep(ActiveSheet.Name)
 
     Const COPY_HDR = "CopyHdr"
 
@@ -321,7 +323,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
     Dim i As Integer
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
-    R = GetRep(SFD)
+    R = GetRep(ActiveSheet.Name)
     With Workbooks(R.RepFile).Sheets(R.SheetN)
 '---- А может мы уже эту колонку вставляли?
         If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
@@ -762,7 +764,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '   20.4.12
 '   3.10.12 - GetRep вместо EOL
 
-    Dim i, dd, MM, yy As Integer
+    Dim i, dd, MM, YY As Integer
     Dim Dat As Date
     Dim D() As String
     
@@ -776,8 +778,8 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
             If dd < 1 Or dd > 31 Then GoTo Nxt
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
-            yy = D(2)
-            Dat = dd & "." & MM & "." & yy
+            YY = D(2)
+            Dat = dd & "." & MM & "." & YY
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
 Nxt:
@@ -969,121 +971,143 @@ Sub testISML()
     A = IsMatchList("собака", "мышка,кошка,соб,лев")
     A = IsMatchList("собака", "мышка,кошка,лев")
 End Sub
-'?????????????????????????????????????????????????????????????????????????
-'?????????????????? процедуры, подлежащие удалению  ??????????????????????
-'?????????????????????????????????????????????????????????????????????????
-Sub ModStart(Report)
+Sub ScreenUpdate(TurnOn As Boolean)
 '
-' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
-'
-'  26.7.12  - переписано для match 2.0
+' - ScreenUpdate(ToDo) - switch off Screen Update if TurnOn = False
+'   8.11.12
 
-    GetRep TOC
-    
-    Select Case Report
-    Case REP_1C_P_LOAD:
-        Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
-        GetRep SF
-        GetRep PAY_SHEET
-''        CheckSheet PAY_SHEET
-''        EOL_PaySheet = RepTOC.EOL
-    Case REP_1C_P_PAINT:
-        Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
-    Case REP_1C_SFACCFIL:
-        Doing = "Заполнение колонки 1 для листа Платежей"
-        GetRep PAY_SHEET
-        EOL_PaySheet = RepTOC.EOL
-''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-    Case REP_SF_LOAD:
-        Doing = "Загрузка Платежей из Salesforce - SF"
-        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
-        GetRep PAY_SHEET
-        EOL_PaySheet = RepTOC.EOL
-        GetRep SF
-        EOL_SF = RepTOC.EOL
-''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
-''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
-''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-'''        P = True
-'    Case REP_1C_С_LOAD:
-'    Case Acc1C:
-    Case Else:
-        ErrMsg FATAL_ERR, "Запрошен неизвестный отчет"
-        End
-    End Select
-
-'''''''    With Application
-'''''''        .DisplayStatusBar = True
-'''''''        .StatusBar = Msg
-'''''''' для ускорения Excel отключаем вывод и др.
-'''''''        .ScreenUpdating = False
-'''''''        .Calculation = xlCalculationManual
-'''''''        .EnableEvents = False
-'''''''        .DisplayAlerts = False
-'''''''    End With
-'''''''    ActiveSheet.DisplayPageBreaks = False
-'''''''    Call AutoFilterReset(SheetN)
-'''''''
-'''''''' ---- определение EOL для всех основных листов
-'''''''    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
-'''''''    EOL_SF = EOL(SF) - SFresLines
-'''''''    EOL_SFD = EOL(SFD) - SFresLines
-'''''''    EOL_SFopp = EOL(SFopp) - SFresLines
-'''''''    EOL_SFacc = EOL(SFacc) - SFresLines
-'''''''    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
-'''''''    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
-'''''''    EOL_Stock = EOL(STOCK_SHEET)
-'''''''    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-'''''''    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
-'''''''
-'''''''    Select Case SheetN
-'''''''    Case PAY_SHEET:     ModStart = EOL_PaySheet
-'''''''    Case DOG_SHEET:     ModStart = EOL_DogSheet
-'''''''    Case Acc1C:         ModStart = EOL_Acc1C
-'''''''    Case STOCK_SHEET:   ModStart = EOL_Stock
-'''''''    Case SF:            ModStart = EOL_SF
-'''''''    Case SFD:           ModStart = EOL_SFD
-'''''''    Case SFacc:         ModStart = EOL_SFacc
-'''''''    Case SF_PA:         ModStart = EOL_SFlnkADSK
-'''''''    Case Else:
-'''''''        ModStart = EOL(SheetN)
-'''''''    End Select
-'''''''' ----
-    ExRespond = True
-
-'    Range("A1:A" & ModStart).EntireRow.Hidden = False
-    With ProgressForm
-        .Show vbModeless
-        .ProgressLabel.Caption = Doing
-    End With
-    LogWr ""
-    LogWr (Doing)
+    If Not TurnOn Then
+        With Application
+            .ScreenUpdating = False
+'            .EnableEvents = False
+            .DisplayAlerts = False
+        End With
+    Else
+        With Application
+            .ScreenUpdating = True
+            .Calculation = xlCalculationAutomatic
+            .EnableEvents = True
+            .DisplayStatusBar = True
+            .DisplayAlerts = True
+        End With
+    End If
 End Sub
-Sub ModEnd()
-'
-' - ModEnd() - подпрограмма завершения работы Модуля
-'  15.2.2012
-'  19.4.12  - восстановление вывода Excel
-'  2.7.12  - match 2.0
-' 20.7.12 - переписываем TOCmatch to RepTOC
-
-    WrTOC
-    Close
-
-'    i = AutoFilterReset(SheetN)
-'    ActiveSheet.Range("A" & i).Select
-    ProgressForm.Hide
-' восстанавливаем вывод Excel и др
-    With Application
-        .StatusBar = False
-        .ScreenUpdating = True
-        .Calculation = xlCalculationAutomatic
-        .EnableEvents = True
-        .DisplayStatusBar = True
-        .DisplayAlerts = True
-    End With
-    ActiveSheet.DisplayPageBreaks = True
-    LogWr (Doing & " - ГОТОВО!")
-End Sub
-
+'''
+''''?????????????????????????????????????????????????????????????????????????
+''''?????????????????? процедуры, подлежащие удалению  ??????????????????????
+''''?????????????????????????????????????????????????????????????????????????
+'''Sub ModStart(Report)
+''''
+'''' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
+''''
+''''  26.7.12  - переписано для match 2.0
+'''
+'''    GetRep TOC
+'''
+'''    Select Case Report
+'''    Case REP_1C_P_LOAD:
+'''        Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
+'''        GetRep SF
+'''        GetRep PAY_SHEET
+'''''        CheckSheet PAY_SHEET
+'''''        EOL_PaySheet = RepTOC.EOL
+'''    Case REP_1C_P_PAINT:
+'''        Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
+'''    Case REP_1C_SFACCFIL:
+'''        Doing = "Заполнение колонки 1 для листа Платежей"
+'''        GetRep PAY_SHEET
+'''        EOL_PaySheet = RepTOC.EOL
+'''''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
+'''    Case REP_SF_LOAD:
+'''        Doing = "Загрузка Платежей из Salesforce - SF"
+'''        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
+'''        GetRep PAY_SHEET
+'''        EOL_PaySheet = RepTOC.EOL
+'''        GetRep SF
+'''        EOL_SF = RepTOC.EOL
+'''''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
+'''''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
+'''''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
+'''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
+''''''        P = True
+''''    Case REP_1C_С_LOAD:
+''''    Case Acc1C:
+'''    Case Else:
+'''        ErrMsg FATAL_ERR, "Запрошен неизвестный отчет"
+'''        End
+'''    End Select
+'''
+''''''''''    With Application
+''''''''''        .DisplayStatusBar = True
+''''''''''        .StatusBar = Msg
+''''''''''' для ускорения Excel отключаем вывод и др.
+''''''''''        .ScreenUpdating = False
+''''''''''        .Calculation = xlCalculationManual
+''''''''''        .EnableEvents = False
+''''''''''        .DisplayAlerts = False
+''''''''''    End With
+''''''''''    ActiveSheet.DisplayPageBreaks = False
+''''''''''    Call AutoFilterReset(SheetN)
+''''''''''
+''''''''''' ---- определение EOL для всех основных листов
+''''''''''    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
+''''''''''    EOL_SF = EOL(SF) - SFresLines
+''''''''''    EOL_SFD = EOL(SFD) - SFresLines
+''''''''''    EOL_SFopp = EOL(SFopp) - SFresLines
+''''''''''    EOL_SFacc = EOL(SFacc) - SFresLines
+''''''''''    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
+''''''''''    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
+''''''''''    EOL_Stock = EOL(STOCK_SHEET)
+''''''''''    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
+''''''''''    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
+''''''''''
+''''''''''    Select Case SheetN
+''''''''''    Case PAY_SHEET:     ModStart = EOL_PaySheet
+''''''''''    Case DOG_SHEET:     ModStart = EOL_DogSheet
+''''''''''    Case Acc1C:         ModStart = EOL_Acc1C
+''''''''''    Case STOCK_SHEET:   ModStart = EOL_Stock
+''''''''''    Case SF:            ModStart = EOL_SF
+''''''''''    Case SFD:           ModStart = EOL_SFD
+''''''''''    Case SFacc:         ModStart = EOL_SFacc
+''''''''''    Case SF_PA:         ModStart = EOL_SFlnkADSK
+''''''''''    Case Else:
+''''''''''        ModStart = EOL(SheetN)
+''''''''''    End Select
+''''''''''' ----
+'''    ExRespond = True
+'''
+''''    Range("A1:A" & ModStart).EntireRow.Hidden = False
+'''    With ProgressForm
+'''        .Show vbModeless
+'''        .ProgressLabel.Caption = Doing
+'''    End With
+'''    LogWr ""
+'''    LogWr (Doing)
+'''End Sub
+''''''Sub ModEnd()
+'''''''
+''''''' - ModEnd() - подпрограмма завершения работы Модуля
+'''''''  15.2.2012
+'''''''  19.4.12  - восстановление вывода Excel
+'''''''  2.7.12  - match 2.0
+''''''' 20.7.12 - переписываем TOCmatch to RepTOC
+''''''
+''''''    WrTOC
+''''''    Close
+''''''
+'''''''    i = AutoFilterReset(SheetN)
+'''''''    ActiveSheet.Range("A" & i).Select
+''''''    ProgressForm.Hide
+''''''' восстанавливаем вывод Excel и др
+''''''    With Application
+''''''        .StatusBar = False
+''''''        .ScreenUpdating = True
+''''''        .Calculation = xlCalculationAutomatic
+''''''        .EnableEvents = True
+''''''        .DisplayStatusBar = True
+''''''        .DisplayAlerts = True
+''''''    End With
+''''''    ActiveSheet.DisplayPageBreaks = True
+''''''    LogWr (Doing & " - ГОТОВО!")
+''''''End Sub
+''''''
