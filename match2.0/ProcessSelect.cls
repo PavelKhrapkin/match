@@ -19,7 +19,7 @@ Private Sub Worksheet_SelectionChange(ByVal Target As Excel.Range)
     Dim i As Long, Proc As String
 
     If ActiveCell.Value = PROC_START Then
-        TraceStop = False: TraceStep = False
+'        TraceStop = False: TraceStep = False
         ProcStart ActiveSheet.Cells(ActiveCell.Row, PROC_NAME_COL)
     ElseIf ActiveCell.Value = "0" Then
 '==== Сброс Процесса

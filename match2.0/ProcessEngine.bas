@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 9.11.12 П.Л.Храпкин, А.Пасс
+' 11.11.12 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -30,6 +30,7 @@ Option Explicit
 Const TRACE_STEP = "Trace"  ' специальный Шаг Trace для трассирования и отладки
 Public TraceStep As Boolean
 Public TraceStop As Boolean
+Public TraceWidth As Boolean
 
 '----- работа с Адаптерами ---------------
 Const WP_CONTEXT_LINE = 8, WP_CONTEXT_COL = 4   ' ячейка передачи iLine
@@ -54,6 +55,8 @@ Sub ProcStart(Proc As String)
 
     Dim Step As String, PrevStep As String
     Dim i As Integer
+'---- инициализируем флаги Trace
+    TraceStep = False:    TraceStop = False:    TraceWidth = False
     
     Proc = Trim(Proc)
     
@@ -161,7 +164,9 @@ Sub Exec(Step As String, iProc)
         If Step = TRACE_STEP Then
             TraceStep = True
             TraceStop = False
+            TraceWidth = False
             If .Cells(iProc, PROC_PAR1_COL) = 1 Then TraceStop = True
+            If .Cells(iProc, PROC_PAR2_COL) = "W" Then TraceWidth = True
             Exit Sub
         End If
 
@@ -335,15 +340,21 @@ Sub WrProcResult(NewLine As Long)
         .Cells(i, PROC_PREVSTEP_COL).Interior.Color = rgbGreen
     End With
 End Sub
-Sub ProcReset(Proc As String)
+Sub ProcReset(Proc As String, _
+    Optional ProcToReset As String = "", Optional StepToReset As String, Optional Col As Long)
 '
-' S ProcReset(Proc) - сброс и новый запуск Процесса Proc
+' S ProcReset(Proc,[ProcToReset, StepToReset, Col]) - сброс и новый запуск Процесса Proc
 ' 1.10.12
+' 11.11.12 - очистка ячейки в Шаге StepToReset в колонке Col
 
     Dim i As Long
     
     GetRep Process
     With DB_MATCH.Sheets(Process)
+        If ProcToReset <> "" Then
+            i = ToStep(ProcToReset, StepToReset)
+            .Cells(i, Col) = ""
+        End If
         i = ToStep(Proc)
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Do While .Cells(i, PROC_STEP_COL) <> PROC_END
@@ -432,6 +443,7 @@ Sub xAdapt(F As String, iLine As Long)
 '   23.10.12 - X_Parse вынесен в отдельную подпрограмму
 '    2.11.12 - вызов NewOpp если Select не нашел ни одного Проекта
 '    9.11.12 - работа с Named Range WP
+'   11.11.12 - введен глобальный флаг для отладки TraceWidth
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -457,19 +469,22 @@ Sub xAdapt(F As String, iLine As Long)
         On Error GoTo 0
         Application.DisplayAlerts = True
     
-        .Sheets.Add Before:=.Sheets(1)
+'        .Sheets.Add Before:=.Sheets(1)
+        DB_MATCH.Sheets(WP_PROTOTYPE).Copy Before:=.Sheets(1)
         .Sheets(1).Name = WP
     End With
 '----- Заполняем WP
     With DB_TMP.Sheets(WP)
         .Tab.Color = rgbBlue
+        For i = 1 To EOL(WP, DB_TMP)
+            .Rows(1).Delete
+        Next i
         
         Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
         FF.Copy .Cells(1, 1)
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            .Columns(i).ColumnWidth = FF.Cells(3, i)
-            .Cells(1, i) = FF.Cells(1, i)
+            If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
         Next i
         
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
@@ -525,10 +540,6 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
         Next iRow
-        For i = 1 To 9
-            .Columns(i).Hidden = True
-        Next i
-        
     End With
     DB_TMP.Sheets(WP).Activate
     
@@ -546,8 +557,9 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
 '                             Сюда передается управления из WP_Select_Button.
 ' 8/10/12
 ' 20.10.12 - обработка кнопок "Занести"
+' 10.11.12 - bug fix - рекурсивный вызов WP с неправильным Namer Range
 
-    Dim Proc As String, Step As String
+    Dim Proc As String, Step As String, iStep As Long
     Dim iPayment As Long, OppId As String
         
 '---- извлекаем контектст из листа WP, то есть строки Платежа, Проекта -----
@@ -560,33 +572,35 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
     If DB_1C Is Nothing Then Set DB_1C = FileOpen(F_1C)
     If DB_MATCH Is Nothing Then Set DB_MATCH = FileOpen(F_MATCH)
     
+    With DB_MATCH.Sheets(Process)
+        .Activate
+        Proc = .Cells(1, PROCESS_NAME_COL)
+        Step = .Cells(1, STEP_NAME_COL)
+        iStep = ToStep(Proc, Step)
+        .Cells(iStep, PROC_PAR2_COL) = iPayment + 1
+    End With
+    
     Select Case Button
     Case "STOP":
-'        GetRep (Process)
-        DB_MATCH.Activate
-        Proc = DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL)
-        Step = DB_MATCH.Sheets(Process).Cells(1, STEP_NAME_COL)
-        iPayment = ToStep(DB_MATCH.Sheets(Process).Cells(1, PROCESS_NAME_COL), Step)
-        StepOut Step, iPayment
+        StepOut Step, iStep
         ProcStart Proc
         End
     Case "->":
-'        iPayment = WP_TMP.Sheets(WP).Cells(12, 4)
-        WP_Paid WP, iPayment + 1
     Case "NewOpp":
         WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
-        WP_Paid WP, iPayment + 1
     Case "NewAcc":
-!!!!        WrNewSheet NEW_ACC, WP, WP_PAYMENT_LINE
-        WP_Paid WP, iPayment + 1
+    ' пока не написано
 '-------- Обработка кликов на кнопках строк Select
     Case "Занести":
         WrNewSheet NEW_PAYMENT, PAY_SHEET, iPayment, OppId
-        WP_Paid WP, iPayment + 1
     Case "Связать  ->"
+        MS "->"
         Stop
         WrNewSheet DOG_UPDATE, PAY_SHEET, iPayment
     End Select
+    
+NextWP:         ProcStart Proc
+
 End Sub
 Sub Adapt(F As String)
 '
@@ -648,6 +662,7 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
 '
 ' 22.10.12
 ' 25.10.12 - иправления в связи с HashFlag=True
+' 11.11.12 - добавлен синтаксис !<Col> для адресации WProw
 
 ''''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
 ''''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
@@ -677,6 +692,9 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
         If Left(sX(0), 1) = "#" Then
             sX(0) = Mid(sX(0), 2)
             HashFlag = True
+        ElseIf Left(sX(0), 1) = "!" Then
+            sX(0) = Mid(sX(0), 2)
+ ''''           HashFlag = True
         End If
         
         iX = 0
@@ -850,6 +868,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                         Exit For
                     End If
                 Next i
+'                If
             Else
     ' вывести один единственный Проект
                 Dim Rdoc As TOCmatch, Doc As String
