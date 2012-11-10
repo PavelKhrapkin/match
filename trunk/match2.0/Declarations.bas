@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  28.10.12
+'  11.11.12
 
 Option Explicit
 
@@ -37,6 +37,7 @@ Public Const PROC_PREVSTEP_COL = 3  'колонка PrevStep
 Public Const PROC_STEPFILE_COL = 4  'колонка "В файле" - файл, где код Шага
 Public Const PROC_STEPDONE_COL = 5  'колонка Done - Шаг выполнен
 Public Const PROC_PAR1_COL = 6      'колонка Параметр 1 - имя Процесса
+Public Const PROC_PAR2_COL = PROC_PAR1_COL + 1
 Public Const PROC_NAME_COL = PROC_PAR1_COL ' имя Процесса в Par1
 Public Const PROC_REP1_COL = 11     'колонка  - имя листа - Документ 1
 
