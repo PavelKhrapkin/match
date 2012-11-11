@@ -12,7 +12,7 @@ Attribute VB_Name = "AdaptEngine"
 '       * Первая строка Шаблона содержит "шапку" - заголовки колонок
 '       * Шаг, вызывающий Адаптеры Шаблона, делает цикл по всем строкам основного Документа
 '       * Вторая строка - Value - содержит формулы и результаты Y, вычисляемые Адаптерами
-'           - Шаблон типа Select выводит выбранные записи ниже Шаблона по Адаптеру OppFilter
+'           - Шаблон типа Select выводит записи, выбранные Адаптером OppFilter ниже Шаблона
 '           - такие строки, выбранные в Select сами содержат КНОПКИ - действия по записям
 '           - некоторые поля Шаблона в строке Value содержат ГИПЕРССЫЛКИ для вызова SF
 '       * Третья строка - Width - ширину выводимой колонки и другие форматные атрибуты
@@ -30,7 +30,7 @@ Attribute VB_Name = "AdaptEngine"
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
 ' 11.11.12 П.Л.Храпкин, А.Пасс
-'
+'   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
@@ -63,7 +63,8 @@ Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
 Const PTRN_SELECT = "Select"
 
-Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, Optional ExtPar As String)
+Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
+    Optional ExtPar As String)
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -153,12 +154,10 @@ Sub xAdapt(F As String, iLine As Long)
         .Sheets(WP).Delete
         On Error GoTo 0
         Application.DisplayAlerts = True
-    
-'        .Sheets.Add Before:=.Sheets(1)
         DB_MATCH.Sheets(WP_PROTOTYPE).Copy Before:=.Sheets(1)
         .Sheets(1).Name = WP
     End With
-'----- Заполняем WP
+'===== Заполняем WP
     With DB_TMP.Sheets(WP)
         .Tab.Color = rgbBlue
         For i = 1 To EOL(WP, DB_TMP)
@@ -167,12 +166,12 @@ Sub xAdapt(F As String, iLine As Long)
         
         Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
         FF.Copy .Cells(1, 1)
+        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
             If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
         Next i
         
-        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
@@ -510,22 +509,18 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
 '   здесь [iRow,iCol]       - адрес ячейки Шаблона для разбора, ссылка на номер колонки
 '       [PutToRow,PutToCol] - адрес ячейки, куда поместить результат Адаптера
 '
-' в поле Шаблона возможна конструкция #6/CopyToVal,5/Form
+' в поле Шаблона возможна конструкция #6 или !6
 '  * знак # означает, что адресуется не колонка в ActiveSheet, а колонка самого Шаблона
+'  * знак ! - что Х надо извлечь из строки WProw ниже Шаблона
 '
 ' 22.10.12
 ' 25.10.12 - иправления в связи с HashFlag=True
 ' 11.11.12 - добавлен синтаксис !<Col> для адресации WProw
 
-''''Const PTRN_TYPE_BUTTON = "Кнопки"   'Кнопки, управляющие работой WP
-''''Const PTRN_TYPE_ILINE = "iLine" 'Аргументы X для Адаптеров вычисляются по iLine
-''''Const PTRN_TYPE_PTRN = "Шаблон" 'Аргументы Х для Адаптеров беруться из самого Шаблона
-''''Const PTRN_TYPE_SELECT_OPP = "SelectOpp" ' Аргументы Х и выбор проводится в SelectOpp
-
     Dim X_rqst As String, sX() As String
     Dim PtrnType As String
     Dim iX As Long, WP_Row As Long
-    Dim HashFlag As Boolean: HashFlag = False
+    Dim RefType As String
     
     X_Parse = ""
     
@@ -542,13 +537,8 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
         If X_rqst = "" Then GoTo Ex
         sX = split(X_rqst, "/")
         
-        If Left(sX(0), 1) = "#" Then
-            sX(0) = Mid(sX(0), 2)
-            HashFlag = True
-        ElseIf Left(sX(0), 1) = "!" Then
-            sX(0) = Mid(sX(0), 2)
- ''''           HashFlag = True
-        End If
+        RefType = Left(sX(0), 1)
+        If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
         
         iX = 0
         If UBound(sX) >= 0 Then iX = sX(0)
@@ -556,27 +546,12 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
             Select Case PtrnType
             Case "Кнопки", "Шаблон": GoTo GetFromWP
             Case "iLine":
-                If HashFlag Then GoTo GetFromWP
-                WP_Row = iLine
                 GoTo GetFromActiveSheet
             Case PTRN_SELECT:
-                If HashFlag Then
-                    WP_Row = iRow + PTRN_VALUE - 1
-                    GoTo GetFromWP
-                End If
                 WP_Row = .Cells(PutToRow, 5)
                 GoTo GetFromActiveSheet
              Case Else:
                 ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
-            End Select
-        End If
-        If UBound(sX) > 0 Then
-            Select Case sX(1)
-            Case "":
-            Case Else
-                ErrMsg FATAL_ERR, "xAdapt> неправильный Шаблон в [" _
-                    & iRow - 1 + PTRN_COLS & ", " & iCol & "]"
-                End
             End Select
         End If
 
@@ -586,6 +561,13 @@ GetFromWP:
     End With
     
 GetFromActiveSheet:
+    If RefType = "!" Then
+        WP_Row = PutToRow
+        GoTo GetFromWP
+    ElseIf RefType = "#" Then
+        WP_Row = iRow + PTRN_VALUE - 1
+        GoTo GetFromWP
+    End If
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
 Ex: Exit Function
 End Function
