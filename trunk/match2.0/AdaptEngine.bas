@@ -10,15 +10,15 @@ Attribute VB_Name = "AdaptEngine"
 '               2.3 Шаблон - наиболее распостраненный тип Шаблона общего назначения
 '               2.4 Select - содержит Адаптер OppSelect, выводящий НЕСКОЛЬКО строк-записей
 '       * Первая строка Шаблона содержит "шапку" - заголовки колонок
-'       * Шаг, вызывающий Адаптеры Шаблона, делает цикл по всем строкам основного Документа
+'       * Шаг, вызывающий Адаптеры Шаблона, делает цикл по строкам основного Документа
 '       * Вторая строка - Value - содержит формулы и результаты Y, вычисляемые Адаптерами
-'           - Шаблон типа Select выводит записи, выбранные Адаптером OppFilter ниже Шаблона
+'           - Шаблон Select выводит записи, выбранные Адаптером OppFilter ниже Шаблона
 '           - такие строки, выбранные в Select сами содержат КНОПКИ - действия по записям
 '           - некоторые поля Шаблона в строке Value содержат ГИПЕРССЫЛКИ для вызова SF
 '       * Третья строка - Width - ширину выводимой колонки и другие форматные атрибуты
 '           - число - ширина в условных единицах - около 1 мм
 '           - признаки Dbl,..
-'           - для Шаблонов с Select ширина колонки определяется только первой строкой Width
+'           - для Шаблона Select ширина колонки определяется только первой строкой Width
 '       * Четвертая строка - Columns или Х - определение аргумента Адаптера
 '           - разбор синтаксиса проводится в X_Parse
 '           - #6 - обращение к колонку 6 в Value самого Шаблона, а не ActiveSheet
@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 11.11.12 П.Л.Храпкин, А.Пасс
+' 18.11.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '
@@ -308,9 +308,10 @@ Sub Adapt(F As String)
     
     Dim FF As Range     '= Форма F
     Dim R As TOCmatch
-    Dim Rqst As String, F_rqst As String, iX As Long, IsErr As Boolean
+    Dim Rqst As String, F_rqst As String, IsErr As Boolean
     Dim X As String, Y As String
     Dim i As Long, Col As Long
+''    Dim PutToRow As Long, PutToCol As Long
     
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
@@ -319,18 +320,26 @@ Sub Adapt(F As String)
         For i = 2 To R.EOL
             Progress i / R.EOL
             For Col = 1 To FF.Columns.Count
-                iX = FF(PTRN_COLS, Col)
-                If iX > 0 Then
-                    X = .Cells(i, iX)
-                    Rqst = FF.Cells(PTRN_ADAPT, Col)
-                    F_rqst = FF.Cells(PTRN_FETCH, Col)
+                X = X_Parse(i, Col)
+                Rqst = FF.Cells(PTRN_ADAPT, Col)
+                F_rqst = FF.Cells(PTRN_FETCH, Col)
+                
+                Y = Adapter(Rqst, X, F_rqst, IsErr)
                     
-                    Y = Adapter(Rqst, X, F_rqst, IsErr)
-                    
-                    If Not IsErr Then .Cells(i, Col) = Y
-                ElseIf iX < 0 Then
-                    Exit For
-                End If
+                If Not IsErr Then .Cells(i, Col) = Y
+'''''                iX = FF(PTRN_COLS, Col)
+'''''                If iX > 0 Then
+'''''                    X = .Cells(i, iX)
+''''''                iX = X_Parse(i,Col)
+'''''                    Rqst = FF.Cells(PTRN_ADAPT, Col)
+'''''                    F_rqst = FF.Cells(PTRN_FETCH, Col)
+'''''
+'''''                    Y = Adapter(Rqst, X, F_rqst, IsErr)
+'''''
+'''''                    If Not IsErr Then .Cells(i, Col) = Y
+'''''                ElseIf iX < 0 Then
+'''''                    Exit For
+'''''                End If
             Next Col
         Next i
     End With
@@ -348,6 +357,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '18.10.12 - в OppFilter обработка EOL
 '23.10.12 - CopyToVal и CopyFrVal
 '25.10.12 - очистка переменных, оставшихся от прежних редакций
+'18.11.12 - изменение кнопок "Связать"/"Занести"
 
     Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String
@@ -467,17 +477,20 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                         Exit For
                     End If
                 Next i
-'                If
             Else
-    ' вывести один единственный Проект
+    ' вывести один единственный Проект, когда Платеж с Договором, и он связан с Проектом
                 Dim Rdoc As TOCmatch, Doc As String
                 Doc = .Cells(iRow, 1)
                 Rdoc = GetRep(Doc)
                 Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
-                .Cells(25, 10) = "Занести"
-                .Cells(25, 10).Interior.Color = rgbBlue
-                If Adapter = .Cells(20, 4) Then Adapter = "-1"
+                .Cells(iRow + PTRN_LNS, 11) = "Занести"
+                .Cells(iRow + PTRN_LNS, 11).Interior.Color = rgbBlue
+                If Adapter = .Cells(iRow + 1, 4) Then Adapter = "-1"
             End If
+        Case "SetOppButton":
+            WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1  ' копирование кнопки "Связать"
+            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
+            If X = "" Then Adapter = "Занести"  ' Если в Платеже нет Договора - кнопка "Занести"
         Case "NewOppName":
     ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
             Dim Typ As String, Dogovor As String, Dat As String
@@ -503,11 +516,13 @@ AdapterFailure:
     ErrMsg WARNING, "Адаптер " & AdapterName & "(" & X & ") не получил данных"
     IsErr = True
 End Function
-Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
+Function X_Parse(iRow, iCol, _
+    Optional PutToRow, Optional PutToCol, Optional iLine) As String
 '
-' -  X_Parse(iRow, iCol, PutToRow, PutToCol)    - разбор строки Х - параметра Адаптера
-'   здесь [iRow,iCol]       - адрес ячейки Шаблона для разбора, ссылка на номер колонки
+' -  X_Parse(iRow, iCol [, PutToRow, PutToCol, iLine])  - разбор строки Х - параметра Адаптера
+'   здесь (iRow,iCol)       - адрес ячейки Шаблона для разбора, ссылка на номер колонки
 '       [PutToRow,PutToCol] - адрес ячейки, куда поместить результат Адаптера
+'           [iLine]         - номер строки для Шаблона типа iLine
 '
 ' в поле Шаблона возможна конструкция #6 или !6
 '  * знак # означает, что адресуется не колонка в ActiveSheet, а колонка самого Шаблона
@@ -516,6 +531,7 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
 ' 22.10.12
 ' 25.10.12 - иправления в связи с HashFlag=True
 ' 11.11.12 - добавлен синтаксис !<Col> для адресации WProw
+' 15.11.12 - Optional параметры
 
     Dim X_rqst As String, sX() As String
     Dim PtrnType As String
@@ -546,6 +562,7 @@ Function X_Parse(iRow, iCol, PutToRow, PutToCol, iLine) As String
             Select Case PtrnType
             Case "Кнопки", "Шаблон": GoTo GetFromWP
             Case "iLine":
+                WP_Row = iLine
                 GoTo GetFromActiveSheet
             Case PTRN_SELECT:
                 WP_Row = .Cells(PutToRow, 5)
