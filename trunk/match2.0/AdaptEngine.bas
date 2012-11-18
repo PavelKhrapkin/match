@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 18.11.12 П.Л.Храпкин, А.Пасс
+' 19.11.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '
@@ -312,7 +312,7 @@ Sub Adapt(F As String)
     Dim R As TOCmatch
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
     Dim X As String, Y As String
-    Dim i As Long, Col As Long
+    Dim i As Long, Col As Long, iX As Long
 ''    Dim PutToRow As Long, PutToCol As Long
     
     Set FF = DB_MATCH.Sheets(Header).Range(F)
@@ -335,7 +335,7 @@ Sub Adapt(F As String)
                     Rqst = FF.Cells(PTRN_ADAPT, Col)
                     F_rqst = FF.Cells(PTRN_FETCH, Col)
 
-                    Y = Adapter(Rqst, X, F_rqst, IsErr)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
 
                     If Not IsErr Then .Cells(i, Col) = Y
                 ElseIf iX < 0 Then
@@ -359,6 +359,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '23.10.12 - CopyToVal и CopyFrVal
 '25.10.12 - очистка переменных, оставшихся от прежних редакций
 '18.11.12 - изменение кнопок "Связать"/"Занести"
+'19.11.12 - добавление Адаптеров в колонки Шаблона справа - в т.ч. InvN
 
     Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String
@@ -406,6 +407,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '******* выполнение Адаптера с параметрами Par ******
     If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(WP)
+        Adapter = ""
         Select Case AdapterName
         Case "", "MainContract": Adapter = X
         Case "Мы", "Продавцы", "Продавец_в_SF", "Vendor":
@@ -414,25 +416,25 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             On Error GoTo 0
         Case "Dec": Adapter = Dec(X)
         Case "GetCol":
-            If X = "" Then
-                Adapter = ""
-            Else                ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
+            If X <> "" Then           ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
                 Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
                 If UBound(Tmp) > 1 Then
                     Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
                 End If
             End If
-        Case "GoodType":
-            Adapter = GoodType(X)
+        Case "GoodType": Adapter = GoodType(X)
         Case "CurISO":  Adapter = CurISO(X)
         Case "CurRate": Adapter = Dec(CurRate(X))
-        Case "Дата":
-            If X = "" Then
-                Adapter = ""
-            Else
-                Adapter = DDMMYYYY(X)
-            End If
+        Case "Дата":    If X <> "" Then Adapter = DDMMYYYY(X)
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
+        Case "SeekInv": Adapter = SeekInv(X)
+        Case "InvN":
+            Tmp = split(X, " ")
+            If UBound(Tmp) > 0 Then Adapter = Tmp(0)
+        Case "SeekPayN":
+            Dim Inv As String
+            Inv = ActiveSheet.Cells(iRow, CLng(Par(0)))
+            If Inv <> "" Then Adapter = SeekPayN(Inv, X)
         Case "DogVal":
             Dim Vpaid As Long, Vinv As Long, Vdog As Long, DogCur As String
             Dim sDog As String
@@ -673,5 +675,3 @@ OK_Exit:    IsErr = False
 ErrExit:    IsErr = True
 
 End Function
-
-

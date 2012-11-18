@@ -10,7 +10,7 @@ Attribute VB_Name = "StockAnalitics"
 ' (*) Sndedup() - дедупликация SN найденных по Складу - времянка!
 '  -  SN_ADSKbyStock(PayId, Acc, Dat) - возвращает SN продукта ADSK по Складу
 
-'   4.9.2012
+'   19.11.2012
 
 Option Explicit
 
@@ -30,7 +30,7 @@ Sub StockHandling()
     Dim SameClient As Boolean
     Dim Acc1C As String     ' имя Организации в справочнике 1С
     Dim Dat As Date         'поле "Дата" в складской книге
-    Dim good, t As String   ' Товар (спецификация) и Тип товара
+    Dim good, T As String   ' Товар (спецификация) и Тип товара
     Dim StockSN As String   ' Складская запись об SN
     Dim SNinSF As String    ' SN уже занесенный в SF
     Dim NewSN As String     ' SN, которого еще нет в SF
@@ -60,9 +60,9 @@ End If
                 .Cells(i, STOCK_INVOICE_COL) = _
                         Sheets(PAY_SHEET).Cells(PayN, PAYINVOICE_COL)
                 good = Sheets(PAY_SHEET).Cells(PayN, PAYGOOD_COL)
-                t = GoodType(good)              ' Тип товара по Счету
-                .Cells(i, STOCK_GOOD_COL) = t
-                If t = WE_GOODS_ADSK Then
+                T = GoodType(good)              ' Тип товара по Счету
+                .Cells(i, STOCK_GOOD_COL) = T
+                If T = WE_GOODS_ADSK Then
                     StockSN = Sheets(STOCK_SHEET).Cells(i, STOCK_SN_COL)
                     NewSN = SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK)
                     .Cells(i, STOCK_SF_SN_COL) = SNinSF
@@ -165,7 +165,7 @@ Function SeekInv(Str) As String
     S = Replace(LCase(S), ")", " ")
     S = Replace(LCase(S), "(", " ")
     S = Replace(LCase(S), """", " ")
-    StWord = Split(S, " ")
+    StWord = split(S, " ")
     For i = LBound(StWord) To UBound(StWord)
         Sch = StWord(i)
         If Left(Sch, 1) = Chr(99) Or Left(Sch, 1) = "с" Then ' Ru или En "с"
@@ -194,6 +194,13 @@ Sub testSeekInv()
     A(4) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч- 267 от 07.10.11 Кириллова ")
     A(5) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч - 267 от 07.10.11 Кириллова ")  '!!! не распознался!!!
 End Sub
+Function SeekPayN(ByVal Inv As String, ByVal Dat As Date) As Long
+'
+' - SeekPayN(Inv, Dat)  - определение номера строки в Платежах по Счету и Дате
+' 19.11.20
+
+    SeekPayN = 0
+End Function
 Function SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK) As String
 '
 ' SNhandl(Acc1C, PayN, StockSN) - обработка SN в складской книге
@@ -237,8 +244,8 @@ Function SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK) As String
     If Len(S) >= 12 Then SNhandl = S
 End Function
 Sub testRemIgnoregSN()
-    Dim t, Q, R
-    t = RemIgnoredSN("456 765-67812345")
+    Dim T, Q, R
+    T = RemIgnoredSN("456 765-67812345")
     Q = RemIgnoredSN("")
     R = RemIgnoredSN("456-5654323 текст 456-апр-567")
 End Sub
@@ -261,7 +268,7 @@ Function RemIgnoredSN(Str) As String
         If (Ch > "9" Or Ch < "0") And Ch <> "-" Then Ch = " "
         Mid(S, i, 1) = Ch
     Next i
-    W = Split(S, " ")
+    W = split(S, " ")
     S = ""
     For i = LBound(W) To UBound(W)
         If Len(W(i)) = 12 And Mid(W(i), 4, 1) = "-" Then
