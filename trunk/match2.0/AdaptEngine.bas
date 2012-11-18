@@ -48,7 +48,7 @@ Attribute VB_Name = "AdaptEngine"
 '                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
 Option Explicit
 
-'========== Константы Адаптеров ==================
+'========== Константы и общие переменные Адаптеров ==================
 Const WP_CONTEXT_LINE = 8, WP_CONTEXT_COL = 4   ' ячейка передачи iLine
 Const WP_PAYMENT_LINE = 8                       ' строка Платежа в WP
 
@@ -92,6 +92,8 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Rnew.Made = "WrNewSheet"
     Rdoc = GetRep(SheetDB)
     
+    
+    
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
@@ -112,7 +114,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
                     .Cells(Rnew.EOL, i) = Y
                 End If
             Else
-                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!????????????????!!!!!!!!!!!!
+                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
             End If
         Next i
     End With
@@ -320,26 +322,25 @@ Sub Adapt(F As String)
         For i = 2 To R.EOL
             Progress i / R.EOL
             For Col = 1 To FF.Columns.Count
-                X = X_Parse(i, Col)
-                Rqst = FF.Cells(PTRN_ADAPT, Col)
-                F_rqst = FF.Cells(PTRN_FETCH, Col)
-                
-                Y = Adapter(Rqst, X, F_rqst, IsErr)
-                    
-                If Not IsErr Then .Cells(i, Col) = Y
-'''''                iX = FF(PTRN_COLS, Col)
-'''''                If iX > 0 Then
-'''''                    X = .Cells(i, iX)
-''''''                iX = X_Parse(i,Col)
-'''''                    Rqst = FF.Cells(PTRN_ADAPT, Col)
-'''''                    F_rqst = FF.Cells(PTRN_FETCH, Col)
-'''''
-'''''                    Y = Adapter(Rqst, X, F_rqst, IsErr)
-'''''
-'''''                    If Not IsErr Then .Cells(i, Col) = Y
-'''''                ElseIf iX < 0 Then
-'''''                    Exit For
-'''''                End If
+'''                X = X_Parse(i, Col)
+'''                Rqst = FF.Cells(PTRN_ADAPT, Col)
+'''                F_rqst = FF.Cells(PTRN_FETCH, Col)
+'''
+'''                Y = Adapter(Rqst, X, F_rqst, IsErr)
+'''
+'''                If Not IsErr Then .Cells(i, Col) = Y
+                iX = FF(PTRN_COLS, Col)
+                If iX > 0 Then
+                    X = .Cells(i, iX)
+                    Rqst = FF.Cells(PTRN_ADAPT, Col)
+                    F_rqst = FF.Cells(PTRN_FETCH, Col)
+
+                    Y = Adapter(Rqst, X, F_rqst, IsErr)
+
+                    If Not IsErr Then .Cells(i, Col) = Y
+                ElseIf iX < 0 Then
+                    Exit For
+                End If
             Next Col
         Next i
     End With
