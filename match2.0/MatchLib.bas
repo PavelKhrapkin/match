@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 9.11.2012
+' П.Л.Храпкин, А.Пасс 19.11.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -313,6 +313,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '  11.9.12 - перенос форм в Headers файла match.xlsm
 '  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
 '  4.11.12 - использование R=GetRep(ActiveSheet.Name)
+' 19.11.12 - COPY_HDR - copy Шаблона вместо присваивания текстового содержимого
 
     Const COPY_HDR = "CopyHdr"
 
@@ -335,7 +336,9 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
             .Columns(i).ColumnWidth = FF.Cells(3, i)
-            If FF.Cells(2, i) = COPY_HDR Then .Cells(1, i) = FF.Cells(1, i)
+            If FF.Cells(2, i) = COPY_HDR Then
+                FF.Cells(1, i).Copy Destination:=.Cells(1, i)
+            End If
         Next i
 '---- копируем колонки MyCol от верха до EOL
         For i = 1 To R.MyCol
@@ -388,7 +391,7 @@ Sub ErrMsg(ErrMode, Msg)
 Fatal:  ErrType = "<! ERROR !> "
         LogWr ErrType & Msg
         MsgBox Msg, , ErrType
-'        Stop
+        Stop
         Exit Sub
     Case Else:
         ErrMode = FATAL_ERR

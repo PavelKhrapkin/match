@@ -434,7 +434,8 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "SeekPayN":
             Dim Inv As String
             Inv = ActiveSheet.Cells(iRow, CLng(Par(0)))
-            If Inv <> "" Then Adapter = SeekPayN(Inv, X)
+            If Inv <> "" And IsDate(X) Then Adapter = SeekPayN(Inv, X)
+            If Adapter = "0" Then Adapter = ""
         Case "DogVal":
             Dim Vpaid As Long, Vinv As Long, Vdog As Long, DogCur As String
             Dim sDog As String

@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  11.11.12
+'  19.11.12
 
 Option Explicit
 
@@ -316,9 +316,12 @@ Public Const PAYINVOICE_COL = 8     ' колонка "Счет"
 Public Const PAYACC_COL = 9         ' колонка "Клиент"
 Public Const PAYRUB_COL = 18        ' колонка "Итог руб"
 Public Const PAYGOOD_COL = 19       ' колонка Товар
+Public Const PAYFIRM_COL = 20       ' колонка Фирма
 Public Const PAYSALE_COL = 22       ' колонка Продавец
 Public Const PAYDOGOVOR_COL = 25    ' колонка Договор
 Public Const PAYOSNDOGOVOR_COL = 26 ' колонка Осн.Договор
+Public Const PAYINV_COL = 30        ' колонка CX-XXX - Счет без даты
+
 
 '''Public Const Stamp1Cpay1 = "Плат. док.", Stamp1Cpay2 = "Дата прих. денег"
 '-------------- Договоры - отчет из 1С ---------------------------------

@@ -199,7 +199,46 @@ Function SeekPayN(ByVal Inv As String, ByVal Dat As Date) As Long
 ' - SeekPayN(Inv, Dat)  - определение номера строки в Платежах по Счету и Дате
 ' 19.11.20
 
+    Const INV_VALIDITY = 50
+    
+    Dim P As TOCmatch, Pdat As String, PayDat As Date
+    Dim PayN As Long, N As Long: N = 1
+    
     SeekPayN = 0
+    
+    P = GetRep(PAY_SHEET)
+    
+    With DB_1C.Sheets(PAY_SHEET)
+        Do
+            PayN = 0
+            On Error Resume Next
+            PayN = Application.Match(Inv, _
+                Range(.Cells(N, PAYINV_COL), .Cells(BIG, PAYINV_COL)), 0) _
+                + N - 1
+            Pdat = .Cells(PayN, PAYDATE_COL)
+            On Error GoTo 0
+            If IsEmpty(PayN) _
+                    Or Not IsNumeric(PayN) _
+                    Or PayN <= 0 _
+                    Or Not IsDate(Pdat) Then Exit Function
+            If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
+                PayDat = Pdat
+                If Dat - PayDat < INV_VALIDITY And Dat >= PayDat Then
+                    SeekPayN = PayN     ' нашли номер строки Платежа PayN
+                    Exit Function
+                End If
+            End If
+            N = PayN + 1
+        Loop While N <= P.EOL
+    End With
+End Function
+Function IgnoredFirm(ByVal Firm As String) As Boolean
+'
+' - IgnoredFirm(Firm)   - возвращает TRUE для игнорируемых Фирм
+' 20.11.12
+
+    IgnoredFirm = False
+    If InStr(Firm, "Меандр") <> 0 Then IgnoredFirm = True
 End Function
 Function SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK) As String
 '
