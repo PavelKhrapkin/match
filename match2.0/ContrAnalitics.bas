@@ -35,6 +35,35 @@ Sub NewContr(NewContract As String)
         Next i
     End With
 End Sub
+Sub PaidContr(ByVal NewPayment As String)
+'
+' S PaidContr()  - Занесение Платежа с Договором, связанным с Проектом
+' 21.11.12
+
+    StepIn
+    
+    Dim Paid As TOCmatch
+    Dim i As Long
+    
+    Const F_rqst = "SFD/" & SFD_COD_COL & ":" & SFD_OPPN_COL
+    
+    NewSheet NewPayment
+    
+    Paid = GetRep(PAY_SHEET)
+
+    With DB_1C.Sheets(PAY_SHEET)
+        For i = 2 To Paid.EOL
+            Progress i / Paid.EOL
+            If .Cells(i, PAYINSF_COL) <> 1 And .Cells(i, PAYDOGOVOR_COL) <> "" Then
+''''                Dogovor = .Cells(i, PAYDOGOVOR_COL)
+''''                MainDog = .Cells(i, PAYOSNDOGOVOR_COL)
+                ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
+                OppN = FetchDoc(F_rqst, ContrK, IsErr)
+                WrNewSheet NewPayment, PAY_SHEET, i, OppN
+            End If
+        Next i
+    End With
+End Sub
 Sub ContrPass()
 '
 ' Проход по отчету Договоров и обзор/создание соответствующих Проектов
@@ -50,12 +79,12 @@ Sub ContrPass()
     Lines = ModStart(DOG_SHEET, "Проход по Договорам: связанные Проекты", True) - DOGRES
     EOL_DogSheet = Lines
     EOL_SFD = EOL(SFD) - SFresLines
-    EOL_SFopp = EOL(SFopp) - SFresLines
+    EOL_SFopp = EOL(Sfopp) - SFresLines
     EOL_SFacc = EOL(SFacc) - SFresLines
     
     CheckSheet DOG_SHEET, 1, 10, Stamp1Cdog1
     CheckSheet SFD, EOL_SFD + 2, 3, SFcontrRepName
-    CheckSheet SFopp, EOL_SFopp + 2, 1, SFoppRepName
+    CheckSheet Sfopp, EOL_SFopp + 2, 1, SFoppRepName
 '---------- проход по Договорам ------------------------
     OppIs = 0: OppNew = 0: NoOpp = 0: Fruitful = 0
     ClearSheet O_NewOpp, Range("HDR_NewOpp")
@@ -79,7 +108,7 @@ Sub ContrPass()
                 '---- анализ существующего Проекта -------
                         OppIs = OppIs + 1
                         OppTyp = WorksheetFunction.VLookup(OppN, _
-                            Sheets(SFopp).Range("B:R"), 17, False)
+                            Sheets(Sfopp).Range("B:R"), 17, False)
                         Vendor1C = .Cells(i, VENDOR1C_COL)
                         If Not IsSameVendor(OppTyp, Vendor1C, ContrK) And _
                                     Vendor1C <> "" Then
@@ -201,7 +230,7 @@ Sub DogOppLink()
     Lines = ModStart(SFD, "DogOppLink: связь Договора с Проектом", True) - SFresLines
 
     CheckSheet SFD, Lines + 2, 3, SFcontrRepName
-    CheckSheet SFopp, EOL_SFopp + 2, 1, SFoppRepName
+    CheckSheet Sfopp, EOL_SFopp + 2, 1, SFoppRepName
 
     ClearSheet NewContractLnk, Range("HDR_ContrLnk")
     
@@ -220,7 +249,7 @@ Sub DogOppLink()
                 If .Cells(i, SFD_OPPN_COL) = "" Then     '==== Договор связан с Проектом?
                 '-- проход по SFopp - по Проектам           нет - связываем
                     For j = 2 To EOL_SFopp
-                        With Sheets(SFopp)
+                        With Sheets(Sfopp)
                             SaleOpp = .Cells(j, SFOPP_SALE_COL)
                             OppN = .Cells(j, SFOPP_OPPN_COL)
                         ' для данного Договора выбираем только Проекты с той же Организацией
