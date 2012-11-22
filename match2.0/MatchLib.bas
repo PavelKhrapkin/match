@@ -28,7 +28,7 @@ Attribute VB_Name = "MatchLib"
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
-' - CSmatch(Val,Col,Sht)        - Case Sensitive match возвращает номер строки с Val в
+' - CSmatchSht(Val,Col,Sht)     - Case Sensitive match возвращает номер строки с Val в
 '                                 колонке Col листа Sht. Если Val не найден- возвращает 0.
 ' - ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
 ' - SheetSort(SheetN, Col)      - сортировка листа SheetN по колонке Col
@@ -723,11 +723,12 @@ Sub SheetDedup(SheetN, Col)
         End If
     Loop While i < EOL_SheetN
 End Sub
-Sub SheetDedup2(SheetN, ColSort, СolAcc)
+Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '
-' - SheetDedup2(SheetN, ColSort, ColAcc)  - сортируем лист SheetN
-'               по колонке SortCol затем значения ColAcc сливем с "+"
+' - SheetDedup2(SheetN, ColSort, ColAcc, ColIdSF)  - сортируем лист SheetN
+'          по колонке SortCol затем значения ColAcc и ColIdSF сливем с "+"
 '   23.5.2012
+'   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
     Dim prev As String, X As String
