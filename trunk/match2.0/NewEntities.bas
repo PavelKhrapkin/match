@@ -2,17 +2,17 @@ Attribute VB_Name = "NewEntities"
 '-----------------------------------------------------------------------------
 ' NewEntities   - новые Платежи, Договоры, etc в "голубых" листах WP_TMP
 '
-' S NewSheet(SheetName, HDRform) - создает новый лист SheetName
+' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
-'   27.10.2012
+'   23.11.2012
 
 Option Explicit
 
-Sub NewSheet(SheetName As String)
+Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
 '
-' S NewSheet(SheetName, HDRform) - создает новый лист SheetName
+' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 '
@@ -22,6 +22,7 @@ Sub NewSheet(SheetName As String)
 '  1.10.12 - bug fix
 ' 19.10.12 - перемещение "голубых" листов в WP_TMP
 ' 27.10.12 - ведение "голубых" листов в общей таблице TOCmatch
+' 23.11.12 - Optional TabColor
 
     StepIn
     
@@ -48,7 +49,7 @@ Sub NewSheet(SheetName As String)
         .Sheets.Add After:=.Sheets(.Sheets.Count)
         .Sheets(.Sheets.Count).Name = SheetName
         With .Sheets(SheetName)
-            .Tab.Color = rgbLightBlue
+            .Tab.Color = TabColor
             For i = 1 To Cols
                 Frm.Columns(i).Copy Destination:=.Cells(1, i)
                 W = .Cells(3, i)
@@ -62,8 +63,9 @@ Sub NewSheet(SheetName As String)
 '-- записываем в TOCmatch данные по новому листу
     R.EOL = EOL(R.SheetN, DB_TMP)
     If R.EOL <> 1 Then GoTo ErrHdr
-    R.CreateDat = Now
-    WrTOC           ' остальные поля в TOCmatch запишет StepOut
+    R.CreateDat = Now        ' остальные поля в TOCmatch запишет StepOut
+    RepTOC = R
+    WrTOC
     Exit Sub
 NoHdr:
     ErrMsg FATAL_ERR, "NewSheet> Нет Шаблона (шапки) '" & R.FormName _
@@ -95,7 +97,7 @@ Sub NewPay(i, OppN, ContrId)
         .Cells(j, 7) = OppN                             ' OppN
     End With
 End Sub
-Sub NewOpp(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
+Sub NEWOPP(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
     Optional Stage = "90%-первые деньги пришли на счет")
 '
 ' новый проект для записи DL в Организации Account.
@@ -130,7 +132,7 @@ Sub NewOpp(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
     Else
 '---- дедупликация Проектов по Расходникам:
 '           В Организации отдаленная дата разрешена только для Расходников
-        With DB_SFDC.Sheets(SFopp)
+        With DB_SFDC.Sheets(Sfopp)
             For i = 1 To EOL_SFopp
                 If .Cells(i, SFOPP_ACC1C_COL) = Account _
                         And .Cells(i, SFOPP_CLOSEDATE_COL) >= DATE_BULKY _
