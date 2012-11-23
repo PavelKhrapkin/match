@@ -755,7 +755,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '                ElseIf PrevAcc = "" And NewAcc = "" Then
 '                   в двух последних случаях ничего не делаем
                 End If
-                If PrevSFid <> NewSFid Then
+                If PrevSFid <> "" And NewSFid <> "" And PrevSFid <> NewSFid Then
                     .Cells(i - 1, ColIdSF) = PrevSFid & "+" & NewSFid
                 End If
                 .Cells(i - 1, СolAcc) = PrevAcc
