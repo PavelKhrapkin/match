@@ -733,6 +733,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     Dim i As Integer, EOL_SheetN As Integer
     Dim prev As String, X As String
     Dim PrevAcc As String, NewAcc As String
+    Dim PrevSFid As String, NewSFid As String
     
     Call SheetSort(SheetN, ColSort)
     EOL_SheetN = EOL(SheetN)
@@ -743,7 +744,9 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
             X = .Cells(i, ColSort)
             If X = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
+                PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
+                NewSFid = .Cells(i, ColIdSF)
                 If PrevAcc <> "" And NewAcc <> "" And PrevAcc <> NewAcc Then
                     PrevAcc = PrevAcc & "+" & NewAcc
                 ElseIf PrevAcc = "" And NewAcc <> "" Then
@@ -751,6 +754,9 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '                ElseIf PrevAcc <> "" And NewAcc = "" Then
 '                ElseIf PrevAcc = "" And NewAcc = "" Then
 '                   в двух последних случаях ничего не делаем
+                End If
+                If PrevSFid <> NewSFid Then
+                    .Cells(i - 1, ColIdSF) = PrevSFid & "+" & NewSFid
                 End If
                 .Cells(i - 1, СolAcc) = PrevAcc
                 Rows(i).Delete
