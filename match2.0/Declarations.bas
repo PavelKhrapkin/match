@@ -176,7 +176,7 @@ Public Const SF = "SF"              ' лист отчета по Платежам
 Public Const SFD = "SFD"            ' лист отчета по Договорам
 Public Const SFacc = "SFacc"        ' лист - список Организаций
 Public Const SFcont = "SFcont"      ' лист отчета по Контактам
-Public Const SFopp = "SFopp"        ' лист отчета по Проектам
+Public Const Sfopp = "SFopp"        ' лист отчета по Проектам
 Public Const SForders = "SForders"  ' лист отчета по Заказам
 Public Const ADSKfrSF = "ADSKfrSF"  ' лист отчета по Autodesk
 
@@ -362,15 +362,15 @@ Public Const Acc1C = "Список клиентов 1C"   ' Справочник клиентов 1С
 Public Const ACC1C_RES = 3      ' пятка справочника организаций 1С
 
 Public Const A1C_ISACC_COL = 1  ' колонка =1, если Организация есть в SF
-'---
-Public Const A1C_NAME_COL = 5   ' колонка "Название фирмы" в 1С
-Public Const A1C_CON_COL = 6    ' колонка "контакт" в 1С
-Public Const A1C_TEL_COL = 7    ' колонка "Телефон"
-Public Const A1C_ADR_COL = 8    ' колонка "Адрес" в 1С
-Public Const A1C_FACTADR_COL = 9 ' колонка "Факт. адрес" в 1С
-Public Const A1C_INN_COL = 10   ' колонка "ИНН" в 1С
-Public Const A1C_INVOICE_COL = 17  ' колонка "Список счетов с оплатой" в 1С
-Public Const A1C_GOOD_COL = 18  ' колонка "Товар последнего счета" в 1С
+Public Const A1C_ISDEL_COL = 2  ' колонка ="удал", если Организация удалена
+Public Const A1C_NAME_COL = 3   ' колонка "Название фирмы" в 1С
+Public Const A1C_CON_COL = 4    ' колонка "контакт" в 1С
+Public Const A1C_TEL_COL = 5    ' колонка "Телефон"
+Public Const A1C_ADR_COL = 6    ' колонка "Адрес" в 1С
+Public Const A1C_FACTADR_COL = 7 ' колонка "Факт. адрес" в 1С
+Public Const A1C_INN_COL = 8   ' колонка "ИНН" в 1С
+Public Const A1C_INVOICE_COL = 15  ' колонка "Список счетов с оплатой" в 1С
+Public Const A1C_GOOD_COL = 16  ' колонка "Товар последнего счета" в 1С
 
 '~~~~~~~~~~~~~~~~~~~~~~~~ Склад ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Public Const STOCK_SHEET = "Склад"  ' Лист проводок по Складу
