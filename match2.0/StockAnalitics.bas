@@ -165,7 +165,7 @@ Function SeekInv(Str) As String
     S = Replace(LCase(S), ")", " ")
     S = Replace(LCase(S), "(", " ")
     S = Replace(LCase(S), """", " ")
-    StWord = split(S, " ")
+    StWord = Split(S, " ")
     For i = LBound(StWord) To UBound(StWord)
         Sch = StWord(i)
         If Left(Sch, 1) = Chr(99) Or Left(Sch, 1) = "с" Then ' Ru или En "с"
@@ -199,29 +199,51 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
 ' - SeekPayN(Inv, Client, Dat)  - определение номера строки в Платежах по Счету и Дате
 ' 24.11.20
 
-    Const INV_VALIDITY = 50
+    Const INV_VALIDITY = 50                     'max дней после оплаты Счета
+    
+    Dim Dic As TOCmatch, DicRange As Range      ' Словарь названий Организаций
+    Dim Acc As String, accWords() As String     ' полное название и слова в имени Организации
+    Dim Id As String, IdS() As String           ' строка IdSFacc, соединненных + и отдельные
+    Dim IdSF() As String, N_IdSF As Long: N_IdSF = 0    'массив IdSFacc по словам в имени
     
     Dim P As TOCmatch, Pdat As String, PayDat As Date
     Dim PayN As Long, i As Long, j As Long, N As Long
-    Dim Acc As String, PaccW() As String, accWords() As String
-    Dim Dic As TOCmatch, DicRange As Range
     
     SeekPayN = 0
                 
-    accWords = split(RemIgnored(LCase$(Client)), " ")
+    accWords = Split(RemIgnored(LCase$(Client)), " ")
     
     Dic = GetRep("DicAcc")
     
     With DB_TMP.Sheets(Dic.SheetN)
-        Set DicRange = Range(.Cells(2, 1), .Cells(BIG, 1))
+        Set DicRange = Range(.Cells(2, 1), .Cells(BIG, 3))
         For i = LBound(accWords) To UBound(accWords)
-            N = 0
+            Id = ""
             On Error Resume Next
-            N = Application.Match(accWords(i), DicRange, 0)
+            Id = Workfunction.VLookup(accWords(i), DicRange, 3, False)
             On Error GoTo 0
-            If N = 0 Then accWords(i) = ""
+            If Id = "" Then
+                accWords(i) = ""
+            Else
+                IdS = Split(Id, "+")
+                For j = LBound(IdS) To UBound(IdS)
+                    N_IdSF = N_IdSF + 1
+                    IdSF(N_IdSF) = IdS(j)
+                Next j
+            End If
         Next i
     End With
+    
+    SFpaid = GetRep(SF)
+    With DB_SFDC.Sheets(SF)
+        Set SFRange = Range(.Cells(2, 1), .Cells(BIG, SF_INV_COL))
+        For i = 1 To N_IdSF
+            InvSF = Workfunction.VLookup(IdSF(i), SFRange, 3, False)
+        Next i
+    End With
+    
+    
+    
     
     P = GetRep(PAY_SHEET)
     
@@ -241,7 +263,7 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
                     Or Not IsDate(Pdat) Then Exit Function
             If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
                 Acc = LCase(.Cells(PayN, PAYACC_COL))
-                PaccW = split(RemIgnored(Acc), " ")
+                PaccW = Split(RemIgnored(Acc), " ")
                 For i = LBound(accWords) To UBound(accWords)
                     If accWords(i) <> "" Then
                         For j = LBound(PaccW) To UBound(PaccW)
@@ -335,7 +357,7 @@ Function RemIgnoredSN(Str) As String
         If (Ch > "9" Or Ch < "0") And Ch <> "-" Then Ch = " "
         Mid(S, i, 1) = Ch
     Next i
-    W = split(S, " ")
+    W = Split(S, " ")
     S = ""
     For i = LBound(W) To UBound(W)
         If Len(W(i)) = 12 And Mid(W(i), 4, 1) = "-" Then
