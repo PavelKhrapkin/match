@@ -194,20 +194,38 @@ Sub testSeekInv()
     A(4) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч- 267 от 07.10.11 Кириллова ")
     A(5) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч - 267 от 07.10.11 Кириллова ")  '!!! не распознался!!!
 End Sub
-Function SeekPayN(ByVal Inv As String, ByVal Dat As Date) As Long
+Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date) As Long
 '
-' - SeekPayN(Inv, Dat)  - определение номера строки в Платежах по Счету и Дате
-' 19.11.20
+' - SeekPayN(Inv, Client, Dat)  - определение номера строки в Платежах по Счету и Дате
+' 24.11.20
 
     Const INV_VALIDITY = 50
     
     Dim P As TOCmatch, Pdat As String, PayDat As Date
-    Dim PayN As Long, N As Long: N = 1
+    Dim PayN As Long, i As Long, j As Long, N As Long
+    Dim Acc As String, PaccW() As String, accWords() As String
+    Dim Dic As TOCmatch, DicRange As Range
     
     SeekPayN = 0
+                
+    accWords = split(RemIgnored(LCase$(Client)), " ")
+    
+    Dic = GetRep("DicAcc")
+    
+    With DB_TMP.Sheets(Dic.SheetN)
+        Set DicRange = Range(.Cells(2, 1), .Cells(BIG, 1))
+        For i = LBound(accWords) To UBound(accWords)
+            N = 0
+            On Error Resume Next
+            N = Application.Match(accWords(i), DicRange, 0)
+            On Error GoTo 0
+            If N = 0 Then accWords(i) = ""
+        Next i
+    End With
     
     P = GetRep(PAY_SHEET)
     
+    N = 1
     With DB_1C.Sheets(PAY_SHEET)
         Do
             PayN = 0
@@ -222,13 +240,23 @@ Function SeekPayN(ByVal Inv As String, ByVal Dat As Date) As Long
                     Or PayN <= 0 _
                     Or Not IsDate(Pdat) Then Exit Function
             If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
-                PayDat = Pdat
+                Acc = LCase(.Cells(PayN, PAYACC_COL))
+                PaccW = split(RemIgnored(Acc), " ")
+                For i = LBound(accWords) To UBound(accWords)
+                    If accWords(i) <> "" Then
+                        For j = LBound(PaccW) To UBound(PaccW)
+                            If accWords(i) = PaccW(j) Then GoTo Found
+                        Next j
+                    End If
+                Next i
+                GoTo NextInv
+Found:          PayDat = Pdat
                 If Dat - PayDat < INV_VALIDITY And Dat >= PayDat Then
                     SeekPayN = PayN     ' нашли номер строки Платежа PayN
                     Exit Function
                 End If
             End If
-            N = PayN + 1
+NextInv:    N = PayN + 1
         Loop While N <= P.EOL
     End With
 End Function
