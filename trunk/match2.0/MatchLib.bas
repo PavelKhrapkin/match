@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 19.11.2012
+' П.Л.Храпкин, А.Пасс 25.11.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -603,23 +603,26 @@ Function CSmatch(Val, Col) As Double
         N = CSmatch + 1
     Loop While Val <> CheckCS
 End Function
-Function CSmatchSht(Val, Col, Sht) As Long
+Function CSmatchSht(Val, Col, Sht, Optional ByVal FromN As Long = 1) As Long
 '
 ' - CSmatch(Val,Col,Sht) - Case Sensitive match возвращает номер строки с Val в колонке Col.
 '                   Если Val не найден- возвращает 0. Sht - лист для поиска Val.
 ' 27.9.12
+' 25.11.12 - Optional FromN
 
     Dim CheckCS
-    Dim N As Long
-    N = 1
+''    Dim N As Long
+''    N = 1
     Do
         CSmatchSht = 0
         On Error Resume Next
-        CSmatchSht = Application.Match(Val, Range(Sht.Cells(N, Col), Sht.Cells(BIG, Col)), 0) + N - 1
+        CSmatchSht = Application.Match(Val, Range(Sht.Cells(N, Col), Sht.Cells(BIG, Col)), 0) _
+            + FromN - 1
         CheckCS = Sht.Cells(CSmatchSht, Col)
         On Error GoTo 0
-        If IsEmpty(CSmatchSht) Or Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
-        N = CSmatchSht + 1
+''        If IsEmpty(CSmatchSht) Or Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
+        If Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
+        FromN = CSmatchSht + 1
     Loop While Val <> CheckCS
 End Function
 Sub ClearSheet(SheetN, HDR_Range As Range)

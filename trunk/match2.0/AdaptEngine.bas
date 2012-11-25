@@ -432,9 +432,10 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Tmp = split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
-            Dim Inv As String
+            Dim Inv As String, Client As String
             Inv = ActiveSheet.Cells(iRow, CLng(Par(0)))
-            If Inv <> "" And IsDate(X) Then Adapter = SeekPayN(Inv, X)
+            Client = ActiveSheet.Cells(iRow, CLng(Par(1)))
+            If Inv <> "" And IsDate(X) Then Adapter = SeekPayN(Inv, Client, X)
             If Adapter = "0" Then Adapter = ""
         Case "DogVal":
             Dim Vpaid As Long, Vinv As Long, Vdog As Long, DogCur As String
