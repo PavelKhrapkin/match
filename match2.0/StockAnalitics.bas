@@ -10,7 +10,7 @@ Attribute VB_Name = "StockAnalitics"
 ' (*) Sndedup() - дедупликация SN найденных по Складу - времянка!
 '  -  SN_ADSKbyStock(PayId, Acc, Dat) - возвращает SN продукта ADSK по Складу
 
-'   19.11.2012
+'   25.11.2012
 
 Option Explicit
 
@@ -165,7 +165,7 @@ Function SeekInv(Str) As String
     S = Replace(LCase(S), ")", " ")
     S = Replace(LCase(S), "(", " ")
     S = Replace(LCase(S), """", " ")
-    StWord = Split(S, " ")
+    StWord = split(S, " ")
     For i = LBound(StWord) To UBound(StWord)
         Sch = StWord(i)
         If Left(Sch, 1) = Chr(99) Or Left(Sch, 1) = "с" Then ' Ru или En "с"
@@ -197,21 +197,25 @@ End Sub
 Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date) As Long
 '
 ' - SeekPayN(Inv, Client, Dat)  - определение номера строки в Платежах по Счету и Дате
-' 24.11.20
+' 25.11.20
 
     Const INV_VALIDITY = 50                     'max дней после оплаты Счета
     
     Dim Dic As TOCmatch, DicRange As Range      ' Словарь названий Организаций
     Dim Acc As String, accWords() As String     ' полное название и слова в имени Организации
     Dim Id As String, IdS() As String           ' строка IdSFacc, соединненных + и отдельные
-    Dim IdSF() As String, N_IdSF As Long: N_IdSF = 0    'массив IdSFacc по словам в имени
+    Dim IdSF(), N_IdSF As Long: N_IdSF = 0
+''    Dim IdSF(1 To N_IdSF) As String             ' массив IdSFacc по словам в имени
     
     Dim P As TOCmatch, Pdat As String, PayDat As Date
+    Dim SFpaid As TOCmatch, SFRange As Range
+    Dim InvSF As String
     Dim PayN As Long, i As Long, j As Long, N As Long
-    
+        
     SeekPayN = 0
+    If Trim(Client) = "" Then Exit Function
                 
-    accWords = Split(RemIgnored(LCase$(Client)), " ")
+    accWords = split(RemIgnored(LCase$(Client)), " ")
     
     Dic = GetRep("DicAcc")
     
@@ -220,67 +224,76 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
         For i = LBound(accWords) To UBound(accWords)
             Id = ""
             On Error Resume Next
-            Id = Workfunction.VLookup(accWords(i), DicRange, 3, False)
+            Id = WorksheetFunction.VLookup(accWords(i), DicRange, 3, False)
             On Error GoTo 0
             If Id = "" Then
                 accWords(i) = ""
             Else
-                IdS = Split(Id, "+")
+                IdS = split(Id, "+")
                 For j = LBound(IdS) To UBound(IdS)
                     N_IdSF = N_IdSF + 1
+                    ReDim Preserve IdSF(N_IdSF)
                     IdSF(N_IdSF) = IdS(j)
                 Next j
             End If
         Next i
     End With
     
+    If N_IdSF = 0 Then Exit Function
+''    If UBound(IdSF) = 0 Then Exit Function
     SFpaid = GetRep(SF)
     With DB_SFDC.Sheets(SF)
         Set SFRange = Range(.Cells(2, 1), .Cells(BIG, SF_INV_COL))
         For i = 1 To N_IdSF
-            InvSF = Workfunction.VLookup(IdSF(i), SFRange, 3, False)
+            InvSF = ""
+            On Error Resume Next
+            InvSF = WorksheetFunction.VLookup(IdSF(i), SFRange, SF_INV_COL, False)
+            On Error GoTo 0
+            If InStr(InvSF, Inv) <> 0 Then
+                SeekPayN = WorksheetFunction.Match(IdSF(i), SFRange, 0)
+                SeekPayN = .Cells(1, SeekPayN)
+                Exit Function
+            End If
         Next i
     End With
-    
-    
-    
-    
-    P = GetRep(PAY_SHEET)
-    
-    N = 1
-    With DB_1C.Sheets(PAY_SHEET)
-        Do
-            PayN = 0
-            On Error Resume Next
-            PayN = Application.Match(Inv, _
-                Range(.Cells(N, PAYINV_COL), .Cells(BIG, PAYINV_COL)), 0) _
-                + N - 1
-            Pdat = .Cells(PayN, PAYDATE_COL)
-            On Error GoTo 0
-            If IsEmpty(PayN) _
-                    Or Not IsNumeric(PayN) _
-                    Or PayN <= 0 _
-                    Or Not IsDate(Pdat) Then Exit Function
-            If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
-                Acc = LCase(.Cells(PayN, PAYACC_COL))
-                PaccW = Split(RemIgnored(Acc), " ")
-                For i = LBound(accWords) To UBound(accWords)
-                    If accWords(i) <> "" Then
-                        For j = LBound(PaccW) To UBound(PaccW)
-                            If accWords(i) = PaccW(j) Then GoTo Found
-                        Next j
-                    End If
-                Next i
-                GoTo NextInv
-Found:          PayDat = Pdat
-                If Dat - PayDat < INV_VALIDITY And Dat >= PayDat Then
-                    SeekPayN = PayN     ' нашли номер строки Платежа PayN
-                    Exit Function
-                End If
-            End If
-NextInv:    N = PayN + 1
-        Loop While N <= P.EOL
-    End With
+i = i
+'''
+'''    P = GetRep(PAY_SHEET)
+'''
+'''    N = 1
+'''    With DB_1C.Sheets(PAY_SHEET)
+'''        Do
+'''            PayN = 0
+'''            On Error Resume Next
+'''            PayN = Application.Match(Inv, _
+'''                Range(.Cells(N, PAYINV_COL), .Cells(BIG, PAYINV_COL)), 0) _
+'''                + N - 1
+'''            Pdat = .Cells(PayN, PAYDATE_COL)
+'''            On Error GoTo 0
+'''            If IsEmpty(PayN) _
+'''                    Or Not IsNumeric(PayN) _
+'''                    Or PayN <= 0 _
+'''                    Or Not IsDate(Pdat) Then Exit Function
+'''            If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
+'''                Acc = LCase(.Cells(PayN, PAYACC_COL))
+'''                PaccW = split(RemIgnored(Acc), " ")
+'''                For i = LBound(accWords) To UBound(accWords)
+'''                    If accWords(i) <> "" Then
+'''                        For j = LBound(PaccW) To UBound(PaccW)
+'''                            If accWords(i) = PaccW(j) Then GoTo Found
+'''                        Next j
+'''                    End If
+'''                Next i
+'''                GoTo NextInv
+'''Found:          PayDat = Pdat
+'''                If Dat - PayDat < INV_VALIDITY And Dat >= PayDat Then
+'''                    SeekPayN = PayN     ' нашли номер строки Платежа PayN
+'''                    Exit Function
+'''                End If
+'''            End If
+'''NextInv:    N = PayN + 1
+'''        Loop While N <= P.EOL
+'''    End With
 End Function
 Function IgnoredFirm(ByVal Firm As String) As Boolean
 '
@@ -357,7 +370,7 @@ Function RemIgnoredSN(Str) As String
         If (Ch > "9" Or Ch < "0") And Ch <> "-" Then Ch = " "
         Mid(S, i, 1) = Ch
     Next i
-    W = Split(S, " ")
+    W = split(S, " ")
     S = ""
     For i = LBound(W) To UBound(W)
         If Len(W(i)) = 12 And Mid(W(i), 4, 1) = "-" Then
