@@ -240,23 +240,49 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
     End With
     
     If N_IdSF = 0 Then Exit Function
-''    If UBound(IdSF) = 0 Then Exit Function
-    SFpaid = GetRep(SF)
-    With DB_SFDC.Sheets(SF)
-        Set SFRange = Range(.Cells(2, 1), .Cells(BIG, SF_INV_COL))
+    P = GetRep(PAY_SHEET)
+    With DB_1C.Sheets(P.SheetN)
+        Set Prng = Range(.Cells(2, 1), .Cells(P.EOL, PAYINVOICE_COL))
         For i = 1 To N_IdSF
-            InvSF = ""
-            On Error Resume Next
-            InvSF = WorksheetFunction.VLookup(IdSF(i), SFRange, SF_INV_COL, False)
-            On Error GoTo 0
-            If InStr(InvSF, Inv) <> 0 Then
-                SeekPayN = WorksheetFunction.Match(IdSF(i), SFRange, 0)
-                SeekPayN = .Cells(1, SeekPayN)
-                Exit Function
-            End If
+            Do
+                j = CSmatchSht(IdSF(i), 1, Prng, j)
+                If j > 0 Then
+                    If Left(.Cells(j, PAYINVOICE_COL), Len(Inv)) = Inv Then
+'                    If InStr(.Cells(j, PAYINVOICE_COL), Inv) <> 0 Then
+                        SeepPayN = j
+                        Exit Function
+                    End If
+                End If
+            Loop While j > 0
         Next i
+''''''            Inv1C = ""
+''''''            On Error Resume Next
+''''''            Inv1C = WorksheetFunction.VLookup(IdSF(i), Prng, PAYINVOICE_COL, False)
+''''''            On Error GoTo 0
+''''''            If InStr(Inv1C, Inv) <> 0 Then
+''''''                SeekPayN = WorksheetFunction.Match(IdSF(i), SFRange, 0)
+''''''                SeekPayN = .Cells(1, SeekPayN)
+''''''                Exit Function
+''''''            End If
+''''''        Next i
     End With
-i = i
+''i = i
+''    SFpaid = GetRep(SF)
+''    With DB_SFDC.Sheets(SF)
+''        Set SFRange = Range(.Cells(2, 1), .Cells(BIG, SF_INV_COL))
+''        For i = 1 To N_IdSF
+''            InvSF = ""
+''            On Error Resume Next
+''            InvSF = WorksheetFunction.VLookup(IdSF(i), SFRange, SF_INV_COL, False)
+''            On Error GoTo 0
+''            If InStr(InvSF, Inv) <> 0 Then
+''                SeekPayN = WorksheetFunction.Match(IdSF(i), SFRange, 0)
+''                SeekPayN = .Cells(1, SeekPayN)
+''                Exit Function
+''            End If
+''        Next i
+''    End With
+''i = i
 '''
 '''    P = GetRep(PAY_SHEET)
 '''
