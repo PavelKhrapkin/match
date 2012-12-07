@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 25.11.12 П.Л.Храпкин, А.Пасс
+' 19.11.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '
@@ -198,15 +198,18 @@ Sub xAdapt(F As String, iLine As Long)
                     If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
+                    fmt = .Cells(iRow + PTRN_WIDTH - 1, iCol)
                     If Not IsErr And X <> "" Then
-                        If .Cells(iRow + PTRN_WIDTH - 1, iCol) = "Dbl" _
-                                And IsNumeric(Y) Then
+                        .Cells(PutToRow, PutToCol) = Y
+                        If fmt = "Dbl" And IsNumeric(Y) Then
                             Dim YY As Double
                             YY = Y
                             .Cells(PutToRow, PutToCol) = YY
                             .Cells(PutToRow, PutToCol).NumberFormat = "#,##0.00"
-                        Else
-                            .Cells(PutToRow, PutToCol) = Y
+                        ElseIf fmt = "Date" Then
+                            .Cells(PutToRow, PutToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
+                        ElseIf fmt = "Txt" Then
+                            .Cells(PutToRow, PutToCol).NumberFormat = "@"
                         End If
                     End If
                 Next iCol
@@ -372,9 +375,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = split(Request, "/")
+        Tmp = Split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
     End If
 
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
@@ -394,7 +397,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = split(F_rqst, ",")
+        FF = Split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -429,7 +432,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "SeekInv": Adapter = SeekInv(X)
         Case "InvN":
-            Tmp = split(X, " ")
+            Tmp = Split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
             Dim Inv As String, Client As String
@@ -556,7 +559,7 @@ Function X_Parse(iRow, iCol, _
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
         If X_rqst = "" Then GoTo Ex
-        sX = split(X_rqst, "/")
+        sX = Split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
         If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
@@ -618,12 +621,12 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
         
-    Dim Tmp() As String, Cols() As String, S As String
+    Dim Tmp() As String, Cols() As String, s As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = split(F_rqst, "/")
+    Tmp = Split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = split(Tmp(1), ":")
+    Cols = Split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
@@ -641,22 +644,22 @@ Function FetchDoc(F_rqst, X, IsErr) As String
                 & ") - неправильный номер строки"
             GoTo ErrExit
         End If
-        S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
+        s = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
     Else
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup или №
         If IsNumeric(Cols(1)) Then C2 = Cols(1)
-        S = ""
+        s = ""
         N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         If N <> 0 Then
             If Cols(1) = "№" Then
-                S = N
+                s = N
             Else
-                S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
+                s = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
             End If
         End If
     End If
 '--- обработка группы 2 -- если S=""
-    If S = "" Then
+    If s = "" Then
         If UBound(Tmp) >= 2 Then
             If Tmp(2) = "W" Then
                 ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
@@ -669,7 +672,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
             GoTo ErrExit
         End If
     Else
-        FetchDoc = S
+        FetchDoc = s
     End If
     
 OK_Exit:    IsErr = False

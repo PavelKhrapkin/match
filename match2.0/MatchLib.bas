@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 25.11.2012
+' П.Л.Храпкин, А.Пасс 5.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -609,6 +609,7 @@ Function CSmatchSht(Val, Col, Sht, Optional ByVal FromN As Long = 1) As Long
 '                   Если Val не найден- возвращает 0. Sht - лист для поиска Val.
 ' 27.9.12
 ' 25.11.12 - Optional FromN
+'  5.12.12 - bug fix
 
     Dim CheckCS
 ''    Dim N As Long
@@ -616,7 +617,7 @@ Function CSmatchSht(Val, Col, Sht, Optional ByVal FromN As Long = 1) As Long
     Do
         CSmatchSht = 0
         On Error Resume Next
-        CSmatchSht = Application.Match(Val, Range(Sht.Cells(N, Col), Sht.Cells(BIG, Col)), 0) _
+        CSmatchSht = Application.Match(Val, Range(Sht.Cells(FromN, Col), Sht.Cells(BIG, Col)), 0) _
             + FromN - 1
         CheckCS = Sht.Cells(CSmatchSht, Col)
         On Error GoTo 0
