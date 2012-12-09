@@ -46,6 +46,10 @@ Attribute VB_Name = "AdaptEngine"
 ' - X_Parse(iRow, iCol, PutToRow, PutToCol)    - разбор строки Х - параметра Адаптера
 ' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
 '                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
+
+'    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
+'    8.12.12 - введен прoизвольный формат в строке width
+
 Option Explicit
 
 '========== Константы и общие переменные Адаптеров ==================
@@ -84,7 +88,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
-    Dim Y As String         '= результат работы Адаптера
+    Dim y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
     Rnew = GetRep(SheetNew)
@@ -105,13 +109,13 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
                     X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
                 End If
                 
-                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
+                y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
                 
                 If IsErr Then
                     .Rows(Rnew.EOL).Delete
                     Exit For
                 Else
-                    .Cells(Rnew.EOL, i) = Y
+                    .Cells(Rnew.EOL, i) = y
                 End If
             Else
                 .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
@@ -123,6 +127,10 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
         WrTOC
     End If
 End Sub
+Sub testXAdapt()
+    xAdapt "", 0
+    Stop
+End Sub
 Sub xAdapt(F As String, iLine As Long)
 '
 ' - xAdapt(F, iLine) - запускает Адаптеры из формы F, обрабатывая данные с экрана
@@ -132,17 +140,18 @@ Sub xAdapt(F As String, iLine As Long)
 '    2.11.12 - вызов NewOpp если Select не нашел ни одного Проекта
 '    9.11.12 - работа с Named Range WP
 '   11.11.12 - введен глобальный флаг для отладки TraceWidth
+'    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width"
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim PtrnType As String                      ' поле Тип Шаблона
-    Dim PutToRow As Long, PutToCol As Long
+    Dim putToRow As Long, putToCol As Long
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
     Dim F_rqst As String                        '
-    Dim Y As String
+    Dim y As String
     Dim IsErr As Boolean
     Dim iSelect As Long     '''', WP_Row As Long
     Dim i As Long
@@ -167,6 +176,7 @@ Sub xAdapt(F As String, iLine As Long)
         Next i
         
         Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
+        Dim width() As String
         FF.Copy .Cells(1, 1)
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
 '---- задаем ширину и заголовки вставленных колонок
@@ -188,29 +198,31 @@ Sub xAdapt(F As String, iLine As Long)
             iSelect = 2
             Do
                 For iCol = 5 To .UsedRange.Columns.Count
-                    X = X_Parse(iRow, iCol, PutToRow, PutToCol, iLine)
+                    X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
                     
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
                     
-                    If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
+                    If InStr(Rqst, "OppFilter") <> 0 And y = "-1" Then GoTo OppEOL
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
-                    fmt = .Cells(iRow + PTRN_WIDTH - 1, iCol)
                     If Not IsErr And X <> "" Then
-                        .Cells(PutToRow, PutToCol) = Y
-                        If fmt = "Dbl" And IsNumeric(Y) Then
-                            Dim YY As Double
-                            YY = Y
-                            .Cells(PutToRow, PutToCol) = YY
-                            .Cells(PutToRow, PutToCol).NumberFormat = "#,##0.00"
-                        ElseIf fmt = "Date" Then
-                            .Cells(PutToRow, PutToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
-                        ElseIf fmt = "Txt" Then
-                            .Cells(PutToRow, PutToCol).NumberFormat = "@"
-                        End If
+                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        fmtCell DB_TMP, WP, width, y, putToRow, putToCol
+'                        If UBound(width) > 0 Then
+'                            If width(1) = "Dbl" And IsNumeric(Y) Then
+'                                Dim YY As Double
+''                                YY = Y
+''                                .Cells(PutToRow, PutToCol) = YY
+'                                .Cells(putToRow, putToCol).NumberFormat = "#,##0.00"
+'                            ElseIf width(1) = "Date" Then
+'                                .Cells(putToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
+'                            ElseIf width(1) = "Txt" Then
+'                                .Cells(putToRow, putToCol).NumberFormat = "@"
+'                            End If
+'                        End If
                     End If
                 Next iCol
                 If PtrnType = PTRN_SELECT Then
@@ -232,7 +244,7 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
     End With
     DB_TMP.Sheets(WP).Activate
     
-    If iSelect = 2 And Y = "-1" Then
+    If iSelect = 2 And y = "-1" Then
        xAdapt_Continue "NewOpp", 1
     End If
 
@@ -314,7 +326,7 @@ Sub Adapt(F As String)
     Dim FF As Range     '= Форма F
     Dim R As TOCmatch
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
-    Dim X As String, Y As String
+    Dim X As String, y As String
     Dim i As Long, Col As Long, iX As Long
 ''    Dim PutToRow As Long, PutToCol As Long
     
@@ -338,9 +350,9 @@ Sub Adapt(F As String)
                     Rqst = FF.Cells(PTRN_ADAPT, Col)
                     F_rqst = FF.Cells(PTRN_FETCH, Col)
 
-                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
+                    y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
 
-                    If Not IsErr Then .Cells(i, Col) = Y
+                    If Not IsErr Then .Cells(i, Col) = y
                 ElseIf iX < 0 Then
                     Exit For
                 End If
@@ -525,7 +537,7 @@ AdapterFailure:
     IsErr = True
 End Function
 Function X_Parse(iRow, iCol, _
-    Optional PutToRow, Optional PutToCol, Optional iLine) As String
+    Optional putToRow, Optional putToCol, Optional iLine) As String
 '
 ' -  X_Parse(iRow, iCol [, PutToRow, PutToCol, iLine])  - разбор строки Х - параметра Адаптера
 '   здесь (iRow,iCol)       - адрес ячейки Шаблона для разбора, ссылка на номер колонки
@@ -554,7 +566,7 @@ Function X_Parse(iRow, iCol, _
         PtrnType = .Cells(iRow, 2)
         If PtrnType = PTRN_SELECT Then WP_Row = iRow + PTRN_LNS + .Cells(iRow + 3, 3) - 1
         
-        PutToRow = WP_Row: PutToCol = iCol
+        putToRow = WP_Row: putToCol = iCol
         
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
@@ -573,7 +585,7 @@ Function X_Parse(iRow, iCol, _
                 WP_Row = iLine
                 GoTo GetFromActiveSheet
             Case PTRN_SELECT:
-                WP_Row = .Cells(PutToRow, 5)
+                WP_Row = .Cells(putToRow, 5)
                 GoTo GetFromActiveSheet
              Case Else:
                 ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
@@ -587,7 +599,7 @@ GetFromWP:
     
 GetFromActiveSheet:
     If RefType = "!" Then
-        WP_Row = PutToRow
+        WP_Row = putToRow
         GoTo GetFromWP
     ElseIf RefType = "#" Then
         WP_Row = iRow + PTRN_VALUE - 1
@@ -621,7 +633,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
         
-    Dim Tmp() As String, Cols() As String, s As String
+    Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
     Tmp = Split(F_rqst, "/")
@@ -644,22 +656,22 @@ Function FetchDoc(F_rqst, X, IsErr) As String
                 & ") - неправильный номер строки"
             GoTo ErrExit
         End If
-        s = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
+        S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(Indx, C1)
     Else
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup или №
         If IsNumeric(Cols(1)) Then C2 = Cols(1)
-        s = ""
+        S = ""
         N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         If N <> 0 Then
             If Cols(1) = "№" Then
-                s = N
+                S = N
             Else
-                s = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
+                S = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(N, C2)
             End If
         End If
     End If
 '--- обработка группы 2 -- если S=""
-    If s = "" Then
+    If S = "" Then
         If UBound(Tmp) >= 2 Then
             If Tmp(2) = "W" Then
                 ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
@@ -672,7 +684,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
             GoTo ErrExit
         End If
     Else
-        FetchDoc = s
+        FetchDoc = S
     End If
     
 OK_Exit:    IsErr = False
@@ -680,3 +692,49 @@ OK_Exit:    IsErr = False
 ErrExit:    IsErr = True
 
 End Function
+Sub testfmtCell()
+    
+    Dim fmt(0 To 1) As String
+    Set DB_TMP = FileOpen(F_TMP)
+    
+    fmt(1) = "Dbl"
+    fmtCell DB_TMP, "NewOpp", fmt, "3m3", 2, 2
+    fmtCell DB_TMP, "NewOpp", fmt, 3.3, 2, 2
+    
+    fmt(1) = "Txt"
+    fmtCell DB_TMP, "NewOpp", fmt, "xxx", 2, 2
+    fmt(1) = "@"
+    fmtCell DB_TMP, "NewOpp", fmt, "yyy", 2, 2
+    
+    fmt(1) = "Date"
+    fmtCell DB_TMP, "NewOpp", fmt, "1/2/2012", 2, 2
+    fmt(1) = "#,##0.0000"
+    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
+    fmt(1) = "0%"
+    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
+    fmt(1) = "0.00%"
+    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
+    Stop
+End Sub
+Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
+            ByVal value, ByVal putToRow As Long, ByVal putToCol As Long)
+
+'   - fmtCell - обработка формата в строке width вида 0/Txt или 0/@
+
+    If UBound(fmt) > 0 Then
+        If fmt(1) = "Dbl" Then
+'                                Dim YY As Double
+'                                YY = Y
+'                                .Cells(PutToRow, PutToCol) = YY
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "#,##0.00"
+        ElseIf fmt(1) = "Date" Then
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
+        ElseIf fmt(1) = "Txt" Then
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "@"
+        Else
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = fmt(1)
+        End If
+        db.Sheets(list).Cells(putToRow, putToCol) = value
+    End If
+End Sub
+
