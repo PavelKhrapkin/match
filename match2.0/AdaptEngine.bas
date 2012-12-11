@@ -29,9 +29,11 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 19.11.12 П.Л.Храпкин, А.Пасс
+' 11.12.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
+'  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
+'  8.12.12 - введен прoизвольный формат в строке width
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -47,8 +49,6 @@ Attribute VB_Name = "AdaptEngine"
 ' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
 '                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
 
-'    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
-'    8.12.12 - введен прoизвольный формат в строке width
 
 Option Explicit
 
@@ -209,7 +209,7 @@ Sub xAdapt(F As String, iLine As Long)
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
-                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        width = split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
                         fmtCell DB_TMP, WP, width, y, putToRow, putToCol
 '                        If UBound(width) > 0 Then
 '                            If width(1) = "Dbl" And IsNumeric(Y) Then
@@ -387,9 +387,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = Split(Request, "/")
+        Tmp = split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
     End If
 
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
@@ -409,7 +409,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = Split(F_rqst, ",")
+        FF = split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -444,7 +444,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "SeekInv": Adapter = SeekInv(X)
         Case "InvN":
-            Tmp = Split(X, " ")
+            Tmp = split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
             Dim Inv As String, Client As String
@@ -571,7 +571,7 @@ Function X_Parse(iRow, iCol, _
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
         If X_rqst = "" Then GoTo Ex
-        sX = Split(X_rqst, "/")
+        sX = split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
         If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
@@ -636,9 +636,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = Split(F_rqst, "/")
+    Tmp = split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = Split(Tmp(1), ":")
+    Cols = split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
