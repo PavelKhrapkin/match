@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 19.11.12 П.Л.Храпкин, А.Пасс
+' 15.12.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -89,10 +89,10 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
-    Dim y As String         '= результат работы Адаптера
+    Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
-    Dim width() As Long
+    Dim width() As String
     
     Rnew = GetRep(SheetNew)
     Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
@@ -104,7 +104,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
-            width = Split(P.Cells(PTRN_WIDTH, i), "/")
+            width = split(P.Cells(PTRN_WIDTH, i), "/")
             sX = P.Cells(PTRN_COLS, i)
             If sX <> "" Then
                 If sX = EXT_PAR Then
@@ -113,18 +113,20 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
                     X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
                 End If
                 
-                y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
+                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
                 
                 If IsErr Then
                     .Rows(Rnew.EOL).Delete
                     Exit For
                 Else
 '                    .Cells(Rnew.EOL, i) = y
-                    fmtCell DB_TMP, WP, width, y, Rnew.EOL, i
+                    '-- записываем в SheetNew значение Y в указанном формате
+                    fmtCell DB_TMP, SheetNew, width, Y, Rnew.EOL, i
                 End If
             Else
 '                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
-                fmtCell DB_TMP, WP, width, P.Cells(2, i), Rnew.EOL, i
+                '-- iX пустой - записываем в SheetNew значение из Шаблона в указанном формате
+                fmtCell DB_TMP, SheetNew, width, P.Cells(2, i), Rnew.EOL, i
             End If
         Next i
     End With
@@ -157,7 +159,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
     Dim F_rqst As String                        '
-    Dim y As String
+    Dim Y As String
     Dim IsErr As Boolean
     Dim iSelect As Long     '''', WP_Row As Long
     Dim i As Long
@@ -209,14 +211,14 @@ Sub xAdapt(F As String, iLine As Long)
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
                     
-                    If InStr(Rqst, "OppFilter") <> 0 And y = "-1" Then GoTo OppEOL
+                    If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
-                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-                        fmtCell DB_TMP, WP, width, y, putToRow, putToCol
+                        width = split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
 '                        If UBound(width) > 0 Then
 '                            If width(1) = "Dbl" And IsNumeric(Y) Then
 '                                Dim YY As Double
@@ -250,7 +252,7 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
     End With
     DB_TMP.Sheets(WP).Activate
     
-    If iSelect = 2 And y = "-1" Then
+    If iSelect = 2 And Y = "-1" Then
        xAdapt_Continue "NewOpp", 1
     End If
 
@@ -332,7 +334,7 @@ Sub Adapt(F As String)
     Dim FF As Range     '= Форма F
     Dim R As TOCmatch
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
-    Dim X As String, y As String
+    Dim X As String, Y As String
     Dim i As Long, Col As Long, iX As Long
 ''    Dim PutToRow As Long, PutToCol As Long
     
@@ -356,9 +358,9 @@ Sub Adapt(F As String)
                     Rqst = FF.Cells(PTRN_ADAPT, Col)
                     F_rqst = FF.Cells(PTRN_FETCH, Col)
 
-                    y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
 
-                    If Not IsErr Then .Cells(i, Col) = y
+                    If Not IsErr Then .Cells(i, Col) = Y
                 ElseIf iX < 0 Then
                     Exit For
                 End If
@@ -393,9 +395,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = Split(Request, "/")
+        Tmp = split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
     End If
 
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
@@ -415,7 +417,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = Split(F_rqst, ",")
+        FF = split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -450,7 +452,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "SeekInv": Adapter = SeekInv(X)
         Case "InvN":
-            Tmp = Split(X, " ")
+            Tmp = split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
             Dim Inv As String, Client As String
@@ -577,7 +579,7 @@ Function X_Parse(iRow, iCol, _
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
         If X_rqst = "" Then GoTo Ex
-        sX = Split(X_rqst, "/")
+        sX = split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
         If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
@@ -642,9 +644,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = Split(F_rqst, "/")
+    Tmp = split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = Split(Tmp(1), ":")
+    Cols = split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
@@ -724,8 +726,14 @@ Sub testfmtCell()
 End Sub
 Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
             ByVal value, ByVal putToRow As Long, ByVal putToCol As Long)
-
+'
 '   - fmtCell - обработка формата в строке width вида 0/Txt или 10/@
+'
+' db и list - имена Workbook и листа, куда помещаем ..
+' value     - значение в виде ..
+' fmt(1)    - формата ячейки [putToRow,putToCol]
+'
+'   * распознаются форматы Txt, Dbl, Date и любые другие, понимаемые Excel
 
     If UBound(fmt) > 0 Then
         If fmt(1) = "Dbl" Then
@@ -740,7 +748,7 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
         Else
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = fmt(1)
         End If
-        db.Sheets(list).Cells(putToRow, putToCol) = value
     End If
+    db.Sheets(list).Cells(putToRow, putToCol) = value
 End Sub
 
