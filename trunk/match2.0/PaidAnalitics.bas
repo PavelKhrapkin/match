@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   31.10.2012
+'   18.12.2012
 
 Option Explicit
 
@@ -466,7 +466,7 @@ Sub P_PaidContract()
 '    PaidContr.AutoFilter Field:=9, Criteria1:="<>0"       ' Платежи 1С, где указан Договор
 
     For i = 2 To Lines
-        If Range("I" & i).Value = 0 Then Rows(i).Hidden = True
+        If Range("I" & i).value = 0 Then Rows(i).Hidden = True
     Next i
     
     ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Payment"
@@ -476,12 +476,13 @@ Sub P_PaidContract()
     AutoFilterReset 1
     ModEnd WSheetName
 End Sub
-Function GoodType(G) As String
+Function GoodType(ByVal G As String) As String
 '
 ' возвращает тип товара G по таблице в We.
 ' если подходящий тип не найден - ошибка и GoodType = ""
 '   19.2.2012
 '   5.10.12 - полная ссылка с DB_MATCH на We
+'   18.12.12 - LCase(G)
 
     Dim j As Integer
     Dim iG As Range
@@ -489,10 +490,11 @@ Function GoodType(G) As String
     
     GoodType = ""
     If G = "" Then Exit Function
+    G = LCase(Trim(G))
     For Each iG In DB_MATCH.Sheets(We).Range("Goods").Rows
         GoodType = iG.Cells(1, 1)
-        S = iG.Cells(1, 2)
-        Goods = split(S, ",")   ' в Goods список товаров данного типа
+        S = LCase(iG.Cells(1, 2))
+        Goods = Split(S, ",")   ' в Goods список товаров данного типа
         For j = 0 To UBound(Goods)
             If InStr(G, Trim(Goods(j))) > 0 Then Exit Function
         Next j
@@ -532,7 +534,7 @@ Function IsSubscription(good, GT) As Boolean
     Dim LGood As String
     LGood = LCase$(good)
     
-    SbsWords = split(LCase$(Sbs), ",")
+    SbsWords = Split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)
         If InStr(LGood, Trim(SbsWords(i))) > 0 Then
             IsSubscription = True
@@ -554,7 +556,7 @@ Function IsWork(ByVal good As String) As Boolean
 '
     good = LCase(good)
     Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
-    Wrd = split(LCase(Wokabulary), ",")
+    Wrd = Split(LCase(Wokabulary), ",")
     IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
         If InStr(good, Trim(Wrd(i))) > 0 Then Exit Function
