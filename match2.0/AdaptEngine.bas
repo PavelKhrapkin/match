@@ -29,13 +29,12 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 19.11.12 П.Л.Храпкин, А.Пасс
+' 15.12.12 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
 '  8.12.12 - введен прoизвольный формат в строке width
 ' 14.12.12 - добавлена обработка формата в строке PTRN_WIDTH (WrNewSheet)
-' 17.12.12 - добавлен тест целого формата в testfmtCell()
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -658,7 +657,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
         Dim Indx As Long
         Indx = X
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!
-' сейчас Indx=Х - это просто число, но в дальнейшем тут надо split
+' сейчас Indx=Х - это просто число, но в дальнейшем тут надо Split
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!
         If Indx <= 0 Then
             ErrMsg WARNING, "FetchDoc: " & Doc & "(" & Indx & "," & C1 _
@@ -702,8 +701,6 @@ ErrExit:    IsErr = True
 
 End Function
 Sub testfmtCell()
-'   тесты fmtCell()
-' 17.12.12 - добавлен тест целого формата
     
     Dim fmt(0 To 1) As String
     Set DB_TMP = FileOpen(F_TMP)
@@ -721,8 +718,6 @@ Sub testfmtCell()
     fmtCell DB_TMP, "NewOpp", fmt, "1/2/2012", 2, 2
     fmt(1) = "#,##0.0000"
     fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
-    fmt(1) = "0"
-    fmtCell DB_TMP, "NewOpp", fmt, 22, 2, 2
     fmt(1) = "0%"
     fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
     fmt(1) = "0.00%"
