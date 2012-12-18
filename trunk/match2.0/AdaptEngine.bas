@@ -104,7 +104,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
-            width = split(P.Cells(PTRN_WIDTH, i), "/")
+            width = Split(P.Cells(PTRN_WIDTH, i), "/")
             sX = P.Cells(PTRN_COLS, i)
             If sX <> "" Then
                 If sX = EXT_PAR Then
@@ -217,7 +217,7 @@ Sub xAdapt(F As String, iLine As Long)
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
-                        width = split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
                         fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
 '                        If UBound(width) > 0 Then
 '                            If width(1) = "Dbl" And IsNumeric(Y) Then
@@ -395,9 +395,9 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = split(Request, "/")
+        Tmp = Split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
     End If
 
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
@@ -417,7 +417,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = split(F_rqst, ",")
+        FF = Split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -452,7 +452,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "SeekInv": Adapter = SeekInv(X)
         Case "InvN":
-            Tmp = split(X, " ")
+            Tmp = Split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
             Dim Inv As String, Client As String
@@ -477,6 +477,16 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                 Vdog = CDbl(sDog) * CurRate(DogCur)
             End If
             Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
+        Case "OppType":             ' инициализация типа Проекта
+            If X = "Оборудование" Then X = "Железо"
+            If X = "Autodesk" Then
+                If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
+                    X = "Подписка"
+                Else
+                    X = "Лицензии"
+                End If
+            End If
+            Adapter = X
         Case "ForceTxt":
             Adapter = "'" & X
         Case "CopyToVal":
@@ -579,7 +589,7 @@ Function X_Parse(iRow, iCol, _
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
         If X_rqst = "" Then GoTo Ex
-        sX = split(X_rqst, "/")
+        sX = Split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
         If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
@@ -644,9 +654,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = split(F_rqst, "/")
+    Tmp = Split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = split(Tmp(1), ":")
+    Cols = Split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
