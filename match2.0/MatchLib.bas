@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 5.12.2012
+' П.Л.Храпкин, А.Пасс 19.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -80,7 +80,6 @@ Function GetRep(RepName) As TOCmatch
         Set DB_MATCH = FileOpen(F_MATCH)
         EOL_TOC = EOL(TOC, DB_MATCH)
         DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL) = EOL_TOC
-'?'        GetRep = GetRep(TOC)        ' для TOCmatch - РЕКУРСИЯ для проверки штампа
     Else
         EOL_TOC = DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL)
     End If
@@ -113,8 +112,6 @@ Function GetRep(RepName) As TOCmatch
     End If
     
     With DB_MATCH.Sheets(TOC)
-'''''        For i = 4 To EOL(TOC, DB_MATCH)
-'''''        For i = 4 To 177
         For i = TOClineN To EOL_TOC
             If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
         Next i
@@ -154,14 +151,12 @@ FoundRep:
             RepStock = RepTOC
         Case F_TMP:
             Set DB_TMP = FileOpen(.RepFile)
-''            RepWP = RepTOC
         Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
         End Select
             
         CheckStamp i
         
         GetRep = RepTOC
-'''        Workbooks(.RepFile).Sheets(.SheetN).Activate
     End With
 End Function
 Sub FatalRep(SubName, RepName)
@@ -198,8 +193,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         If Typ = "N" Then GoTo Ex
@@ -314,6 +309,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '  1.10.12 - копирование заголовка колонки в Шапку по COPY_HDR в строке 2 Шаблона
 '  4.11.12 - использование R=GetRep(ActiveSheet.Name)
 ' 19.11.12 - COPY_HDR - copy Шаблона вместо присваивания текстового содержимого
+' 19.12.12 - Обработка формата в строке Width
 
     Const COPY_HDR = "CopyHdr"
 
@@ -335,7 +331,12 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            .Columns(i).ColumnWidth = FF.Cells(3, i)
+            If IsNumeric(FF.Cells(3, i)) Then
+                .Columns(i).ColumnWidth = FF.Cells(3, i)
+            Else
+                Dim Fmt() As String
+                Fmt = Split(FF.Cells(3, i), "/")
+                .Columns(i).ColumnWidth = Fmt(0)
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
@@ -435,19 +436,37 @@ Function AutoFilterReset(SheetN) As Integer
 ' подпрограмма сброса и взвода фильтра листа SheetN в первой строке
 '      возвращает количество строк в SheetN
 ' 16.1.2012
+' 15.12.12 - исправлено при переходе на MS Office 2013:
+'       - EOL в соответствии с идеологией match2.0 берется из TOCmatch
+'       - AutoFilter устанавливается до EOL, чтобы пропустить пятку
 
-    Sheets(SheetN).Select
-    ActiveSheet.AutoFilterMode = False  ' собственно сброс фильтра
-    ActiveWindow.FreezePanes = False    ' Top Row Freeze
-    Rows("1:1").AutoFilter              ' включаем/выключаем AutoFilter
-    With ActiveWindow
-        .SplitColumn = 0
-        .SplitRow = 1
+    Dim R As TOCmatch
+    
+    R = GetRep(SheetN)
+    
+    With Workbooks(R.RepFile).Sheets(R.SheetN)
+''        If .AutoFilterMode Then
+''            .AutoFilter
+''        End If
+        .AutoFilterMode = False
+        .Rows("1:" & R.EOL).AutoFilter
     End With
-    ActiveWindow.FreezePanes = True
-    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
-    Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
+''
+''    ActiveSheet.AutoFilterMode = False  ' собственно сброс фильтра
+''    ActiveWindow.FreezePanes = False    ' Top Row Freeze
+''    Rows("1:1").AutoFilter              ' включаем/выключаем AutoFilter
+''    With ActiveWindow
+''        .SplitColumn = 0
+''        .SplitRow = 1
+''    End With
+''    ActiveWindow.FreezePanes = True
+''    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
+''    Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
+Sub tst()
+    AutoFilterReset PAY_SHEET
+End Sub
+
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
 '
 ' подпрограмма замены (Ctrl/H) строки FromStr на ToStr в листе SheetN
@@ -786,7 +805,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     R = GetRep(SheetN)
     
     For i = 1 To R.EOL
-        D = split(Sheets(SheetN).Cells(i, Col), ".")
+        D = Split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             dd = D(0)
             If dd < 1 Or dd > 31 Then GoTo Nxt
@@ -967,7 +986,7 @@ Function IsMatchList(W, DicList) As Boolean
     Dim lW As String
     
     lW = LCase$(W)
-    X = split(DicList, ",")
+    X = Split(DicList, ",")
     
     For i = LBound(X) To UBound(X)
         If InStr(lW, LCase$(X(i))) <> 0 Then
@@ -1006,122 +1025,3 @@ Sub ScreenUpdate(TurnOn As Boolean)
         End With
     End If
 End Sub
-'''
-''''?????????????????????????????????????????????????????????????????????????
-''''?????????????????? процедуры, подлежащие удалению  ??????????????????????
-''''?????????????????????????????????????????????????????????????????????????
-'''Sub ModStart(Report)
-''''
-'''' - ModStart(Report)    - начало работы с отчетом Report, проверки и инициализации
-''''
-''''  26.7.12  - переписано для match 2.0
-'''
-'''    GetRep TOC
-'''
-'''    Select Case Report
-'''    Case REP_1C_P_LOAD:
-'''        Doing = "Загружаем новый отчет по Платежам 1С в базу 1C.xlsm"
-'''        GetRep SF
-'''        GetRep PAY_SHEET
-'''''        CheckSheet PAY_SHEET
-'''''        EOL_PaySheet = RepTOC.EOL
-'''    Case REP_1C_P_PAINT:
-'''        Doing = "Раскрашиваем лист Платежей базы 1C.xlsm"
-'''    Case REP_1C_SFACCFIL:
-'''        Doing = "Заполнение колонки 1 для листа Платежей"
-'''        GetRep PAY_SHEET
-'''        EOL_PaySheet = RepTOC.EOL
-'''''''''''''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-'''    Case REP_SF_LOAD:
-'''        Doing = "Загрузка Платежей из Salesforce - SF"
-'''        Set DB_1C = Workbooks.Open(DirDBs & F_1C, UpdateLinks:=False, ReadOnly:=True)
-'''        GetRep PAY_SHEET
-'''        EOL_PaySheet = RepTOC.EOL
-'''        GetRep SF
-'''        EOL_SF = RepTOC.EOL
-'''''        CheckSheet PAY_SHEET, 1, PAYDOC_COL, Stamp1Cpay1
-'''''        CheckSheet PAY_SHEET, 1, PAYDATE_COL, Stamp1Cpay2
-'''''        EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-'''''        EOL_SFacc = EOL(SFacc, F_SFDC) - SFresLines
-''''''        P = True
-''''    Case REP_1C_С_LOAD:
-''''    Case Acc1C:
-'''    Case Else:
-'''        ErrMsg FATAL_ERR, "Запрошен неизвестный отчет"
-'''        End
-'''    End Select
-'''
-''''''''''    With Application
-''''''''''        .DisplayStatusBar = True
-''''''''''        .StatusBar = Msg
-''''''''''' для ускорения Excel отключаем вывод и др.
-''''''''''        .ScreenUpdating = False
-''''''''''        .Calculation = xlCalculationManual
-''''''''''        .EnableEvents = False
-''''''''''        .DisplayAlerts = False
-''''''''''    End With
-''''''''''    ActiveSheet.DisplayPageBreaks = False
-''''''''''    Call AutoFilterReset(SheetN)
-''''''''''
-''''''''''' ---- определение EOL для всех основных листов
-''''''''''    EOL_DogSheet = EOL(DOG_SHEET) - DOGRES
-''''''''''    EOL_SF = EOL(SF) - SFresLines
-''''''''''    EOL_SFD = EOL(SFD) - SFresLines
-''''''''''    EOL_SFopp = EOL(SFopp) - SFresLines
-''''''''''    EOL_SFacc = EOL(SFacc) - SFresLines
-''''''''''    EOL_Acc1C = EOL(Acc1C) - ACC1C_RES
-''''''''''    EOL_ADSKfrSF = EOL(ADSKfrSF) - SFresLines
-''''''''''    EOL_Stock = EOL(STOCK_SHEET)
-''''''''''    EOL_PaySheet = EOL(PAY_SHEET) - PAY_RESLINES
-''''''''''    EOL_SFlnkADSK = EOL(SF_PA) - SFresLines
-''''''''''
-''''''''''    Select Case SheetN
-''''''''''    Case PAY_SHEET:     ModStart = EOL_PaySheet
-''''''''''    Case DOG_SHEET:     ModStart = EOL_DogSheet
-''''''''''    Case Acc1C:         ModStart = EOL_Acc1C
-''''''''''    Case STOCK_SHEET:   ModStart = EOL_Stock
-''''''''''    Case SF:            ModStart = EOL_SF
-''''''''''    Case SFD:           ModStart = EOL_SFD
-''''''''''    Case SFacc:         ModStart = EOL_SFacc
-''''''''''    Case SF_PA:         ModStart = EOL_SFlnkADSK
-''''''''''    Case Else:
-''''''''''        ModStart = EOL(SheetN)
-''''''''''    End Select
-''''''''''' ----
-'''    ExRespond = True
-'''
-''''    Range("A1:A" & ModStart).EntireRow.Hidden = False
-'''    With ProgressForm
-'''        .Show vbModeless
-'''        .ProgressLabel.Caption = Doing
-'''    End With
-'''    LogWr ""
-'''    LogWr (Doing)
-'''End Sub
-''''''Sub ModEnd()
-'''''''
-''''''' - ModEnd() - подпрограмма завершения работы Модуля
-'''''''  15.2.2012
-'''''''  19.4.12  - восстановление вывода Excel
-'''''''  2.7.12  - match 2.0
-''''''' 20.7.12 - переписываем TOCmatch to RepTOC
-''''''
-''''''    WrTOC
-''''''    Close
-''''''
-'''''''    i = AutoFilterReset(SheetN)
-'''''''    ActiveSheet.Range("A" & i).Select
-''''''    ProgressForm.Hide
-''''''' восстанавливаем вывод Excel и др
-''''''    With Application
-''''''        .StatusBar = False
-''''''        .ScreenUpdating = True
-''''''        .Calculation = xlCalculationAutomatic
-''''''        .EnableEvents = True
-''''''        .DisplayStatusBar = True
-''''''        .DisplayAlerts = True
-''''''    End With
-''''''    ActiveSheet.DisplayPageBreaks = True
-''''''    LogWr (Doing & " - ГОТОВО!")
-''''''End Sub
-''''''
