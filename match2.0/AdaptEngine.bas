@@ -479,6 +479,16 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
                 Vdog = CDbl(sDog) * CurRate(DogCur)
             End If
             Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
+        Case "OppType":             ' инициализация типа Проекта
+            If X = "Оборудование" Then X = "Железо"
+            If X = "Autodesk" Then
+                If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
+                    X = "Подписка"
+                Else
+                    X = "Лицензии"
+                End If
+            End If
+            Adapter = X
         Case "ForceTxt":
             Adapter = "'" & X
         Case "CopyToVal":
