@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   20.12.2012
+'   22.12.2012
 
 Option Explicit
 
@@ -479,6 +479,21 @@ Dim A(10) As String
 Set DB_MATCH = FileOpen(F_MATCH)
 A(1) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
 End Sub
+Sub testGoodType()
+    Dim res(1 To 5) As String
+    Set DB_MATCH = FileOpen(F_MATCH)
+' предполагается, что 'оборудование' в 'We' расположено раньше, чем 'расходники'
+    res(1) = GoodType("плоттер")        ' оборудование (описано '^плоттер$')
+    res(2) = GoodType("плот")           ' не распознается, т.е. оплата
+    res(3) = GoodType("плоттерА")       ' расходники
+    
+    If res(1) <> "Оборудование" Then Stop
+    If res(2) <> "О П Л А Т А" Then Stop
+    If res(3) <> "Расходники" Then Stop
+    
+    Stop
+    
+End Sub
 Function GoodType(ByVal G As String) As String
 '
 ' возвращает тип товара G по таблице в We.
@@ -487,6 +502,8 @@ Function GoodType(ByVal G As String) As String
 '   5.10.12 - полная ссылка с DB_MATCH на We
 '   18.12.12 - LCase(G)
 '   20.12.12 - игнорируем пустые слова в словаре Goods
+'   22.12.12 - обращение к InStr заменено на обращение к patTest
+'               (RegExp, регулярные выражения) А.Пасс
 
     Dim j As Integer
     Dim iG As Range
@@ -498,10 +515,11 @@ Function GoodType(ByVal G As String) As String
     For Each iG In DB_MATCH.Sheets(We).Range("Goods").Rows
         GoodType = iG.Cells(1, 1)
         S = LCase(iG.Cells(1, 2))
-        Goods = Split(S, ",")   ' в Goods список товаров данного типа
+        Goods = split(S, ",")   ' в Goods список товаров данного типа
         For j = 0 To UBound(Goods)
             GoodW = Trim(Goods(j))
-            If GoodW <> "" And InStr(G, GoodW) > 0 Then Exit Function
+            If GoodW <> "" And patTest(G, GoodW) Then Exit Function
+'            If GoodW <> "" And InStr(G, GoodW) > 0 Then Exit Function
         Next j
     Next iG
     ErrMsg FATAL_ERR, "Неизвестный тип товара " & G
@@ -539,7 +557,7 @@ Function IsSubscription(good, GT) As Boolean
     Dim LGood As String
     LGood = LCase$(good)
     
-    SbsWords = Split(LCase$(Sbs), ",")
+    SbsWords = split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)
         If InStr(LGood, Trim(SbsWords(i))) > 0 Then
             IsSubscription = True
@@ -555,13 +573,13 @@ Function IsWork(ByVal good As String) As Boolean
     Dim Wrd() As String, Wokabulary As String, i As Long
     
 '    For Each iG In Range("WorksTable").Rows
-'        Ent = split(LCase$(Good), ",")
+'        Ent = Split(LCase$(Good), ",")
 '
 '    Next iG
 '
     good = LCase(good)
     Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
-    Wrd = Split(LCase(Wokabulary), ",")
+    Wrd = split(LCase(Wokabulary), ",")
     IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
         If InStr(good, Trim(Wrd(i))) > 0 Then Exit Function
