@@ -65,6 +65,7 @@ Option Explicit
     
 ' переменные с областью действия 'модуль'
     Dim patObject
+    Dim patObjectSet As Boolean
     
     
 Function GetRep(RepName) As TOCmatch
@@ -1043,7 +1044,8 @@ Sub testpatTest()
     ret(5) = patTest("xxx-TEST-yyyccc", "T[eE]ST")                 'да
     ret(6) = patTest("xxx-TeST-yyyccc", "^xxx-T[eE]ST-yyyccc$")    'да
     ret(7) = patTest("xxx-TeST-yyyccc", "^xxx-T\wST-yyyccc$")      'да
-
+    Stop
+    
 End Sub
 
 Function patTest(longTxt As String, pat As String) As Boolean
@@ -1051,7 +1053,10 @@ Function patTest(longTxt As String, pat As String) As Boolean
 ' - patTest - проверка на соответствие регулярному выражению
 '   22.12.2012
 
-    Set patObject = CreateObject("VBSCRIPT.REGEXP")
+    If Not patObjectSet Then
+        Set patObject = CreateObject("VBSCRIPT.REGEXP")
+        patObjectSet = True
+    End If
     
     With patObject
         .Pattern = pat
