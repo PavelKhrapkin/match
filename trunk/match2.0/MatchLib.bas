@@ -50,6 +50,8 @@ Attribute VB_Name = "MatchLib"
 ' - IsInDIC(W,Dic)              - определяет есть ли слово W в словаре Dic
 ' - IsMatchList(W, DicList)     - возвращает TRUE если W входит в DicList
 ' T test ISML                   - отладка IsMatchList
+' Т testpatTest()               - отладка patTest
+' - patTest                     - проверка на соответствие регулярному выражению
 
 Option Explicit
 
