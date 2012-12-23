@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 19.12.2012
+' П.Л.Храпкин, А.Пасс 22.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -60,6 +60,11 @@ Option Explicit
     Public Const Gray = 8750469     ' серый
     
     Public Const Log = "Log"        ' Log лист
+    
+' переменные с областью действия 'модуль'
+    Dim patObject
+    
+    
 Function GetRep(RepName) As TOCmatch
 '
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
@@ -193,8 +198,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         If Typ = "N" Then GoTo Ex
@@ -335,7 +340,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
                 .Columns(i).ColumnWidth = FF.Cells(3, i)
             Else
                 Dim Fmt() As String
-                Fmt = Split(FF.Cells(3, i), "/")
+                Fmt = split(FF.Cells(3, i), "/")
                 .Columns(i).ColumnWidth = Fmt(0)
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
@@ -805,7 +810,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     R = GetRep(SheetN)
     
     For i = 1 To R.EOL
-        D = Split(Sheets(SheetN).Cells(i, Col), ".")
+        D = split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             dd = D(0)
             If dd < 1 Or dd > 31 Then GoTo Nxt
@@ -986,7 +991,7 @@ Function IsMatchList(W, DicList) As Boolean
     Dim lW As String
     
     lW = LCase$(W)
-    X = Split(DicList, ",")
+    X = split(DicList, ",")
     
     For i = LBound(X) To UBound(X)
         If InStr(lW, LCase$(X(i))) <> 0 Then
@@ -1025,3 +1030,35 @@ Sub ScreenUpdate(TurnOn As Boolean)
         End With
     End If
 End Sub
+Sub testpatTest()
+
+    Dim ret(1 To 10) As Boolean
+'                               где                 что
+    ret(1) = patTest("xxx-TEST-yyyccc", "TEST")                    'да
+    ret(2) = patTest("xxx-TEST-yyyccc", "^TEST$")      'нет - д.б. целиком
+    ret(3) = patTest("xxx-TEST-yyyccc", "^xxx-TEST-yyyccc$")       'да
+    ret(4) = patTest("xxx-TzST-yyyccc", "^xxx-T.ST-yyyccc")        'да
+    ret(5) = patTest("xxx-TEST-yyyccc", "T[eE]ST")                 'да
+    ret(6) = patTest("xxx-TeST-yyyccc", "^xxx-T[eE]ST-yyyccc$")    'да
+    ret(7) = patTest("xxx-TeST-yyyccc", "^xxx-T\wST-yyyccc$")      'да
+
+End Sub
+
+Function patTest(longTxt As String, pat As String) As Boolean
+
+' - patTest - проверка на соответствие регулярному выражению
+'   22.12.2012
+
+    Set patObject = CreateObject("VBSCRIPT.REGEXP")
+    
+    With patObject
+        .Pattern = pat
+        patTest = .test(longTxt)
+'        If .test(longTxt) Then
+'            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
+'        Else
+'            patTest = "Not found: '" & pat & "' in: '" & longTxt & "'"
+'        End If
+    End With
+End Function
+
