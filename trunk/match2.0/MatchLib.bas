@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 22.12.2012
+' П.Л.Храпкин, А.Пасс 24.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -22,6 +22,7 @@ Attribute VB_Name = "MatchLib"
 ' - CurRate(Cur)                - возвращает курс валюты к рублю по коду Cur для We
 ' - CurISO(Cur1C)               - возвращает код валюты в стандарте ISO
 ' - DDMMYYYY(d)                 - преобразование даты d в текстовый формат DDMMYYYY
+' - GetDate(txt)                - получение даты из текстовой строки txt
 ' - Dec(a)                      - формат числа а в виде текста с десятичной точкой
 ' - EOL(SheetN)                 - возвращает номер последней строки листа SheetN
 ' - RowDel(RowStr)              - удаляет строки активного листа в соответствии с RowStr
@@ -552,6 +553,38 @@ Function DDMMYYYY(D) As String
 '   14.2.2012
     DDMMYYYY = Day(D) & "." & Month(D) & "." & Year(D)
 End Function
+Function GetDate(txt As String) As Date
+'
+' - GetDate(txt) - преобразование строки txt в дату
+' 24.12.12
+
+    Dim componentArray() As String, new_txt As String
+    If IsDate(txt) Then
+        GetDate = txt           ' исходный формат удовлетворителен
+    Else
+            ' конвертируем 'ДД.ММ.ГГГГ ВРЕМЯ' -> 'ММ/ДД/ГГГГ ВРЕМЯ'
+            
+        componentArray = split(txt, ".")
+        new_txt = componentArray(1) & "/" & componentArray(0) & "/" & componentArray(2)
+        If Not IsDate(new_txt) Then
+            ' не дата. конвертируем 'ДД.ММ.ГГГГ ВРЕМЯ' -> 'ММ/ДД/ГГГГ ВРЕМЯ'
+            
+            componentArray = split(txt, "/")
+            new_txt = componentArray(1) & "." & componentArray(0) & "." & componentArray(2)
+            If Not IsDate(new_txt) Then ErrMsg FATAL_ERR, "GetDate - неправильный формат даты"
+        End If
+        GetDate = new_txt
+    End If
+
+End Function
+Sub tGetDate()
+
+    Dim res(1 To 5) As Date
+    res(1) = GetDate("12/24/2012 4:12")
+    res(2) = GetDate("12.24.2012 4:12")
+    res(3) = GetDate("24.2.12 4:12")
+    Stop
+End Sub
 Function Dec(A) As String
 '
 ' преобразование числа а в текстовый формат с десятичной точкой
