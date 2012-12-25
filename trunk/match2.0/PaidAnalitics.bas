@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   22.12.2012
+'   24.12.2012
 
 Option Explicit
 
@@ -483,16 +483,17 @@ Sub testGoodType()
     Dim res(1 To 5) As String
     Set DB_MATCH = FileOpen(F_MATCH)
     
-    res(1) = GoodType("плоттер")        ' оборудование  (описано '^плоттер$', т.е. слово точно, без флексий)
-    res(2) = GoodType("плот")           ' не распознается, т.е. оплата
-    res(3) = GoodType("плоттерА")       ' расходники    (описано 'плоттер.+')
-                                        '   т.е. после слова - не менее 1 произвольного символа
+    res(1) = GoodType("xxx Плоттер xxx")    ' оборудование  (описано 'плоттер[ $]'
+                                            ', т.е. слово точно, без флексий)
+    res(2) = GoodType("xx плот ")           ' не распознается, т.е. оплата
+    res(3) = GoodType("xxx плоттерА")       ' расходники    (описано 'плоттер')
+                                            '   т.е. после слова - не менее 1 произвольного символа
     If res(1) <> "Оборудование" Then Stop
     If res(2) <> "О П Л А Т А" Then Stop
     If res(3) <> "Расходники" Then Stop
     
     Stop
-    
+ 
 End Sub
 Function GoodType(ByVal G As String) As String
 '
