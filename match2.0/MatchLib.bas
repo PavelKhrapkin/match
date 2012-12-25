@@ -1072,8 +1072,8 @@ Sub testpatTest()
 '                               где                 что
     ret(1) = patTest("xxx-TEST-yyyccc", "TEST")                    'да
     ret(2) = patTest("xxx-TEST-yyyccc", "^TEST$")      'нет - д.б. целиком
-    ret(3) = patTest("xxx-TEST-yyyccc", "^xxx-TEST-yyyccc$")       'да
-    ret(4) = patTest("xxx-TzST-yyyccc", "^xxx-T.ST-yyyccc")        'да
+    ret(3) = patTest("xxx-TEST.-yyyccc", "^xxx-TEST.-yyyccc$")     'да
+    ret(4) = patTest("xxx-TzST-yyyccc", "^xxx-T.ST-yyyccc")        'нет
     ret(5) = patTest("xxx-TEST-yyyccc", "T[eE]ST")                 'да
     ret(6) = patTest("xxx-TeST-yyyccc", "^xxx-T[eE]ST-yyyccc$")    'да
     ret(7) = patTest("xxx-TeST-yyyccc", "^xxx-T\wST-yyyccc$")      'да
@@ -1085,6 +1085,8 @@ Function patTest(longTxt As String, pat As String) As Boolean
 
 ' - patTest - проверка на соответствие регулярному выражению
 '   22.12.2012
+'   24.12.2012 Вместо '.' в рег. выражении следует ставить '~'.
+'               Точка (.) всегда имеет буквальный смысл.
 
     If Not patObjectSet Then
         Set patObject = CreateObject("VBSCRIPT.REGEXP")
@@ -1092,12 +1094,18 @@ Function patTest(longTxt As String, pat As String) As Boolean
     End If
     
     With patObject
+'        pat = "плоттер$|плоттер "
+        pat = Replace(pat, ".", "\.")       ' буквальная точка
+        pat = Replace(pat, "~", ".")        ' точка как спец. символ
         .Pattern = pat
+        
         patTest = .test(longTxt)
+'        Dim rslt
+'        Set rslt = .Execute(longTxt)
 '        If .test(longTxt) Then
-'            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
+'            rslt = "found: '" & pat & "' in: '" & longTxt & "', " & "$1"
 '        Else
-'            patTest = "Not found: '" & pat & "' in: '" & longTxt & "'"
+'            rslt = "Not found: '" & pat & "' in: '" & longTxt & "', " & "$1"
 '        End If
     End With
 End Function
