@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   24.12.2012
+'   25.12.2012
 
 Option Explicit
 
@@ -488,9 +488,11 @@ Sub testGoodType()
     res(2) = GoodType("xx плот ")           ' не распознается, т.е. оплата
     res(3) = GoodType("xxx плоттерА")       ' расходники    (описано 'плоттер')
                                             '   т.е. после слова - не менее 1 произвольного символа
+    res(4) = GoodType("xxххx сканирА")
     If res(1) <> "Оборудование" Then Stop
     If res(2) <> "О П Л А Т А" Then Stop
     If res(3) <> "Расходники" Then Stop
+    If res(4) <> "Печать" Then Stop
     
     Stop
  
@@ -505,6 +507,7 @@ Function GoodType(ByVal G As String) As String
 '   20.12.12 - игнорируем пустые слова в словаре Goods
 '   22.12.12 - обращение к InStr заменено на обращение к patTest
 '               (RegExp, регулярные выражения) А.Пасс
+'   25.12.12 - patTest вызывается только если в начале паттерна вставлен $, иначе InStr
 
     Dim j As Integer
     Dim iG As Range
@@ -519,8 +522,13 @@ Function GoodType(ByVal G As String) As String
         Goods = split(S, ",")   ' в Goods список товаров данного типа
         For j = 0 To UBound(Goods)
             GoodW = Trim(Goods(j))
-            If GoodW <> "" And patTest(G, GoodW) Then Exit Function
-'            If GoodW <> "" And InStr(G, GoodW) > 0 Then Exit Function
+            If GoodW <> "" Then
+                If Left(GoodW, 1) = "$" Then
+                    If patTest(G, Mid(GoodW, 2)) Then Exit Function
+                Else
+                    If InStr(G, GoodW) > 0 Then Exit Function
+                End If
+            End If
         Next j
     Next iG
     ErrMsg FATAL_ERR, "Неизвестный тип товара " & G
