@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 24.12.2012
+' П.Л.Храпкин, А.Пасс 27.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -163,9 +163,11 @@ FoundRep:
         Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
         End Select
             
-        CheckStamp i
-        
-        GetRep = RepTOC
+        If CheckStamp(i) Then
+            GetRep = RepTOC
+        Else
+            FatalRep "GetRep", RepName
+        End If
     End With
 End Function
 Sub FatalRep(SubName, RepName)
@@ -174,8 +176,9 @@ Sub FatalRep(SubName, RepName)
 ' 17.8.12
 ' 9.8.12 -- более ясная диагностика по не найденному Штампу
 
-    ErrMsg FATAL_ERR, SubName & "> Не найден Штамп в Документе " & RepName _
-        & vbCrLf & vbCrLf & "Этот Документ надо загрузить в match заново!"
+    ErrMsg FATAL_ERR, SubName & "> Не найден Штамп в Документе '" & RepName & "'" _
+        & vbCrLf & vbCrLf & "Этот Документ надо загрузить в match заново или " _
+        & vbCrLf & "исправить параметры в TOCmatch."
     Stop
 '    End
 End Sub
@@ -202,8 +205,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         If Typ = "N" Then GoTo Ex
@@ -319,6 +322,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '  4.11.12 - использование R=GetRep(ActiveSheet.Name)
 ' 19.11.12 - COPY_HDR - copy Шаблона вместо присваивания текстового содержимого
 ' 19.12.12 - Обработка формата в строке Width
+' 27.12.12 - диагностика при ошибке Штампа
 
     Const COPY_HDR = "CopyHdr"
 
@@ -344,8 +348,9 @@ Sub InsMyCol(F As String, Optional FS As String = "")
                 .Columns(i).ColumnWidth = FF.Cells(3, i)
             Else
                 Dim Fmt() As String
-                Fmt = split(FF.Cells(3, i), "/")
+                Fmt = Split(FF.Cells(3, i), "/")
                 .Columns(i).ColumnWidth = Fmt(0)
+            End If
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
@@ -564,12 +569,12 @@ Function GetDate(txt As String) As Date
     Else
             ' конвертируем 'ДД.ММ.ГГГГ ВРЕМЯ' -> 'ММ/ДД/ГГГГ ВРЕМЯ'
             
-        componentArray = split(txt, ".")
+        componentArray = Split(txt, ".")
         new_txt = componentArray(1) & "/" & componentArray(0) & "/" & componentArray(2)
         If Not IsDate(new_txt) Then
             ' не дата. конвертируем 'ДД.ММ.ГГГГ ВРЕМЯ' -> 'ММ/ДД/ГГГГ ВРЕМЯ'
             
-            componentArray = split(txt, "/")
+            componentArray = Split(txt, "/")
             new_txt = componentArray(1) & "." & componentArray(0) & "." & componentArray(2)
             If Not IsDate(new_txt) Then ErrMsg FATAL_ERR, "GetDate - неправильный формат даты"
         End If
@@ -846,7 +851,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     R = GetRep(SheetN)
     
     For i = 1 To R.EOL
-        D = split(Sheets(SheetN).Cells(i, Col), ".")
+        D = Split(Sheets(SheetN).Cells(i, Col), ".")
         If UBound(D) = 2 Then
             dd = D(0)
             If dd < 1 Or dd > 31 Then GoTo Nxt
@@ -1027,7 +1032,7 @@ Function IsMatchList(W, DicList) As Boolean
     Dim lW As String
     
     lW = LCase$(W)
-    X = split(DicList, ",")
+    X = Split(DicList, ",")
     
     For i = LBound(X) To UBound(X)
         If InStr(lW, LCase$(X(i))) <> 0 Then
