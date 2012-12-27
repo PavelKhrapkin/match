@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 27.12.2012
+' П.Л.Храпкин, А.Пасс 28.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -842,7 +842,6 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
 '   3.10.12 - GetRep вместо EOL
-'   27.12.12 - GetDate added
 
     Dim i, dd, MM, YY As Integer
     Dim Dat As Date
@@ -859,7 +858,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
             YY = D(2)
-            Dat = GetDate(dd & "." & MM & "." & YY)
+            Dat = dd & "." & MM & "." & YY
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
 Nxt:
@@ -1078,8 +1077,8 @@ Sub testpatTest()
 '                               где                 что
     ret(1) = patTest("xxx-TEST-yyyccc", "TEST")                    'да
     ret(2) = patTest("xxx-TEST-yyyccc", "^TEST$")      'нет - д.б. целиком
-    ret(3) = patTest("xxx-TEST.-yyyccc", "^xxx-TEST.-yyyccc$")     'да
-    ret(4) = patTest("xxx-TzST-yyyccc", "^xxx-T.ST-yyyccc")        'нет
+    ret(3) = patTest("xxx-TEST-yyyccc", "^xxx-TEST-yyyccc$")       'да
+    ret(4) = patTest("xxx-TzST-yyyccc", "^xxx-T.ST-yyyccc")        'да
     ret(5) = patTest("xxx-TEST-yyyccc", "T[eE]ST")                 'да
     ret(6) = patTest("xxx-TeST-yyyccc", "^xxx-T[eE]ST-yyyccc$")    'да
     ret(7) = patTest("xxx-TeST-yyyccc", "^xxx-T\wST-yyyccc$")      'да
@@ -1091,8 +1090,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
 
 ' - patTest - проверка на соответствие регулярному выражению
 '   22.12.2012
-'   24.12.2012 Вместо '.' в рег. выражении следует ставить '~'.
-'               Точка (.) всегда имеет буквальный смысл.
+'   28.12.12 - replace "~" with ","
 
     If Not patObjectSet Then
         Set patObject = CreateObject("VBSCRIPT.REGEXP")
@@ -1100,18 +1098,13 @@ Function patTest(longTxt As String, pat As String) As Boolean
     End If
     
     With patObject
-'        pat = "плоттер$|плоттер "
-        pat = Replace(pat, ".", "\.")       ' буквальная точка
-        pat = Replace(pat, "~", ".")        ' точка как спец. символ
+'        pat = Replace("~", ",")
         .Pattern = pat
-        
         patTest = .test(longTxt)
-'        Dim rslt
-'        Set rslt = .Execute(longTxt)
 '        If .test(longTxt) Then
-'            rslt = "found: '" & pat & "' in: '" & longTxt & "', " & "$1"
+'            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
 '        Else
-'            rslt = "Not found: '" & pat & "' in: '" & longTxt & "', " & "$1"
+'            patTest = "Not found: '" & pat & "' in: '" & longTxt & "'"
 '        End If
     End With
 End Function
