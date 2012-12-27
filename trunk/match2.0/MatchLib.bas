@@ -842,6 +842,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 ' преобразование колонки Col в листе SheetN из текста вида DD.MM.YY в формат Date
 '   20.4.12
 '   3.10.12 - GetRep вместо EOL
+'   27.12.12 - GetDate added
 
     Dim i, dd, MM, YY As Integer
     Dim Dat As Date
@@ -858,7 +859,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
             YY = D(2)
-            Dat = dd & "." & MM & "." & YY
+            Dat = GetDate(dd & "." & MM & "." & YY)
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
 Nxt:
