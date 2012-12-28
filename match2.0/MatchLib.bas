@@ -1087,8 +1087,9 @@ Sub testpatTest()
 End Sub
 
 Function patTest(longTxt As String, pat As String) As Boolean
-
+'
 ' - patTest - проверка на соответствие регулярному выражению
+'             возвращает True, если строка longTxt соответствует шаблону pat
 '   22.12.2012
 '   28.12.12 - replace "~" with ","
 
@@ -1098,7 +1099,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
     End If
     
     With patObject
-'        pat = Replace("~", ",")
+        pat = Replace(pat, "~", ",")
         .Pattern = pat
         patTest = .test(longTxt)
 '        If .test(longTxt) Then
