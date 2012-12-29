@@ -106,7 +106,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         For i = 1 To P.Columns.Count
-            width = split(P.Cells(PTRN_WIDTH, i), "/")
+            width = Split(P.Cells(PTRN_WIDTH, i), "/")
             sX = P.Cells(PTRN_COLS, i)
             If sX <> "" Then
                 If sX = EXT_PAR Then
@@ -219,7 +219,7 @@ Sub xAdapt(F As String, iLine As Long)
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
-                        width = split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
                         fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
 '                        If UBound(width) > 0 Then
 '                            If width(1) = "Dbl" And IsNumeric(Y) Then
@@ -338,7 +338,6 @@ Sub Adapt(F As String)
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
     Dim X As String, Y As String
     Dim i As Long, Col As Long, iX As Long
-''    Dim PutToRow As Long, PutToCol As Long
     
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
@@ -347,13 +346,6 @@ Sub Adapt(F As String)
         For i = 2 To R.EOL
             Progress i / R.EOL
             For Col = 1 To FF.Columns.Count
-'''                X = X_Parse(i, Col)
-'''                Rqst = FF.Cells(PTRN_ADAPT, Col)
-'''                F_rqst = FF.Cells(PTRN_FETCH, Col)
-'''
-'''                Y = Adapter(Rqst, X, F_rqst, IsErr)
-'''
-'''                If Not IsErr Then .Cells(i, Col) = Y
                 iX = FF(PTRN_COLS, Col)
                 If iX > 0 Then
                     X = .Cells(i, iX)
@@ -385,21 +377,22 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '25.10.12 - очистка переменных, оставшихся от прежних редакций
 '18.11.12 - изменение кнопок "Связать"/"Занести"
 '19.11.12 - добавление Адаптеров в колонки Шаблона справа - в т.ч. InvN
+'29.12.12 - Compressor(X)
 
     Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
-    X = Trim(X)
+    X = Compressor(X)
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = split(Request, "/")
+        Tmp = Split(Request, "/")
         AdapterName = Tmp(0)
-        If InStr(Request, "/") <> 0 Then Par = split(Tmp(1), ",")
+        If InStr(Request, "/") <> 0 Then Par = Split(Tmp(1), ",")
     End If
 
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
@@ -419,7 +412,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
     If F_rqst <> "" And X <> "" Then
         
-        FF = split(F_rqst, ",")
+        FF = Split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
             X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -454,7 +447,7 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
         Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
         Case "SeekInv": Adapter = SeekInv(X)
         Case "InvN":
-            Tmp = split(X, " ")
+            Tmp = Split(X, " ")
             If UBound(Tmp) > 0 Then Adapter = Tmp(0)
         Case "SeekPayN":
             Dim Inv As String, Client As String
@@ -591,7 +584,7 @@ Function X_Parse(iRow, iCol, _
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
         If X_rqst = "" Then GoTo Ex
-        sX = split(X_rqst, "/")
+        sX = Split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
         If RefType = "#" Or RefType = "!" Then sX(0) = Mid(sX(0), 2)
@@ -656,9 +649,9 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = split(F_rqst, "/")
+    Tmp = Split(F_rqst, "/")
     Doc = Tmp(0)
-    Cols = split(Tmp(1), ":")
+    Cols = Split(Tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
@@ -716,35 +709,35 @@ Sub testfmtCell()
 '   тесты fmtCell()
 ' 17.12.12 - добавлен тест целого формата
     
-    Dim fmt(0 To 1) As String
+    Dim Fmt(0 To 1) As String
     Set DB_TMP = FileOpen(F_TMP)
     
-    fmt(1) = "Dbl"
-    fmtCell DB_TMP, "NewOpp", fmt, "3m3", 2, 2
-    fmtCell DB_TMP, "NewOpp", fmt, 33333.3, 2, 2
+    Fmt(1) = "Dbl"
+    fmtCell DB_TMP, "NewOpp", Fmt, "3m3", 2, 2
+    fmtCell DB_TMP, "NewOpp", Fmt, 33333.3, 2, 2
     
-    fmt(1) = "Txt"
-    fmtCell DB_TMP, "NewOpp", fmt, "xxx", 2, 2
-    fmt(1) = "@"
-    fmtCell DB_TMP, "NewOpp", fmt, "yyy", 2, 2
+    Fmt(1) = "Txt"
+    fmtCell DB_TMP, "NewOpp", Fmt, "xxx", 2, 2
+    Fmt(1) = "@"
+    fmtCell DB_TMP, "NewOpp", Fmt, "yyy", 2, 2
     
-    fmt(1) = "Date"
-    fmtCell DB_TMP, "NewOpp", fmt, "1/2/2012", 2, 2
-    fmt(1) = "# ##0.0000"
-    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
-    fmt(1) = "# ##0.00"             ' Стандарт для России ~ Dbl
-    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
-    fmt(1) = "0.00"
-    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
-    fmt(1) = "0"
-    fmtCell DB_TMP, "NewOpp", fmt, 22, 2, 2
-    fmt(1) = "0%"
-    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
-    fmt(1) = "0.00%"
-    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
+    Fmt(1) = "Date"
+    fmtCell DB_TMP, "NewOpp", Fmt, "1/2/2012", 2, 2
+    Fmt(1) = "# ##0.0000"
+    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
+    Fmt(1) = "# ##0.00"             ' Стандарт для России ~ Dbl
+    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
+    Fmt(1) = "0.00"
+    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
+    Fmt(1) = "0"
+    fmtCell DB_TMP, "NewOpp", Fmt, 22, 2, 2
+    Fmt(1) = "0%"
+    fmtCell DB_TMP, "NewOpp", Fmt, 5.666, 2, 2
+    Fmt(1) = "0.00%"
+    fmtCell DB_TMP, "NewOpp", Fmt, 5.666, 2, 2
     Stop
 End Sub
-Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
+Sub fmtCell(ByVal db As Workbook, ByVal list As String, Fmt() As String, _
             ByVal value, ByVal putToRow As Long, ByVal putToCol As Long)
 '
 '   - fmtCell - обработка формата в строке width вида 0/Txt или 10/@
@@ -761,18 +754,18 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
 ' 17.12.12 - добавлен тест целого формата
 
-    If UBound(fmt) > 0 Then
-        If fmt(1) = "Dbl" Then
+    If UBound(Fmt) > 0 Then
+        If Fmt(1) = "Dbl" Then
 '                                Dim YY As Double
 '                                YY = Y
 '                                .Cells(PutToRow, PutToCol) = YY
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "# ##0.00"
-        ElseIf fmt(1) = "Date" Then
+        ElseIf Fmt(1) = "Date" Then
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
-        ElseIf fmt(1) = "Txt" Then
+        ElseIf Fmt(1) = "Txt" Then
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "@"
         Else
-            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = fmt(1)
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = Fmt(1)
         End If
     End If
     db.Sheets(list).Cells(putToRow, putToCol) = value
