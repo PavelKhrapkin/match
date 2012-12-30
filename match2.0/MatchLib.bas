@@ -1103,7 +1103,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
 '                   $pat1; - вновь добавленный, такой что longTxt должен ему противоречить.
 '               пример: $для*.printer;printer( |\d|$). Тогда 'ххх printer' проходит тест,
 '                       а 'для ххх printer' - не проходит.
-,
+'
     patTest = False
     If Not patObjectSet Then
         Set patObject = CreateObject("VBSCRIPT.REGEXP")
