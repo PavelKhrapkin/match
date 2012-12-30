@@ -474,11 +474,11 @@ End Function
 '''    AutoFilterReset 1
 '''    ModEnd WSheetName
 '''End Sub
-Sub tgoodtype()
-Dim A(10) As String
-Set DB_MATCH = FileOpen(F_MATCH)
-A(1) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
-End Sub
+''Sub tgoodtype()
+''Dim A(10) As String
+''Set DB_MATCH = FileOpen(F_MATCH)
+''A(1) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
+''End Sub
 Sub testGoodType()
     Dim res(1 To 6) As String
     Set DB_MATCH = FileOpen(F_MATCH)
@@ -496,6 +496,7 @@ Sub testGoodType()
     If res(3) <> "Расходники" Then Stop
     If res(4) <> "Печать" Then Stop
     If res(5) <> "Оборудование" Then Stop
+    If res(6) <> "Оборудование" Then Stop       ' 'Оборудование' - из-за SpacePilot
    
     Stop
  
@@ -522,9 +523,12 @@ Function GoodType(ByVal G As String) As String
     For Each iG In DB_MATCH.Sheets(We).Range("Goods").Rows
         GoodType = iG.Cells(1, 1)
         S = LCase(iG.Cells(1, 2))
-        Goods = split(S, ",")   ' в Goods список товаров данного типа
+        Goods = Split(S, ",")   ' в Goods список товаров данного типа
         For j = 0 To UBound(Goods)
             GoodW = Trim(Goods(j))
+'            If InStr(G, "шлейф") > 0 And GoodType = "Расходники" And j = 84 Then
+'                j = j
+'            End If
             If GoodW <> "" Then
                 If Left(GoodW, 1) = "$" Then
                     If patTest(G, Mid(GoodW, 2)) Then Exit Function
@@ -569,7 +573,7 @@ Function IsSubscription(good, GT) As Boolean
     Dim LGood As String
     LGood = LCase$(good)
     
-    SbsWords = split(LCase$(Sbs), ",")
+    SbsWords = Split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)
         If InStr(LGood, Trim(SbsWords(i))) > 0 Then
             IsSubscription = True
@@ -591,7 +595,7 @@ Function IsWork(ByVal good As String) As Boolean
 '
     good = LCase(good)
     Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
-    Wrd = split(LCase(Wokabulary), ",")
+    Wrd = Split(LCase(Wokabulary), ",")
     IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
         If InStr(good, Trim(Wrd(i))) > 0 Then Exit Function
