@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 28.12.2012
+' П.Л.Храпкин, А.Пасс 29.12.2012
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -209,7 +209,7 @@ Function CheckStamp(iTOC As Long, _
         SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-        If Typ = "N" Then GoTo Ex
+        If Typ = "N" Then GoTo ex
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
@@ -238,7 +238,7 @@ Function CheckStamp(iTOC As Long, _
                 End If
             
                 If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-Ex:             Exit Function
+ex:             Exit Function
 NxtChk:
             Next j
         Next i
@@ -590,16 +590,16 @@ Sub tGetDate()
     res(3) = GetDate("24.2.12 4:12")
     Stop
 End Sub
-Function Dec(A) As String
+Function Dec(a) As String
 '
 ' преобразование числа а в текстовый формат с десятичной точкой
 '   14.2.2012
 
-    Dec = "'" & WorksheetFunction.Substitute(A, ",", ".")
+    Dec = "'" & WorksheetFunction.Substitute(a, ",", ".")
 End Function
 Sub testEOL()
-    Dim A, b, C
-    A = EOL(1)
+    Dim a, b, C
+    a = EOL(1)
     b = EOL(2)
         Dim F As Workbook
         Set F = Workbooks.Open(F_SFDC, UpdateLinks:=True, ReadOnly:=True)
@@ -969,8 +969,8 @@ Sub testFindInLst()
 '
 ' Т testFindInLst() - отладка FindInLst(W,Lst)
 '   24/5/12
-    Dim A
-    A = FindInLst("Autodesk Plant Design Suite Premium 2012 New SLM", "DIC_GoodADSK")
+    Dim a
+    a = FindInLst("Autodesk Plant Design Suite Premium 2012 New SLM", "DIC_GoodADSK")
 End Sub
 Function FindInLst(W, Lst) As String
 '
@@ -993,8 +993,8 @@ Sub testFindInDIC()
 '
 ' Т testFindInDIC() - отладка FindInDIC(W,Dic)
 '   7/5/12
-    Dim A
-    A = FindInDIC("картридж", "Goods")
+    Dim a
+    a = FindInDIC("картридж", "Goods")
 End Sub
 Function FindInDIC(W, Dic) As String
 '
@@ -1045,10 +1045,10 @@ Sub testISML()
 '
 ' T test ISML - отладка IsMatchList
 ' 7/5/12
-    Dim A As Boolean
-    A = IsMatchList("", "мышка,кошка,лев")
-    A = IsMatchList("собака", "мышка,кошка,соб,лев")
-    A = IsMatchList("собака", "мышка,кошка,лев")
+    Dim a As Boolean
+    a = IsMatchList("", "мышка,кошка,лев")
+    a = IsMatchList("собака", "мышка,кошка,соб,лев")
+    a = IsMatchList("собака", "мышка,кошка,лев")
 End Sub
 Sub ScreenUpdate(TurnOn As Boolean)
 '
@@ -1073,8 +1073,9 @@ Sub ScreenUpdate(TurnOn As Boolean)
 End Sub
 Sub testpatTest()
 
-    Dim ret(1 To 10) As Boolean
+    Dim ret(1 To 15) As Boolean
 '                               где                 что
+a:
     ret(1) = patTest("xxx-TEST-yyyccc", "TEST")                    'да
     ret(2) = patTest("xxx-TEST-yyyccc", "^TEST$")      'нет - д.б. целиком
     ret(3) = patTest("xxx-TEST-yyyccc", "^xxx-TEST-yyyccc$")       'да
@@ -1082,7 +1083,13 @@ Sub testpatTest()
     ret(5) = patTest("xxx-TEST-yyyccc", "T[eE]ST")                 'да
     ret(6) = patTest("xxx-TeST-yyyccc", "^xxx-T[eE]ST-yyyccc$")    'да
     ret(7) = patTest("xxx-TeST-yyyccc", "^xxx-T\wST-yyyccc$")      'да
+    ret(8) = patTest(" xxx плоттер5 ; для xxx плоттер ", "$для.*плоттер;плоттер(\s|\d|$)")  'да
+    ret(9) = patTest(" xxx плоттерa ; для xxx плоттер ", "$для.*плоттер;плоттер(\s|\d|$)")  'нет(2)
+    ret(10) = patTest(" xxx плоттерx; для xxx плоттер ", "$длxя.*плоттер;плоттер(\s|$)")    'да
+    ret(11) = patTest(" xxx плоттерx; для xxx плоттер ", "$для.*плотттер;плоттер(\s|$)")    'да
+    ret(12) = patTest(" xxx плоттер ; для xxx плоттер ", "$для.*плоттер;плоттер(\s|\d|$)")  'да
     Stop
+    GoTo a
     
 End Sub
 
@@ -1092,21 +1099,55 @@ Function patTest(longTxt As String, pat As String) As Boolean
 '             возвращает True, если строка longTxt соответствует шаблону pat
 '   22.12.2012
 '   28.12.12 - replace "~" with ","
-
+'   29.12.12 - добавил конструкцию $pat1;pat0 где pat0 - обычный паттерн;
+'                   $pat1; - вновь добавленный, такой что longTxt должен ему противоречить.
+'               пример: $для*.printer;printer( |\d|$). Тогда 'ххх printer' проходит тест,
+'                       а 'для ххх printer' - не проходит.
+,
+    patTest = False
     If Not patObjectSet Then
         Set patObject = CreateObject("VBSCRIPT.REGEXP")
         patObjectSet = True
     End If
     
     With patObject
-        pat = Replace(pat, "~", ",")
-        .Pattern = pat
-        patTest = .test(longTxt)
-'        If .test(longTxt) Then
-'            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
-'        Else
-'            patTest = "Not found: '" & pat & "' in: '" & longTxt & "'"
-'        End If
+         
+        If Left(pat, 1) = "$" Then
+            pat = Trim(Mid(pat, 2))             ' убираем спец. символ
+            If pat = "" Then GoTo ex
+            
+            Dim comps() As String, pats() As String, i As Long
+                ' В случае 2-го знака '$' - компоненты описания товара, разделенные запятыми,
+                '       рассматриваются независимо
+                '       и в паттерне должно быть ровно 2 части
+            pats = Split(pat, ";")
+            If UBound(pats) <> 1 Then GoTo ex  ' в паттерне должно быть ровно 2 части
+            
+            comps = Split(longTxt, ";")
+            For i = 0 To UBound(comps)
+                    ' pattern должен быть 'начало;конец', напр. 'для;принтер[ $]';
+                    '   означает: 'для' запрещено, 'принтер[ $]' обязательно.
+                    ' предполагается, что это описывает 'оборудование'
+                If Not patTest(comps(i), pats(0)) Then   ' 1-я часть - false
+                    If patTest(comps(i), pats(1)) Then   ' 2-я часть д.б. true
+                        patTest = True
+                        GoTo ex              ' найден образец
+                    End If
+                    GoTo nextComp
+                End If
+nextComp:
+            Next i
+        Else
+            pat = Replace(pat, "~", ",")
+            .Pattern = pat
+            patTest = .test(longTxt)
+    '        If .test(longTxt) Then
+    '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
+    '        Else
+    '            patTest = "Not found: '" & pat & "' in: '" & longTxt & "'"
+    '        End If
+        End If
     End With
+ex:
 End Function
 
