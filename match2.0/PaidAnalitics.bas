@@ -480,7 +480,7 @@ Set DB_MATCH = FileOpen(F_MATCH)
 A(1) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
 End Sub
 Sub testGoodType()
-    Dim res(1 To 5) As String
+    Dim res(1 To 6) As String
     Set DB_MATCH = FileOpen(F_MATCH)
     
     res(1) = GoodType("xxx Плоттер xxx")    ' оборудование  (описано 'плоттер[ $]'
@@ -489,11 +489,14 @@ Sub testGoodType()
     res(3) = GoodType("xxx плоттерА")       ' расходники    (описано 'плоттер')
                                             '   т.е. после слова - не менее 1 произвольного символа
     res(4) = GoodType("xxххx сканирА")
+    res(5) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
+    res(6) = GoodType("деталь Манипулятора SpacePilot PRO, black, USB, CAD Professional/1;")
     If res(1) <> "Оборудование" Then Stop
     If res(2) <> "О П Л А Т А" Then Stop
     If res(3) <> "Расходники" Then Stop
     If res(4) <> "Печать" Then Stop
-    
+    If res(5) <> "Оборудование" Then Stop
+   
     Stop
  
 End Sub
