@@ -6,7 +6,7 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   9.11.2012
+'   30.12.2012
 
 Option Explicit
 Sub NewContr(NewContract As String)
@@ -39,13 +39,14 @@ Sub PaidContr(ByVal NewPayment As String)
 '
 ' S PaidContr()  - Занесение Платежа с Договором, связанным с Проектом
 ' 21.11.12
+' 30.12.12 - NewOpp для Договоров без связки с Проектом
 
     StepIn
     
-    Dim Paid As TOCmatch
+    Dim Paid As TOCmatch, ContrK As String, IsErr As Boolean, OppId As String
     Dim i As Long
     
-    Const F_rqst = "SFD/" & SFD_COD_COL & ":" & SFD_OPPN_COL
+    Const F_rqst = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL
     
     NewSheet NewPayment
     
@@ -55,11 +56,13 @@ Sub PaidContr(ByVal NewPayment As String)
         For i = 2 To Paid.EOL
             Progress i / Paid.EOL
             If .Cells(i, PAYINSF_COL) <> 1 And .Cells(i, PAYDOGOVOR_COL) <> "" Then
-''''                Dogovor = .Cells(i, PAYDOGOVOR_COL)
-''''                MainDog = .Cells(i, PAYOSNDOGOVOR_COL)
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
-                OppN = FetchDoc(F_rqst, ContrK, IsErr)
-                WrNewSheet NewPayment, PAY_SHEET, i, OppN
+                OppId = FetchDoc(F_rqst, ContrK, IsErr)
+                If OppId = "" Then
+'---- NEWOPP              лист для CSV    файл      строка -- НЕ НАПИСАНО ЕЩЕ!!!
+                    WrNewSheet NEW_OPP, PAY_SHEET, i
+                End If
+                If Not IsErr Then WrNewSheet NewPayment, PAY_SHEET, i, OppId
             End If
         Next i
     End With
@@ -79,12 +82,12 @@ Sub ContrPass()
     Lines = ModStart(DOG_SHEET, "Проход по Договорам: связанные Проекты", True) - DOGRES
     EOL_DogSheet = Lines
     EOL_SFD = EOL(SFD) - SFresLines
-    EOL_SFopp = EOL(Sfopp) - SFresLines
+    EOL_SFopp = EOL(SFopp) - SFresLines
     EOL_SFacc = EOL(SFacc) - SFresLines
     
     CheckSheet DOG_SHEET, 1, 10, Stamp1Cdog1
     CheckSheet SFD, EOL_SFD + 2, 3, SFcontrRepName
-    CheckSheet Sfopp, EOL_SFopp + 2, 1, SFoppRepName
+    CheckSheet SFopp, EOL_SFopp + 2, 1, SFoppRepName
 '---------- проход по Договорам ------------------------
     OppIs = 0: OppNew = 0: NoOpp = 0: Fruitful = 0
     ClearSheet O_NewOpp, Range("HDR_NewOpp")
@@ -108,7 +111,7 @@ Sub ContrPass()
                 '---- анализ существующего Проекта -------
                         OppIs = OppIs + 1
                         OppTyp = WorksheetFunction.VLookup(OppN, _
-                            Sheets(Sfopp).Range("B:R"), 17, False)
+                            Sheets(SFopp).Range("B:R"), 17, False)
                         Vendor1C = .Cells(i, VENDOR1C_COL)
                         If Not IsSameVendor(OppTyp, Vendor1C, ContrK) And _
                                     Vendor1C <> "" Then
@@ -230,7 +233,7 @@ Sub DogOppLink()
     Lines = ModStart(SFD, "DogOppLink: связь Договора с Проектом", True) - SFresLines
 
     CheckSheet SFD, Lines + 2, 3, SFcontrRepName
-    CheckSheet Sfopp, EOL_SFopp + 2, 1, SFoppRepName
+    CheckSheet SFopp, EOL_SFopp + 2, 1, SFoppRepName
 
     ClearSheet NewContractLnk, Range("HDR_ContrLnk")
     
@@ -249,7 +252,7 @@ Sub DogOppLink()
                 If .Cells(i, SFD_OPPN_COL) = "" Then     '==== Договор связан с Проектом?
                 '-- проход по SFopp - по Проектам           нет - связываем
                     For j = 2 To EOL_SFopp
-                        With Sheets(Sfopp)
+                        With Sheets(SFopp)
                             SaleOpp = .Cells(j, SFOPP_SALE_COL)
                             OppN = .Cells(j, SFOPP_OPPN_COL)
                         ' для данного Договора выбираем только Проекты с той же Организацией
@@ -322,7 +325,7 @@ Function IsSameVendor(OppType, V1C, ContrCode) As Boolean
     IsSameVendor = False
     
 ' цикл по типам Проектов входящим в OppType -- в Типе их может быть несколько
-    OppTypeArr = split(OppType, ";")
+    OppTypeArr = Split(OppType, ";")
     For i = 0 To UBound(OppTypeArr)
         VendorSF = ""
         On Error Resume Next
