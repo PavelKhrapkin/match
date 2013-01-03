@@ -859,7 +859,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
             YY = D(2)
-            If Len(YY) = 2 Then YY = "20" & YY
+            If Len(YY) = 2 Then YY = 2000 + YY
             Dat = GetDate(dd & "." & MM & "." & YY)
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
