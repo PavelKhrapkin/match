@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 2.1.2013
+' П.Л.Храпкин, А.Пасс 3.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -843,6 +843,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '   20.4.12
 '   3.10.12 - GetRep вместо EOL
 '   2.1.13  - добавил 2000 к году, если он двузначный, и конвертировал к локальному формату
+'   3.1.13  - исправил расчет года
 
     Dim i, dd, MM, YY As Integer
     Dim Dat As Date
@@ -859,7 +860,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
             MM = D(1)
             If MM < 1 Or MM > 12 Then GoTo Nxt
             YY = D(2)
-            If Len(YY) = 2 Then YY = 2000 + YY
+            If YY < 100 Then YY = 2000 + YY
             Dat = GetDate(dd & "." & MM & "." & YY)
             Sheets(SheetN).Cells(i, Col) = Dat
         End If
