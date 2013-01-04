@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 19.12.12 П.Л.Храпкин, А.Пасс
+' 3.1.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -37,6 +37,7 @@ Attribute VB_Name = "AdaptEngine"
 ' 14.12.12 - добавлена обработка формата в строке PTRN_WIDTH (WrNewSheet)
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
+' 3.1.13   - введено профилирование Adapt
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -330,6 +331,7 @@ Sub Adapt(F As String)
 ' 12.9.12
 ' 14.9.12 - если Адаптер не нашел значение - оставляем значение по умолчанию
 ' 26.9.12 - обработка пустых и отрицательных значений Columns
+'  3.1.13 - введено профилирование
 
     StepIn
     
@@ -338,14 +340,26 @@ Sub Adapt(F As String)
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
     Dim X As String, Y As String
     Dim i As Long, Col As Long, iX As Long
+''    Dim PutToRow As Long, PutToCol As Long
+
+    ' профилирование
+    
+    Dim tot1 As Single, beg1 As Single: tot1 = 0
+    Dim tot2(40) As Single, beg2(40) As Single
+    Dim profileStr As String
     
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     With ActiveSheet
         R = GetRep(.Name)
+    
+        beg1 = Timer()                  ' профилирование
         For i = 2 To R.EOL
             Progress i / R.EOL
             For Col = 1 To FF.Columns.Count
+
+                beg2(Col) = Timer()       ' профилирование
+                
                 iX = FF(PTRN_COLS, Col)
                 If iX > 0 Then
                     X = .Cells(i, iX)
@@ -358,8 +372,19 @@ Sub Adapt(F As String)
                 ElseIf iX < 0 Then
                     Exit For
                 End If
+                
+                tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
             Next Col
         Next i
+        
+        ' профилирование
+        tot1 = tot1 + (Timer() - beg1)
+        profileStr = ""
+        For Col = 1 To FF.Columns.Count
+            profileStr = profileStr & " " & Format(tot2(Col), "###0.00")
+        Next Col
+        LogWr "adapt profile: total = " & Format(tot1, "###0.00") _
+            & vbCrLf & "By steps = " & profileStr
     End With
 End Sub
 Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRow, Optional iCol) As String
@@ -496,16 +521,16 @@ Function Adapter(Request, ByVal X, F_rqst, IsErr, Optional EOL_Doc, Optional iRo
             Dim IdSFopp As String
             IdSFopp = .Cells(SEL_REF, 3)
             If IdSFopp = "" Then
-                Dim b As Long, A(0 To 6) As Long
+                Dim b As Long, a(0 To 6) As Long
                 b = .Cells(SEL_REF + 2, 4)
-                For i = 0 To UBound(A)
-                    A(i) = CLng(Par(i))
+                For i = 0 To UBound(a)
+                    a(i) = CLng(Par(i))
                 Next i
                 Adapter = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
                 For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
-                    If OppFilter(i, .Cells(b, A(0)), .Cells(b, A(1)), _
-                            .Cells(b, A(2)), .Cells(b, A(3)), .Cells(b, A(4)), _
-                            .Cells(b, A(5)), .Cells(b, A(6))) Then
+                    If OppFilter(i, .Cells(b, a(0)), .Cells(b, a(1)), _
+                            .Cells(b, a(2)), .Cells(b, a(3)), .Cells(b, a(4)), _
+                            .Cells(b, a(5)), .Cells(b, a(6))) Then
                         Adapter = i
                         Exit For
                     End If
@@ -583,7 +608,7 @@ Function X_Parse(iRow, iCol, _
         
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
-        If X_rqst = "" Then GoTo Ex
+        If X_rqst = "" Then GoTo ex
         sX = Split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
@@ -607,7 +632,7 @@ Function X_Parse(iRow, iCol, _
 
 GetFromWP:
         If iX > 0 Then X_Parse = .Cells(WP_Row, iX)
-        GoTo Ex
+        GoTo ex
     End With
     
 GetFromActiveSheet:
@@ -619,7 +644,7 @@ GetFromActiveSheet:
         GoTo GetFromWP
     End If
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
-Ex: Exit Function
+ex: Exit Function
 End Function
 Function FetchDoc(F_rqst, X, IsErr) As String
 '
