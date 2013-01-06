@@ -550,8 +550,22 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
         Next i
     Case "ForceTxt":
         Adapter = "'" & X
+    Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
+            Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
+            Dim sDog As String, DogCur As String            ' имя Договора и его валюта
+            Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+            Vpaid = Z(0): Vinv = Z(1): sDog = Z(2): DogCur = Z(3)
+            If sDog <> "" Then
+                If Not IsNumeric(sDog) Then
+                    ErrMsg FATAL_ERR, "Не числовое значение в сумме Договора по " & X
+                    Stop
+                    End
+                End If
+                Vdog = CDbl(sDog) * CurRate(DogCur)
+            End If
+            Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
         
-    Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "DogVal", "OppFilter", _
+    Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
         Adapter = AdapterWP(AdapterName, X, Par)
     Case Else
@@ -605,25 +619,6 @@ Function AdapterWP(AdapterName, X, Par) As String
         '            Stop
             good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
             Adapter = TypOpp(X, good)
-        Case "DogVal":
-            Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
-            Dim sDog As String, DogCur As String            ' имя Договора и его валюта
-        '''''        Call ArrayZ(Z, WP, iRow, Par)
-            Vpaid = Z(0): Vinv = Z(1): DogCur = Z(2): sDog = Z(3)
-        '' !Vpaid = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-        '' !Vinv = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
-        '' !DogCur = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
-        ''        Vdog = 0
-        '' !sDog = Trim(.Cells(WP_PAYMENT_LINE, CLng(Par(3))))
-            If sDog <> "" Then
-                If Not IsNumeric(sDog) Then
-                    ErrMsg FATAL_ERR, "Не числовое значение в Договоре Платежа WP"
-                    Stop
-                    End
-                End If
-                Vdog = CDbl(sDog) * CurRate(DogCur)
-            End If
-            Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
         Case "OppFilter":
             Const SEL_REF = 20
         ' проверить есть ли Проект связанный с Договором
