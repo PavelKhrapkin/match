@@ -37,6 +37,8 @@ Attribute VB_Name = "AdaptEngine"
 ' 14.12.12 - добавлена обработка формата в строке PTRN_WIDTH (WrNewSheet)
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
+' 3.1.13   - введено профилирование Adapt
+' 5.1.13   - Merged with Google source
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -329,6 +331,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 ' 12.9.12
 ' 14.9.12 - если Адаптер не нашел значение - оставляем значение по умолчанию
 ' 26.9.12 - обработка пустых и отрицательных значений Columns
+'  3.1.13 - введено профилирование
 '  6.1.13 - Optional FromDoc и ToDoc - по умолчанию ActiveSheet
 
     StepIn
@@ -340,6 +343,12 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Dim i As Long, Col As Long, iX As Long
     Dim R_From As TOCmatch, R_To As TOCmatch
 '    Dim F_Doc As Sheets, T_Doc As Sheets
+
+    ' профилирование
+    
+    Dim tot1 As Single, beg1 As Single: tot1 = 0
+    Dim tot2(40) As Single, beg2(40) As Single
+    Dim profileStr As String
     
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     If FromDoc = "" Then
@@ -357,9 +366,13 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 '        Set T_Doc = Workbooks(R_To.RepFile).Sheets(R_To.SheetN)
     End If
     
+    beg1 = Timer()                  ' профилирование
     For i = 2 To R_From.EOL
         Progress i / R_From.EOL
         For Col = 1 To FF.Columns.Count
+
+            beg2(Col) = Timer()       ' профилирование
+            
             iX = FF(PTRN_COLS, Col)
             If iX > 0 Then
                 X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
@@ -372,8 +385,19 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
             ElseIf iX < 0 Then
                 Exit For
             End If
+            
+            tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
         Next Col
     Next i
+
+    ' профилирование
+    tot1 = tot1 + (Timer() - beg1)
+    profileStr = ""
+    For Col = 1 To FF.Columns.Count
+        profileStr = profileStr & " " & Format(tot2(Col), "###0.00")
+    Next Col
+    LogWr "adapt profile: total = " & Format(tot1, "###0.00") _
+        & vbCrLf & "By steps = " & profileStr
 
 ''''''    With ActiveSheet
 ''''''        R = GetRep(.Name)
