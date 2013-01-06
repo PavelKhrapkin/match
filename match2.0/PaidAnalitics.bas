@@ -6,7 +6,7 @@ Attribute VB_Name = "PaidAnalitics"
 ' - GoodType(Good)              - возвращает строку - тип товара Good
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   25.12.2012
+'   7.1.2013
 
 Option Explicit
 
@@ -474,13 +474,9 @@ End Function
 '''    AutoFilterReset 1
 '''    ModEnd WSheetName
 '''End Sub
-''Sub tgoodtype()
-''Dim A(10) As String
-''Set DB_MATCH = FileOpen(F_MATCH)
-''A(1) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
-''End Sub
+
 Sub testGoodType()
-    Dim res(1 To 6) As String
+    Dim res(1 To 5) As String
     Set DB_MATCH = FileOpen(F_MATCH)
     
     res(1) = GoodType("xxx Плоттер xxx")    ' оборудование  (описано 'плоттер[ $]'
@@ -490,21 +486,24 @@ Sub testGoodType()
                                             '   т.е. после слова - не менее 1 произвольного символа
     res(4) = GoodType("xxххx сканирА")
     res(5) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
-    res(6) = GoodType("деталь Манипулятора SpacePilot PRO, black, USB, CAD Professional/1;")
     If res(1) <> "Оборудование" Then Stop
     If res(2) <> "О П Л А Т А" Then Stop
     If res(3) <> "Расходники" Then Stop
     If res(4) <> "Печать" Then Stop
-    If res(5) <> "Оборудование" Then Stop
-    If res(6) <> "Оборудование" Then Stop       ' 'Оборудование' - из-за SpacePilot
-   
+    
     Stop
  
 End Sub
-Function GoodType(ByVal G As String) As String
+Function GoodType(ByVal G As String, _
+    Optional IsLicense As Boolean, _
+    Optional IsSubscription As Boolean, _
+    Optional IsRenewal As Boolean, _
+    Optional IsWork As Boolean) As String
 '
-' возвращает тип товара G по таблице в We.
-' если подходящий тип не найден - ошибка и GoodType = ""
+' - GoodType(Good, [IsLicense, IsSubscription, IsRenewal, IsWork)
+'       возвращает тип товара Goods по таблице в We
+'       и флаги Лицензии, Подписки, Renewal  и Работы.
+'       если подходящий тип не найден - ошибка и GoodType = ""
 '   19.2.2012
 '   5.10.12 - полная ссылка с DB_MATCH на We
 '   18.12.12 - LCase(G)
@@ -512,6 +511,7 @@ Function GoodType(ByVal G As String) As String
 '   22.12.12 - обращение к InStr заменено на обращение к patTest
 '               (RegExp, регулярные выражения) А.Пасс
 '   25.12.12 - patTest вызывается только если в начале паттерна вставлен $, иначе InStr
+'   7.1.2013 - Optional флаги Лицензии, Подписки, Renewal и Работы
 
     Dim j As Integer
     Dim iG As Range
@@ -526,9 +526,6 @@ Function GoodType(ByVal G As String) As String
         Goods = Split(S, ",")   ' в Goods список товаров данного типа
         For j = 0 To UBound(Goods)
             GoodW = Trim(Goods(j))
-'            If InStr(G, "шлейф") > 0 And GoodType = "Расходники" And j = 84 Then
-'                j = j
-'            End If
             If GoodW <> "" Then
                 If Left(GoodW, 1) = "$" Then
                     If patTest(G, Mid(GoodW, 2)) Then Exit Function
