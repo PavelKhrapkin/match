@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 6.1.13 П.Л.Храпкин, А.Пасс
+' 7.1.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -439,6 +439,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 '29.12.12 - Compressor(X)
 ' 4.1.13 - Адаптер OppName для Платежей; обработка параметров Array
 ' 5.1.13 - Адаптер <>"" и <>1; выделение Адаптеров WP в отдельный модуль
+' 7.1.13 - Изменения в GoodType - работа с флагами Лицензий, Подписки, Работ
 
     Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -513,7 +514,14 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
                 Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
             End If
         End If
-    Case "GoodType": Adapter = GoodType(X)
+    Case "GoodType":
+        If UBound(Par) < 1 Then
+            Adapter = GoodType(X)
+        Else
+            Dim Flg(4) As Boolean
+            Call GoodType(X, Flg)
+            If Flg(CLng(Par(0))) Then Adapter = "1"
+        End If
     Case "CurISO":  Adapter = CurISO(X)
     Case "CurRate": Adapter = Dec(CurRate(X))
     Case "Дата":    If X <> "" Then Adapter = DDMMYYYY(X)
@@ -625,10 +633,10 @@ Function AdapterWP(AdapterName, X, Par) As String
             Dim IdSFopp As String
         !IdSFopp = .Cells(SEL_REF, 3)
             If IdSFopp = "" Then
-                Dim b As Long, A(0 To 6) As Long
+                Dim b As Long, a(0 To 6) As Long
         !b = .Cells(SEL_REF + 2, 4)
-                For i = 0 To UBound(A)
-                    A(i) = CLng(Par(i))
+                For i = 0 To UBound(a)
+                    a(i) = CLng(Par(i))
                 Next i
                 Adapter = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
         !            For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
@@ -731,7 +739,7 @@ Function X_Parse(iRow, iCol, _
         
         X_rqst = .Cells(iRow - 1 + PTRN_COLS, iCol)
         
-        If X_rqst = "" Then GoTo Ex
+        If X_rqst = "" Then GoTo ex
         sX = Split(X_rqst, "/")
         
         RefType = Left(sX(0), 1)
@@ -755,7 +763,7 @@ Function X_Parse(iRow, iCol, _
 
 GetFromWP:
         If iX > 0 Then X_Parse = .Cells(WP_Row, iX)
-        GoTo Ex
+        GoTo ex
     End With
     
 GetFromActiveSheet:
@@ -767,7 +775,7 @@ GetFromActiveSheet:
         GoTo GetFromWP
     End If
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
-Ex: Exit Function
+ex: Exit Function
 End Function
 Function FetchDoc(F_rqst, X, IsErr) As String
 '
