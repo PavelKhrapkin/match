@@ -546,28 +546,56 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
             Call ArrayZ(Z, PAY_SHEET, iRow, Par)
             Adapter = Z(2) & "-" & Z(3) & " " & ContrCod(Z(4), Z(5))
         End If
+    Case "TypeSFopp":
+        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+        If Z(1) = "1" Then Adapter = "Лицензии"
+        If Z(2) = "1" Then Adapter = "Подписки"
+        If Z(4) = "1" Then Adapter = "Работы"
+        If X = "Расходники" Then Adapter = X
+        If X = "Оборудование" Then Adapter = "Железо"
+    Case "LineOpp":
+        Adapter = "Программное обеспечение (ПО)"
+        Select Case X
+        Case "Расходники": Adapter = "Расходные материалы и ЗИП"
+        Case "Работы":     Adapter = "Услуги"
+        Case "Печать":     Adapter = "Печать"
+        Case "Оборудование": Adapter = "железо"
+        End Select
+    Case "KindOpp":
+        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+        If Z(1) = "1" Then Adapter = "Лицензии"
+        If Z(2) = "1" Then Adapter = "Подписки"
+        If Z(4) = "1" Then Adapter = "Работы"
+        If X = "Расходники" Then Adapter = X
+        If X = "Оборудование" Then Adapter = "Железо"
     Case "Max":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         Adapter = X
         For i = LBound(Z) To UBound(Z)
             Adapter = WorksheetFunction.Max(CLng(Adapter), CLng(Z(i)))
         Next i
+    Case "Stage90": Adapter = "90%-первые деньги пришли на счет"
+    Case "EmptyBuddy":
+        On Error GoTo AdapterFailure
+        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
+        On Error GoTo 0
+        If InStr(Adapter, X) = 0 Then Adapter = X
     Case "ForceTxt":
         Adapter = "'" & X
     Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
-            Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
-            Dim sDog As String, DogCur As String            ' имя Договора и его валюта
-            Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-            Vpaid = Z(0): Vinv = Z(1): sDog = Z(2): DogCur = Z(3)
-            If sDog <> "" Then
-                If Not IsNumeric(sDog) Then
-                    ErrMsg FATAL_ERR, "Не числовое значение в сумме Договора по " & X
-                    Stop
-                    End
-                End If
-                Vdog = CDbl(sDog) * CurRate(DogCur)
+        Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
+        Dim sDog As String, DogCur As String            ' имя Договора и его валюта
+        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+        Vpaid = Z(0): Vinv = Z(1): sDog = Z(2): DogCur = Z(3)
+        If sDog <> "" Then
+            If Not IsNumeric(sDog) Then
+                ErrMsg FATAL_ERR, "Не числовое значение в сумме Договора по " & X
+                Stop
+                End
             End If
-            Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
+            Vdog = CDbl(sDog) * CurRate(DogCur)
+        End If
+        Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
         
     Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
