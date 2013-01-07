@@ -514,14 +514,10 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
                 Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
             End If
         End If
-    Case "GoodType":
-        If UBound(Par) < 1 Then
-            Adapter = GoodType(X)
-        Else
-            Dim Flg(4) As Boolean
-            Call GoodType(X, Flg)
-            If Flg(CLng(Par(0))) Then Adapter = "1"
-        End If
+    Case "GoodType": Adapter = GoodType(X)
+    Case "GoodJob":
+        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+        If GoodJob(Z(1), X, CLng(Par(0))) Then Adapter = "1"
     Case "CurISO":  Adapter = CurISO(X)
     Case "CurRate": Adapter = Dec(CurRate(X))
     Case "Дата":    If X <> "" Then Adapter = DDMMYYYY(X)
