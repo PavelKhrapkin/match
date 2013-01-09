@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 7.1.13 П.Л.Храпкин, А.Пасс
+' 10.1.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -333,6 +333,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 ' 26.9.12 - обработка пустых и отрицательных значений Columns
 '  3.1.13 - введено профилирование
 '  6.1.13 - Optional FromDoc и ToDoc - по умолчанию ActiveSheet
+' 10.1.13 - наличие ToDoc - признак записи в новый лист
 
     StepIn
     
@@ -340,7 +341,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Dim R As TOCmatch
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
     Dim X As String, Y As String
-    Dim i As Long, Col As Long, iX As Long
+    Dim i As Long, Col As Long, iX As Long, iTo As Long
     Dim R_From As TOCmatch, R_To As TOCmatch
 '    Dim F_Doc As Sheets, T_Doc As Sheets
 
@@ -353,22 +354,23 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     If FromDoc = "" Then
         R_From = GetRep(ActiveSheet.Name)
-'        Set F_Doc = ActiveSheet
     Else
         R_From = GetRep(FromDoc)
-'        Set F_Doc = Workbooks(R_From.RepFile).Sheets(R_From.SheetN)
     End If
     If ToDoc = "" Then
         R_To = GetRep(ActiveSheet.Name)
-'        Set T_Doc = ActiveSheet
+        iTo = 2
     Else
         R_To = GetRep(ToDoc)
-'        Set T_Doc = Workbooks(R_To.RepFile).Sheets(R_To.SheetN)
+        NewSheet ToDoc
+        iTo = R_To.EOL
     End If
     
     beg1 = Timer()                  ' профилирование
     For i = 2 To R_From.EOL
         Progress i / R_From.EOL
+        iTo = iTo + 1
+        If ToDoc = "" Then iTo = i
         For Col = 1 To FF.Columns.Count
 
             beg2(Col) = Timer()       ' профилирование
@@ -381,7 +383,12 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 
                 Y = Adapter(Rqst, X, F_rqst, IsErr, R_From.EOL, i, Col)
 
-                If Not IsErr Then Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(i, Col) = Y
+                If IsErr Then
+                    iTo = iTo - 1
+                    Exit For
+                End If
+                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
+
             ElseIf iX < 0 Then
                 Exit For
             End If
@@ -389,6 +396,8 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
             tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
         Next Col
     Next i
+'если ошибка в Адаптере NewSheet последней строки, тогда IsErr остается=True - стираем эту строку
+    If IsErr And ToDoc <> "" Then Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Rows(iTo).Delete
 
     ' профилирование
     tot1 = tot1 + (Timer() - beg1)
@@ -398,27 +407,6 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Next Col
     LogWr "adapt profile: total = " & Format(tot1, "###0.00") _
         & vbCrLf & "By steps = " & profileStr
-
-''''''    With ActiveSheet
-''''''        R = GetRep(.Name)
-''''''        For i = 2 To R.EOL
-''''''            Progress i / R.EOL
-''''''            For Col = 1 To FF.Columns.Count
-''''''                iX = FF(PTRN_COLS, Col)
-''''''                If iX > 0 Then
-''''''                    X = .Cells(i, iX)
-''''''                    Rqst = FF.Cells(PTRN_ADAPT, Col)
-''''''                    F_rqst = FF.Cells(PTRN_FETCH, Col)
-''''''
-''''''                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, i, Col)
-''''''
-''''''                    If Not IsErr Then .Cells(i, Col) = Y
-''''''                ElseIf iX < 0 Then
-''''''                    Exit For
-''''''                End If
-''''''            Next Col
-''''''        Next i
-''''''    End With
 End Sub
 Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean, _
     Optional EOL_Doc As Long, Optional iRow As Long, Optional iCol As Long) As String
@@ -440,6 +428,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 ' 4.1.13 - Адаптер OppName для Платежей; обработка параметров Array
 ' 5.1.13 - Адаптер <>"" и <>1; выделение Адаптеров WP в отдельный модуль
 ' 7.1.13 - Изменения в GoodType - работа с флагами Лицензий, Подписки, Работ
+'10.1.13 - Адаптер "Литерал; исправления TypeSFopp
 
     Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -548,9 +537,9 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
         End If
     Case "TypeSFopp":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-        If Z(1) = "1" Then Adapter = "Лицензии"
-        If Z(2) = "1" Then Adapter = "Подписки"
-        If Z(4) = "1" Then Adapter = "Работы"
+        If Z(0) = "1" Then Adapter = "Лицензии"
+        If Z(1) = "1" Then Adapter = "Подписки"
+        If Z(3) = "1" Then Adapter = "Работы"
         If X = "Расходники" Then Adapter = X
         If X = "Оборудование" Then Adapter = "Железо"
     Case "LineOpp":
@@ -561,23 +550,15 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
         Case "Печать":     Adapter = "Печать"
         Case "Оборудование": Adapter = "железо"
         End Select
-    Case "KindOpp":
-        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-        If Z(1) = "1" Then Adapter = "Лицензии"
-        If Z(2) = "1" Then Adapter = "Подписки"
-        If Z(4) = "1" Then Adapter = "Работы"
-        If X = "Расходники" Then Adapter = X
-        If X = "Оборудование" Then Adapter = "Железо"
     Case "Max":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         Adapter = X
         For i = LBound(Z) To UBound(Z)
             Adapter = WorksheetFunction.Max(CLng(Adapter), CLng(Z(i)))
         Next i
-    Case "Stage90": Adapter = "90%-первые деньги пришли на счет"
     Case "EmptyBuddy":
         On Error GoTo AdapterFailure
-        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
+        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range("Продавцы"), Par(0), False)
         On Error GoTo 0
         If InStr(Adapter, X) = 0 Then Adapter = X
     Case "ForceTxt":
@@ -601,7 +582,11 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
             "SetOppButton", "NewOppNameFromWP":
         Adapter = AdapterWP(AdapterName, X, Par)
     Case Else
-        ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
+        If Left(AdapterName, 1) = """" Then
+            Adapter = Mid(AdapterName, 2)
+        Else
+            ErrMsg FATAL_ERR, "Adapter> Не существует " & AdapterName
+        End If
     End Select
 ''    End With
     Exit Function
