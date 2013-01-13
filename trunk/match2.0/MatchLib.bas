@@ -2,13 +2,14 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 3.1.2013
+' П.Л.Храпкин, А.Пасс 12.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
 ' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
+' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol(F[,FS])            - вставляем колонки в лист слева по шаблону F и пятку из FS
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
@@ -306,6 +307,54 @@ FoundRep:
         .Cells(1, 1) = Now
     End With
 End Sub
+Sub testsetColWidth()
+' Т testsetColWidth() - отладка setColWidth
+
+    Set DB_MATCH = FileOpen(F_MATCH)
+    Dim FF As Range
+    
+    Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
+    Dim width As String, i As Long
+a:
+    For i = 1 To FF.Columns.Count
+        setColWidth "1C.xlsx", "Платежи", i, FF, FF.Cells(3, i)
+    Next i
+        
+    Stop
+    GoTo a
+
+End Sub
+Sub setColWidth(ByVal file As String, ByVal sheet As String, _
+                ByVal Col As Long, ByVal FF As Range, ByVal width As String)
+'
+' S setColWidth(file, sheet, col, range, width) -
+'           устанавливает ширину i-й колонки листа
+' 12.01.2013
+
+    If InStr(width, "/") <> 0 Then      ' формат задан?
+        Dim Fmt() As String             ' выделяем ширину из описания (width/fmt)
+        Fmt = Split(FF.Cells(3, Col), "/")
+        width = Fmt(0)
+    End If
+    
+    On Error GoTo checkSep
+    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = width
+    On Error GoTo 0
+    GoTo exSub
+    
+    ' ошибка - уставливаем . или , согласно Application
+    
+checkSep:
+    If Application.DecimalSeparator = "." Then
+        width = Replace(width, ",", ".")
+    ElseIf Application.DecimalSeparator = "," Then
+        width = Replace(width, ".", ",")
+    End If
+    
+    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = width
+exSub:
+End Sub
+
 Sub InsMyCol(F As String, Optional FS As String = "")
 '
 ' S InsMyCol(F [,FS]) - вставляем колонки в лист слева по шаблону F и пятку из FS
@@ -323,6 +372,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 19.11.12 - COPY_HDR - copy Шаблона вместо присваивания текстового содержимого
 ' 19.12.12 - Обработка формата в строке Width
 ' 27.12.12 - диагностика при ошибке Штампа
+' 12.01.13 - устанавливает ширину колонoк согласно Application.DecimalSeparator
 
     Const COPY_HDR = "CopyHdr"
 
@@ -344,13 +394,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            If IsNumeric(FF.Cells(3, i)) Then
-                .Columns(i).ColumnWidth = FF.Cells(3, i)
-            Else
-                Dim Fmt() As String
-                Fmt = Split(FF.Cells(3, i), "/")
-                .Columns(i).ColumnWidth = Fmt(0)
-            End If
+            setColWidth R.RepFile, R.SheetN, i, FF, FF.Cells(3, i)
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
@@ -1091,6 +1135,7 @@ a:
     ret(10) = patTest(" xxx плоттерx; для xxx плоттер ", "$длxя.*плоттер;плоттер(\s|$)")    'да
     ret(11) = patTest(" xxx плоттерx; для xxx плоттер ", "$для.*плотттер;плоттер(\s|$)")    'да
     ret(12) = patTest(" xxx плоттер ; для xxx плоттер ", "$для.*плоттер;плоттер(\s|\d|$)")  'да
+    ret(12) = patTest("диагностика xxx плоттера ; для xxx ыыы ", "$диагностика;плоттер")  'нет
     Stop
     GoTo a
     
@@ -1107,6 +1152,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
 '               пример: $для*.printer;printer( |\d|$). Тогда 'ххх printer' проходит тест,
 '                       а 'для ххх printer' - не проходит.
 '
+    
     patTest = False
     If Not patObjectSet Then
         Set patObject = CreateObject("VBSCRIPT.REGEXP")
@@ -1142,7 +1188,7 @@ nextComp:
             Next i
         Else
             pat = Replace(pat, "~", ",")
-            .Pattern = pat
+            .pattern = pat
             patTest = .test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
