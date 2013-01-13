@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 12.1.2013
+' П.Л.Храпкин, А.Пасс 13.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -314,10 +314,15 @@ Sub testsetColWidth()
     Dim FF As Range
     
     Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
-    Dim width As String, i As Long
+    Dim width As String, i As Long, fmt() As String
 a:
     For i = 1 To FF.Columns.Count
-        setColWidth "1C.xlsx", "Платежи", i, FF, FF.Cells(3, i)
+        width = FF.Cells(3, i)
+        If InStr(width, "/") <> 0 Then      ' формат задан?
+            fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
+            width = fmt(0)
+        End If
+        setColWidth "1C.xlsx", "Платежи", i, width
     Next i
         
     Stop
@@ -325,24 +330,18 @@ a:
 
 End Sub
 Sub setColWidth(ByVal file As String, ByVal sheet As String, _
-                ByVal Col As Long, ByVal FF As Range, ByVal width As String)
+                ByVal Col As Long, ByVal width As String)
 '
 ' S setColWidth(file, sheet, col, range, width) -
 '           устанавливает ширину i-й колонки листа
 ' 12.01.2013
-
-    If InStr(width, "/") <> 0 Then      ' формат задан?
-        Dim Fmt() As String             ' выделяем ширину из описания (width/fmt)
-        Fmt = Split(FF.Cells(3, Col), "/")
-        width = Fmt(0)
-    End If
     
     On Error GoTo checkSep
     Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = width
     On Error GoTo 0
     GoTo exSub
     
-    ' ошибка - уставливаем . или , согласно Application
+    ' ошибка - уставливаем '.' или ',' согласно Application
     
 checkSep:
     If Application.DecimalSeparator = "." Then
@@ -373,6 +372,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 19.12.12 - Обработка формата в строке Width
 ' 27.12.12 - диагностика при ошибке Штампа
 ' 12.01.13 - устанавливает ширину колонoк согласно Application.DecimalSeparator
+' 13.01.13 - парсинг формата вынесен из setColWidth
 
     Const COPY_HDR = "CopyHdr"
 
@@ -381,6 +381,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
     Dim R As TOCmatch   'R - структура TOCmatch для SFD
     Dim FF As Range
     Dim i As Integer
+    Dim fmt() As String, width As String
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     R = GetRep(ActiveSheet.Name)
@@ -394,7 +395,12 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            setColWidth R.RepFile, R.SheetN, i, FF, FF.Cells(3, i)
+            width = FF.Cells(3, i)
+            If InStr(width, "/") <> 0 Then      ' формат задан?
+                fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
+                width = fmt(0)
+            End If
+            setColWidth R.RepFile, R.SheetN, i, width
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
