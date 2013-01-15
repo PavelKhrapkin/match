@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 13.1.2013
+' П.Л.Храпкин, А.Пасс 15.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -335,6 +335,7 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
 ' S setColWidth(file, sheet, col, range, width) -
 '           устанавливает ширину i-й колонки листа
 ' 12.01.2013
+' 15.1.13 bug fix
     
     On Error GoTo checkSep
     Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = width
@@ -350,7 +351,7 @@ checkSep:
         width = Replace(width, ".", ",")
     End If
     
-    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = width
+    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CLng(width)
 exSub:
 End Sub
 
