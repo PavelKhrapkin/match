@@ -336,23 +336,16 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
 '           устанавливает ширину i-й колонки листа
 ' 12.01.2013
 ' 16.1.13 bug fix
+' 16.1.13 переделал на явную замену десятичной запятой на точку (или наоборот)
+'
     
-    On Error GoTo checkSep
-    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
-    On Error GoTo 0
-    GoTo exSub
-    
-    ' ошибка - уставливаем '.' или ',' согласно Application
-    
-checkSep:
     If Application.DecimalSeparator = "." Then
-        width = Replace(width, ",", ".")
+        width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
     ElseIf Application.DecimalSeparator = "," Then
-        width = Replace(width, ".", ",")
+        width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
     End If
-    
     Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
-exSub:
+
 End Sub
 
 Sub InsMyCol(F As String, Optional FS As String = "")
@@ -826,20 +819,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, X, EOL_SheetN As Integer
+    Dim i, prev, x, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        X = Sheets(SheetN).Cells(i, Col)
-        If X = prev Then
+        x = Sheets(SheetN).Cells(i, Col)
+        If x = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = X
+            prev = x
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -851,7 +844,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, X As String
+    Dim prev As String, x As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -861,8 +854,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            X = .Cells(i, ColSort)
-            If X = prev Then
+            x = .Cells(i, ColSort)
+            If x = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -883,7 +876,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = X
+                prev = x
             End If
         Loop While i < EOL_SheetN
     End With
@@ -1081,15 +1074,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim X() As String
+    Dim x() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    X = Split(DicList, ",")
+    x = Split(DicList, ",")
     
-    For i = LBound(X) To UBound(X)
-        If InStr(lW, LCase$(X(i))) <> 0 Then
+    For i = LBound(x) To UBound(x)
+        If InStr(lW, LCase$(x(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If
