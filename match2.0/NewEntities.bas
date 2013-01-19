@@ -6,9 +6,20 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
-'   23.11.2012
+'   16.01.13
 
 Option Explicit
+
+Sub testNewSheet()
+a:
+    Set DB_MATCH = FileOpen(F_MATCH)
+    DB_MATCH.Sheets("Process").Cells(1, PROCESS_NAME_COL) = "HANDL_PaidOpp"
+    DB_MATCH.Sheets("Process").Cells(1, STEP_NAME_COL) = "NewSheet"
+    NewSheet "NewPayment"
+'    WrNewSheet "NewPayment", F_TMP, 3
+    Stop
+    GoTo a
+End Sub
 
 Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
 '
@@ -23,6 +34,7 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
 ' 19.10.12 - перемещение "голубых" листов в WP_TMP
 ' 27.10.12 - ведение "голубых" листов в общей таблице TOCmatch
 ' 23.11.12 - Optional TabColor
+' 16.01.13 - использование setColWidth, парсинг ширины колонки
 
     StepIn
     
@@ -53,7 +65,9 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
             For i = 1 To Cols
                 Frm.Columns(i).Copy Destination:=.Cells(1, i)
                 W = .Cells(3, i)
-                If IsNumeric(W) Then .Cells.Columns(i).ColumnWidth = CDbl(W)
+'                If IsNumeric(W) Then .Cells.Columns(i).ColumnWidth = CDbl(W)
+                setColWidth DB_TMP.Name, SheetName, i, Split(W, "/")(0)
+                
             Next i
             For i = 2 To .UsedRange.Rows.Count
                 .Rows(2).Delete
@@ -132,7 +146,7 @@ Sub NEWOPP(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
     Else
 '---- дедупликация Проектов по Расходникам:
 '           В Организации отдаленная дата разрешена только для Расходников
-        With DB_SFDC.Sheets(Sfopp)
+        With DB_SFDC.Sheets(SFopp)
             For i = 1 To EOL_SFopp
                 If .Cells(i, SFOPP_ACC1C_COL) = Account _
                         And .Cells(i, SFOPP_CLOSEDATE_COL) >= DATE_BULKY _
