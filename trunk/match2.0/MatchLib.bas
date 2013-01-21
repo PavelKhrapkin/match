@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 16.1.2013
+' П.Л.Храпкин, А.Пасс 20.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -367,6 +367,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 27.12.12 - диагностика при ошибке Штампа
 ' 12.01.13 - устанавливает ширину колонoк согласно Application.DecimalSeparator
 ' 13.01.13 - парсинг формата вынесен из setColWidth
+' 20.01.13 - цикл по вставке колонок заменен на 1 оператор
 
     Const COPY_HDR = "CopyHdr"
 
@@ -384,9 +385,11 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
 
 '---- вставляем колонки по числу MyCol
-        For i = 1 To R.MyCol
-            .Cells(1, 1).EntireColumn.Insert
-        Next i
+
+        .Range(Cells(1, 1), Cells(1, R.MyCol)).EntireColumn.Insert
+'        For i = 1 To R.MyCol
+'            .Cells(1, 1).EntireColumn.Insert
+'        Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
             width = FF.Cells(3, i)
