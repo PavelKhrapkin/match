@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 10.1.13 П.Л.Храпкин, А.Пасс
+' 23.1.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -71,6 +71,7 @@ Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
 Const PTRN_SELECT = "Select"
 
+Const OPP_BALKY = "Расходные материалы и ЗИП"
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Optional ExtPar As String)
 '
@@ -121,6 +122,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
                 If IsErr Then
                     .Rows(Rnew.EOL).Delete
                     Exit For
+                
                 Else
 '                    .Cells(Rnew.EOL, i) = y
                     '-- записываем в SheetNew значение Y в указанном формате
@@ -429,13 +431,15 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 ' 5.1.13 - Адаптер <>"" и <>1; выделение Адаптеров WP в отдельный модуль
 ' 7.1.13 - Изменения в GoodType - работа с флагами Лицензий, Подписки, Работ
 '10.1.13 - Адаптер "Литерал; исправления TypeSFopp
+'23.1.13 - новые Адаптеры IsBalky и BalkyOppId
 
-    Dim FF() As String, Tmp() As String
+    Dim FF() As String, Tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
     X = Compressor(X)
+    InitX = X
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
@@ -581,6 +585,34 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
         Adapter = AdapterWP(AdapterName, X, Par)
+    Case "IsBalky":
+        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+        If Z(0) = "" Or Z(1) = "1" Or Z(2) <> "Расходники" Then
+            IsErr = True
+        Else
+            Adapter = X
+        End If
+    Case "BalkyOppN":  'SFopp/4:2 с проверкой колонки OpportunityActivityKind = "Расходники"
+        Dim BalkyExists As Boolean: BalkyExists = False
+        Dim Rdoc As TOCmatch, N As Long, FromN As Long
+        Rdoc = GetRep(SFopp)
+        FromN = 1
+        With Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN)
+            Do
+                N = CSmatchSht(X, SFOPP_ACC1C_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN), FromN)
+                If N = 0 Then GoTo AdapterFailure
+                If .Cells(N, SFOPP_LINE_COL) = OPP_BALKY Then
+                    If BalkyExists Then
+                        IsErr = True
+                        ErrMsg WARNING, "В Организации '" & InitX & "' несколько проектов по Расходникам"
+                        Exit Function
+                    End If
+                    BalkyExists = True
+                    Adapter = .Cells(N, SFOPP_OPPN_COL)
+                End If
+                FromN = N + 1
+            Loop
+        End With
     Case Else
         If Left(AdapterName, 1) = """" Then
             Adapter = Mid(AdapterName, 2)
@@ -874,35 +906,35 @@ Sub testfmtCell()
 '   тесты fmtCell()
 ' 17.12.12 - добавлен тест целого формата
     
-    Dim Fmt(0 To 1) As String
+    Dim fmt(0 To 1) As String
     Set DB_TMP = FileOpen(F_TMP)
     
-    Fmt(1) = "Dbl"
-    fmtCell DB_TMP, "NewOpp", Fmt, "3m3", 2, 2
-    fmtCell DB_TMP, "NewOpp", Fmt, 33333.3, 2, 2
+    fmt(1) = "Dbl"
+    fmtCell DB_TMP, "NewOpp", fmt, "3m3", 2, 2
+    fmtCell DB_TMP, "NewOpp", fmt, 33333.3, 2, 2
     
-    Fmt(1) = "Txt"
-    fmtCell DB_TMP, "NewOpp", Fmt, "xxx", 2, 2
-    Fmt(1) = "@"
-    fmtCell DB_TMP, "NewOpp", Fmt, "yyy", 2, 2
+    fmt(1) = "Txt"
+    fmtCell DB_TMP, "NewOpp", fmt, "xxx", 2, 2
+    fmt(1) = "@"
+    fmtCell DB_TMP, "NewOpp", fmt, "yyy", 2, 2
     
-    Fmt(1) = "Date"
-    fmtCell DB_TMP, "NewOpp", Fmt, "1/2/2012", 2, 2
-    Fmt(1) = "# ##0.0000"
-    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
-    Fmt(1) = "# ##0.00"             ' Стандарт для России ~ Dbl
-    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
-    Fmt(1) = "0.00"
-    fmtCell DB_TMP, "NewOpp", Fmt, 5666, 2, 2
-    Fmt(1) = "0"
-    fmtCell DB_TMP, "NewOpp", Fmt, 22, 2, 2
-    Fmt(1) = "0%"
-    fmtCell DB_TMP, "NewOpp", Fmt, 5.666, 2, 2
-    Fmt(1) = "0.00%"
-    fmtCell DB_TMP, "NewOpp", Fmt, 5.666, 2, 2
+    fmt(1) = "Date"
+    fmtCell DB_TMP, "NewOpp", fmt, "1/2/2012", 2, 2
+    fmt(1) = "# ##0.0000"
+    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
+    fmt(1) = "# ##0.00"             ' Стандарт для России ~ Dbl
+    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
+    fmt(1) = "0.00"
+    fmtCell DB_TMP, "NewOpp", fmt, 5666, 2, 2
+    fmt(1) = "0"
+    fmtCell DB_TMP, "NewOpp", fmt, 22, 2, 2
+    fmt(1) = "0%"
+    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
+    fmt(1) = "0.00%"
+    fmtCell DB_TMP, "NewOpp", fmt, 5.666, 2, 2
     Stop
 End Sub
-Sub fmtCell(ByVal db As Workbook, ByVal list As String, Fmt() As String, _
+Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
             ByVal value, ByVal putToRow As Long, ByVal putToCol As Long)
 '
 '   - fmtCell - обработка формата в строке width вида 0/Txt или 10/@
@@ -919,18 +951,18 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, Fmt() As String, _
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
 ' 17.12.12 - добавлен тест целого формата
 
-    If UBound(Fmt) > 0 Then
-        If Fmt(1) = "Dbl" Then
+    If UBound(fmt) > 0 Then
+        If fmt(1) = "Dbl" Then
 '                                Dim YY As Double
 '                                YY = Y
 '                                .Cells(PutToRow, PutToCol) = YY
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "# ##0.00"
-        ElseIf Fmt(1) = "Date" Then
+        ElseIf fmt(1) = "Date" Then
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
-        ElseIf Fmt(1) = "Txt" Then
+        ElseIf fmt(1) = "Txt" Then
             db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = "@"
         Else
-            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = Fmt(1)
+            db.Sheets(list).Cells(putToRow, putToCol).NumberFormat = fmt(1)
         End If
     End If
     db.Sheets(list).Cells(putToRow, putToCol) = value
