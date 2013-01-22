@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  24.11.12
+'  23.1.13
 
 Option Explicit
 
@@ -215,6 +215,7 @@ Public Const SFOPP_CLOSEDATE_COL = 9    ' колонка "Дата закрытия" Проекта
 Public Const SFOPP_SALE_COL = 10        ' колонка "Ответственный за Проект"
 Public Const SFOPP_TO_PAY_CUR_COL = 14  ' колонка "Еще не оплачено Валюта" листа SFopp
 Public Const SFOPP_TO_PAY_VAL_COL = 15  ' колонка "Еще не оплачено" листа SFopp
+Public Const SFOPP_LINE_COL = 17        ' колонка "Направление деятельности"
 Public Const SFOPP_TYP_COL = 18         ' колонка "Тема&Вид деятельности" Проекта
 
 '--------------- SFacc Организации ------------------------------------
