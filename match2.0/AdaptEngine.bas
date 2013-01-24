@@ -389,8 +389,8 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
                     iTo = iTo - 1
                     Exit For
                 End If
-'                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
-                fmtCell R_To.RepFile, R_To.SheetN, Y, iTo, Col
+                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
+'!!'                fmtCell Workbooks(R_To.RepFile), R_To.SheetN, , Y, iTo, Col
             ElseIf iX < 0 Then
                 Exit For
             End If
@@ -604,7 +604,10 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
                     If BalkyExists Then Exit Function
                     GoTo AdapterFailure
                 End If
-                If .Cells(N, SFOPP_LINE_COL) = OPP_BALKY Then
+                Dim OppCloseDate As Date, DaysToClos As Long
+                OppCloseDate = .Cells(N, SFOPP_CLOSEDATE_COL)
+                DaysToClos = OppCloseDate - Now
+                If .Cells(N, SFOPP_LINE_COL) = OPP_BALKY And DaysToClos > 365 Then
                     If BalkyExists Then
                         IsErr = True
                         ErrMsg WARNING, "В Организации '" & InitX & "' несколько проектов по Расходникам"
