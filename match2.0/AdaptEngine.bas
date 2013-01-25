@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 23.1.13 П.Л.Храпкин, А.Пасс
+' 24.1.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -70,6 +70,10 @@ Const PTRN_FETCH = 6 ' смещение строки вызова Fetch - извлечения из Док-в в Шабл
 Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
 Const PTRN_SELECT = "Select"
+Sub ttt()
+WrNewSheet "", "", 0
+Stop
+End Sub
 
 Const OPP_BALKY = "Расходные материалы и ЗИП"
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
@@ -122,10 +126,9 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
                 If IsErr Then
                     .Rows(Rnew.EOL).Delete
                     Exit For
-                
                 Else
 '                    .Cells(Rnew.EOL, i) = y
-                    '-- записываем в SheetNew значение Y в указанном формате
+                    '-- записываем в SheetNew значение Y с установкой формата вывода
                     fmtCell DB_TMP, SheetNew, width, Y, Rnew.EOL, i
                 End If
             Else
@@ -154,6 +157,7 @@ Sub xAdapt(F As String, iLine As Long)
 '    9.11.12 - работа с Named Range WP
 '   11.11.12 - введен глобальный флаг для отладки TraceWidth
 '    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width"
+'   19.01.13 - вызвана setColWidth
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -194,7 +198,8 @@ Sub xAdapt(F As String, iLine As Long)
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
+'            If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
+            If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, Split(FF.Cells(3, i), "/")(0)
         Next i
         
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
@@ -224,18 +229,6 @@ Sub xAdapt(F As String, iLine As Long)
                     If Not IsErr And x <> "" Then
                         width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
                         fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
-'                        If UBound(width) > 0 Then
-'                            If width(1) = "Dbl" And IsNumeric(Y) Then
-'                                Dim YY As Double
-''                                YY = Y
-''                                .Cells(PutToRow, PutToCol) = YY
-'                                .Cells(putToRow, putToCol).NumberFormat = "#,##0.00"
-'                            ElseIf width(1) = "Date" Then
-'                                .Cells(putToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
-'                            ElseIf width(1) = "Txt" Then
-'                                .Cells(putToRow, putToCol).NumberFormat = "@"
-'                            End If
-'                        End If
                     End If
                 Next iCol
                 If PtrnType = PTRN_SELECT Then
@@ -336,6 +329,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 '  3.1.13 - введено профилирование
 '  6.1.13 - Optional FromDoc и ToDoc - по умолчанию ActiveSheet
 ' 10.1.13 - наличие ToDoc - признак записи в новый лист
+' 24.1.13 - вызов fmyCell для записи Y вместе с форматом вывода
 
     StepIn
     
@@ -389,8 +383,10 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
                     iTo = iTo - 1
                     Exit For
                 End If
-                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
-'!!'                fmtCell Workbooks(R_To.RepFile), R_To.SheetN, , Y, iTo, Col
+'                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
+                '-- записываем в SheetNew значение Y с установкой формата вывода
+                fmtCell Workbooks(R_To.RepFile), R_To.SheetN, FF.Cells(PTRN_WIDTH, Col), Y, iTo, Col
+
             ElseIf iX < 0 Then
                 Exit For
             End If
@@ -433,13 +429,12 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
 '10.1.13 - Адаптер "Литерал; исправления TypeSFopp
 '23.1.13 - новые Адаптеры IsBalky и BalkyOppId
 
-    Dim FF() As String, Tmp() As String, InitX As String
+    Dim FF() As String, Tmp() As String
     Dim i As Long, Par() As String, Z(10) As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
     x = Compressor(x)
-    InitX = x
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
