@@ -70,12 +70,12 @@ Const PTRN_FETCH = 6 ' смещение строки вызова Fetch - извлечения из Док-в в Шабл
 Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
 Const PTRN_SELECT = "Select"
+Const OPP_BALKY = "Расходные материалы и ЗИП"
 Sub ttt()
 WrNewSheet "", "", 0
 Stop
 End Sub
 
-Const OPP_BALKY = "Расходные материалы и ЗИП"
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Optional ExtPar As String)
 '
@@ -309,6 +309,9 @@ Sub xAdapt_Continue(Button As String, iRow As Long)
 NextWP:         ProcStart Proc
 
 End Sub
+Sub testAdapt()
+    Adapt ""
+End Sub
 Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String = "")
 '
 ' S Adapt(F) - запускает Адаптеры из формы F, осуществляя проход по Документу
@@ -339,6 +342,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Dim x As String, Y As String
     Dim i As Long, Col As Long, iX As Long, iTo As Long
     Dim R_From As TOCmatch, R_To As TOCmatch
+    Dim width() As String
 '    Dim F_Doc As Sheets, T_Doc As Sheets
 
     ' профилирование
@@ -385,7 +389,8 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
                 End If
 '                Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
                 '-- записываем в SheetNew значение Y с установкой формата вывода
-                fmtCell Workbooks(R_To.RepFile), R_To.SheetN, FF.Cells(PTRN_WIDTH, Col), Y, iTo, Col
+               width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
+               fmtCell Workbooks(R_To.RepFile), R_To.SheetN, width, Y, iTo, Col
 
             ElseIf iX < 0 Then
                 Exit For
@@ -429,12 +434,13 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
 '10.1.13 - Адаптер "Литерал; исправления TypeSFopp
 '23.1.13 - новые Адаптеры IsBalky и BalkyOppId
 
-    Dim FF() As String, Tmp() As String
+    Dim FF() As String, Tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
     x = Compressor(x)
+    InitX = x
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
