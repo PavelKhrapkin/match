@@ -11,6 +11,7 @@ Attribute VB_Name = "PaidAnalitics"
 '   7.1.2013
 
 Option Explicit
+Dim t0 As Single, t1 As Single, t2 As Single
 
 '''Sub NewPaidOpp()
 ''''
@@ -538,8 +539,16 @@ Function GoodType(ByVal G As String) As String
     End
 Found:
 End Function
-Sub testGoodJob()
+    Sub testGoodJob()
+    Set DB_MATCH = FileOpen(F_MATCH)
+    Dim i As Long
+    t0 = 0
+    t1 = 0
+    t2 = 0
+    
+    For i = 1 To 1000
     Call GoodJob("настройка xxx Zprinter xxx", "Оборудование", 4)
+    Next i
 End Sub
 Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
 '
@@ -551,19 +560,25 @@ Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
     
     Dim iGoodType As Long, Rng As Range, i As Long
     Dim Goods() As String, GoodW As String
-    Dim pattern As String
+    Dim Pattern As String
+    Dim t1a As Single
     
     GoodJob = False
        
     If Good = "" Then Exit Function
-    
+t1a = Now
     With DB_MATCH.Sheets(We).Range("Goods")
         Set Rng = .Columns(1)
-        iGoodType = Application.Match(GoodType, Rng, 0) 'найти строку по типу товара
-        pattern = .Cells(iGoodType, CLng(JobType) + JOB_COL0)
-        Goods = Split(pattern, ",")
+'''        iGoodType = Application.Match(GoodType, Rng, 0) 'найти строку по типу товара
+        For iGoodType = 1 To Rng.Rows.Count
+            If GoodType = .Cells(iGoodType, 1) Then GoTo FoundType
+        Next iGoodType
+        ErrMsg FATAL_ERR, "испорчен тип товара '" & GoodType & "'"
+FoundType:
+        Pattern = .Cells(iGoodType, CLng(JobType) + JOB_COL0)
+        Goods = Split(Pattern, ",")
     End With
-    
+t1 = t1 + (Now - t1a)
     For i = 0 To UBound(Goods)
         GoodW = Trim(Goods(i))
         If GoodW <> "" Then
@@ -574,6 +589,7 @@ Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
             End If
         End If
     Next i
+t2 = t2 + Now - t1a
     Exit Function
 Found:
     GoodJob = True
