@@ -34,5 +34,11 @@ Sub WP_Paid(Frm As String, Optional InitialPayRow = 2)
         Next i
     End With
     
-Go_xAdapt:                xAdapt Frm, i
+Go_xAdapt:
+    With DB_MATCH.Sheets(Process)
+        Dim iStep As Long
+        iStep = ToStep(.Cells(1, PROCESS_NAME_COL), .Cells(1, STEP_NAME_COL))
+        .Cells(iStep, PROC_PAR2_COL) = i + 1
+    End With
+    xAdapt Frm, i
 End Sub

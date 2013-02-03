@@ -8,7 +8,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   7.1.2013
+'   3.2.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -555,6 +555,7 @@ Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
 ' - GoodJob(Good,GoodType,JobType)  - возвращает True если товар Good типа GoodType
 '                                     соответствует типу номер JobType
 ' 7.1.2013
+' 3.2.13 профилирование
 
     Const JOB_COL0 = 12
     

@@ -6,7 +6,7 @@ Attribute VB_Name = "ContrAnalitics"
 ' [*] DogOppLink    - проход по SFD и поиск подходящих Проектов для связи
 '  -  IsSameVendor(OppType, V1C, ContrCode)    - возвращает True, если Тема&Вид
 '                           Проекта OppType соответствует Поставщику по Договору в 1С
-'   30.12.2012
+'   3.2.2013
 
 Option Explicit
 Sub NewContr(NewContract As String)
@@ -60,7 +60,7 @@ Sub PaidContr(ByVal NewPayment As String)
                 OppId = FetchDoc(F_rqst, ContrK, IsErr)
                 If OppId = "" Then
 '---- NEWOPP              лист для CSV    файл      строка -- НЕ НАПИСАНО ЕЩЕ!!!
-                    WrNewSheet NEW_OPP, PAY_SHEET, i
+'                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
                 End If
                 If Not IsErr Then WrNewSheet NewPayment, PAY_SHEET, i, OppId
             End If
@@ -129,7 +129,7 @@ Sub ContrPass()
             End If
         End With
     Next i
-Ex:
+
     ChDir "C:\Users\Пользователь\Desktop\Работа с Match\SFconstrTMP\Dogovor\"
     WriteCSV NewContract, "Dogovor.txt"
     WriteCSV NewContractLnk, "ContrUpd.txt"

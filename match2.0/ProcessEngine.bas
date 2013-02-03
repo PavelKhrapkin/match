@@ -22,6 +22,7 @@ Attribute VB_Name = "ProcessEngine"
 
 Option Explicit
 
+'========== Константы Процессов ==================
 Const TRACE_STEP = "Trace"  ' специальный Шаг Trace для трассирования и отладки
 Public TraceStep As Boolean
 Public TraceStop As Boolean
@@ -107,10 +108,10 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        S = split(Trim(Step), ",")
+        S = Split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                X = split(S(i), "/")
+                X = Split(S(i), "/")
                 If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
                 If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
