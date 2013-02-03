@@ -47,7 +47,7 @@ Sub DicAccBuild(ByVal DicSheet As String)
             Acc = LCase$(.Cells(i, SFACC_ACCNAME_COL))
             Ac1C = .Cells(i, SFACC_ACC1C_COL)
             IdSFacc = .Cells(i, SFACC_IDACC_COL)
-            accWords = split(RemIgnored(Acc), " ")
+            accWords = Split(RemIgnored(Acc), " ")
             
             With DB_TMP.Sheets(DicSheet)
                 For j = LBound(accWords) To UBound(accWords)
@@ -58,13 +58,15 @@ Sub DicAccBuild(ByVal DicSheet As String)
                 Next j
             End With
         Next i
+    End With
         
-        P = GetRep(Acc1C)
+    P = GetRep(Acc1C)
+    With DB_1C.Sheets(Acc1C)
         For i = 2 To P.EOL
             Progress (i / P.EOL)
             
-            Acc = LCase$(.Cells(i, A1C_NAME_COL))
-            accWords = split(RemIgnored(Acc), " ")
+            Acc = LCase$(DB_1C.Sheets(Acc1C).Cells(i, A1C_NAME_COL))
+            accWords = Split(RemIgnored(Acc), " ")
             
             With DB_TMP.Sheets(DicSheet)
                 For j = LBound(accWords) To UBound(accWords)
@@ -73,10 +75,47 @@ Sub DicAccBuild(ByVal DicSheet As String)
                 Next j
             End With
         Next i
-    
-        Call SheetDedup2(DicSheet, 1, 2, 3)
     End With
+    
+    DB_TMP.Sheets(DicSheet).Activate
+    Call SheetDedup2(DicSheet, 1, 2, 3)
 End Sub
+Function FindAccByDic(ByVal Client As String, ByRef IdSFacc)
+'
+' - FindAccByDic(Client, IdSFacc) - получение имени организации из словаря Dic
+' 24.11.12
+
+    Dim Acc As String
+    Dim accWords() As String, AccName As String, IdSFacc As String
+    Dim i As Long, N As Long
+    Dim Dic As TOCmatch, DicRange As Range
+ 
+    Dic = GetRep("DicAcc")
+    Set DicRange = Range(.Cells(2, 1), .Cells(BIG, 3))
+    
+    FindAcc = "$"
+    
+    If Client = "" Then GoTo ExitSub
+    Acc = LCase(RemIgnored(Client))
+    If Acc = "" Then GoTo ExitSub
+    accWords = Split(Acc, " ")
+    For i = LBound(accWords) To UBound(accWords)
+        IdSFacc = ""
+        On Error Resume Next
+        IdSFacc = WorksheetFunction.VLookup(accWords(i), DicRange, 3, False)
+        On Error GoTo 0
+        If IdSFacc <> "" Then
+            accWords(i) = ""
+    Next i
+        
+        AccName = hashGet(aDicKey, aDicVal, Trim$(accWords(i)))
+        If AccName <> "$" And AccName <> "" Then
+            FindAcc = AccName
+            GoTo ExitSub            ' Goto замещает End Sub
+        End If
+    Next i
+ExitSub:
+End Function
 Sub PaymentAccPass()
 '
 ' (*) PaymentAccPass() - Проход по листу Платежей 1С для внесения
@@ -150,7 +189,7 @@ Function RemIgnored(Client) As String
     Dim cmp As Integer
     
     RemIgnored = ""
-    Swords = split(Compressor(S), " ")
+    Swords = Split(Compressor(S), " ")
       
     With DB_MATCH.Sheets(We)
         rLow = .Range("Glossary").Row - 1
@@ -212,7 +251,7 @@ End If
     NewAcc = "": AccId = ""
 ' ----------- убираем все аббревиатуры ------------------------
     SFname = RemIgnored(LCase$(Client))
-    SeekWords = split(SFname, " ")
+    SeekWords = Split(SFname, " ")
 ' ----- ищем совпадающие с именем Client слова в SFacc ----------
 
     With Sheets(SFacc)
@@ -228,7 +267,7 @@ End If
 '                Stop
 '            End If
 
-            SFwords = split(RemDelimiters(LCase$(SFname)), " ")
+            SFwords = Split(RemDelimiters(LCase$(SFname)), " ")
             For j = 0 To UBound(SeekWords)
                 For k = 0 To UBound(SFwords)
                     If SeekWords(j) = SFwords(k) And Len(SeekWords(j)) > 1 Then
@@ -272,13 +311,13 @@ Function AdrSF(Id)
 '
 End Function
 Sub testIsAccSF()
-    Dim i(10), A(10)
+    Dim i(10), a(10)
 '    A(1) = IsAccSF("abbyy", i(1))
 '    A(2) = IsAccSF("Акрон", i(2))
 '    A(3) = IsAccSF("Роспроект", i(3))
-    A(4) = IsAccSF("ООО «Газпром трансгаз Уфа»", i(4))
-    A(2) = IsAccSF("Гипротюменьнефтегаз", i(2))
-    A(3) = IsAccSF("Студия-44", i(3))
+    a(4) = IsAccSF("ООО «Газпром трансгаз Уфа»", i(4))
+    a(2) = IsAccSF("Гипротюменьнефтегаз", i(2))
+    a(3) = IsAccSF("Студия-44", i(3))
 End Sub
 
 Function IsAccSF(Str, iSFacc) As Boolean
@@ -296,7 +335,7 @@ Function IsAccSF(Str, iSFacc) As Boolean
     IsAccSF = False: iSFacc = 0
     If Str = "" Then Exit Function
     
-    S = split(RemIgnored(Str), " ")
+    S = Split(RemIgnored(Str), " ")
     
     For i = LBound(S) To UBound(S)
         AccId = ""
@@ -330,7 +369,7 @@ Function xId(Id1, Id2) As String
     Dim S() As String
     Dim i As Integer
     
-    S = split(Id2, "+")
+    S = Split(Id2, "+")
     xId = ""
     For i = LBound(S) To UBound(S)
         If InStr(Id1, S(i)) <> 0 Then

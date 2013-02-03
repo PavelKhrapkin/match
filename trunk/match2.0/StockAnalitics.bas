@@ -30,7 +30,7 @@ Sub StockHandling()
     Dim SameClient As Boolean
     Dim Acc1C As String     ' имя Организации в справочнике 1С
     Dim Dat As Date         'поле "Дата" в складской книге
-    Dim good, T As String   ' Товар (спецификация) и Тип товара
+    Dim Good, T As String   ' Товар (спецификация) и Тип товара
     Dim StockSN As String   ' Складская запись об SN
     Dim SNinSF As String    ' SN уже занесенный в SF
     Dim NewSN As String     ' SN, которого еще нет в SF
@@ -59,8 +59,8 @@ End If
             If PayN > 0 And PayN <= EOL_PaySheet Then
                 .Cells(i, STOCK_INVOICE_COL) = _
                         Sheets(PAY_SHEET).Cells(PayN, PAYINVOICE_COL)
-                good = Sheets(PAY_SHEET).Cells(PayN, PAYGOOD_COL)
-                T = GoodType(good)              ' Тип товара по Счету
+                Good = Sheets(PAY_SHEET).Cells(PayN, PAYGOOD_COL)
+                T = GoodType(Good)              ' Тип товара по Счету
                 .Cells(i, STOCK_GOOD_COL) = T
                 If T = WE_GOODS_ADSK Then
                     StockSN = Sheets(STOCK_SHEET).Cells(i, STOCK_SN_COL)
@@ -165,7 +165,7 @@ Function SeekInv(Str) As String
     S = Replace(LCase(S), ")", " ")
     S = Replace(LCase(S), "(", " ")
     S = Replace(LCase(S), """", " ")
-    StWord = split(S, " ")
+    StWord = Split(S, " ")
     For i = LBound(StWord) To UBound(StWord)
         Sch = StWord(i)
         If Left(Sch, 1) = Chr(99) Or Left(Sch, 1) = "с" Then ' Ru или En "с"
@@ -187,12 +187,12 @@ FoundSeekInv:
     SeekInv = "Сч-" & Sch
 End Function
 Sub testSeekInv()
-    Dim A(1 To 6) As String
-    A(1) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч-267 от 07.10.11 Кириллова ")
-    A(2) = SeekInv("Заказ ЗАО ""ЛИК-94"" С-267 от 07.10.11 Кириллова ")
-    A(3) = SeekInv("Заказ ЗАО ""ЛИК-94"" С -267 от 07.10.11 Кириллова ")
-    A(4) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч- 267 от 07.10.11 Кириллова ")
-    A(5) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч - 267 от 07.10.11 Кириллова ")  '!!! не распознался!!!
+    Dim a(1 To 6) As String
+    a(1) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч-267 от 07.10.11 Кириллова ")
+    a(2) = SeekInv("Заказ ЗАО ""ЛИК-94"" С-267 от 07.10.11 Кириллова ")
+    a(3) = SeekInv("Заказ ЗАО ""ЛИК-94"" С -267 от 07.10.11 Кириллова ")
+    a(4) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч- 267 от 07.10.11 Кириллова ")
+    a(5) = SeekInv("Заказ ЗАО ""ЛИК-94"" Сч - 267 от 07.10.11 Кириллова ")  '!!! не распознался!!!
 End Sub
 Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date) As Long
 '
@@ -215,7 +215,7 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
     SeekPayN = 0
     If Trim(Client) = "" Then Exit Function
                 
-    accWords = split(RemIgnored(LCase$(Client)), " ")
+    accWords = Split(RemIgnored(LCase$(Client)), " ")
     
     Dic = GetRep("DicAcc")
     
@@ -229,11 +229,11 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
             If Id = "" Then
                 accWords(i) = ""
             Else
-                IdS = split(Id, "+")
+                IdS = Split(Id, "+")
                 For j = LBound(IdS) To UBound(IdS)
-                    N_IdSF = N_IdSF + 1
                     ReDim Preserve IdSF(N_IdSF)
                     IdSF(N_IdSF) = IdS(j)
+                    N_IdSF = N_IdSF + 1
                 Next j
             End If
         Next i
@@ -242,14 +242,15 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
     If N_IdSF = 0 Then Exit Function
     P = GetRep(PAY_SHEET)
     With DB_1C.Sheets(P.SheetN)
+        Dim Prng As Range
         Set Prng = Range(.Cells(2, 1), .Cells(P.EOL, PAYINVOICE_COL))
-        For i = 1 To N_IdSF
+        For i = 0 To N_IdSF - 1
             Do
                 j = CSmatchSht(IdSF(i), 1, Prng, j)
                 If j > 0 Then
                     If Left(.Cells(j, PAYINVOICE_COL), Len(Inv)) = Inv Then
 '                    If InStr(.Cells(j, PAYINVOICE_COL), Inv) <> 0 Then
-                        SeepPayN = j
+                        SeekPayN = j
                         Exit Function
                     End If
                 End If
@@ -396,7 +397,7 @@ Function RemIgnoredSN(Str) As String
         If (Ch > "9" Or Ch < "0") And Ch <> "-" Then Ch = " "
         Mid(S, i, 1) = Ch
     Next i
-    W = split(S, " ")
+    W = Split(S, " ")
     S = ""
     For i = LBound(W) To UBound(W)
         If Len(W(i)) = 12 And Mid(W(i), 4, 1) = "-" Then

@@ -25,58 +25,6 @@ Attribute VB_Name = "FromSF"
 
     Option Explicit    ' Force explicit variable declaration
         
-Sub PaidSF_Fill()
-'
-' - PaidSF_Fill() - заполнение колонки А листа SF номерами строк - Платежей 1С
-'   2.8.12
-'  17.9.12 - StepIn
-'  28.9.12 - раскраска красным и голубым колонки Match
-
-    StepIn
-    
-    Dim Rep1C As TOCmatch, RepSF As TOCmatch
-    Dim PayK As String      'поле SF - код Платежа
-    Dim i As Integer
-    
-    PublicStepName = ""
-    RepSF = GetRep(SF)
-    Rep1C = GetRep(PAY_SHEET)
-    DB_1C.Sheets(Rep1C.SheetN).Activate
-    With DB_SFDC.Sheets(SF)
-        For i = 2 To RepSF.EOL
-            Progress i / RepSF.EOL
-            PayK = .Cells(i, SF_COD_COL)
-            .Cells(i, 1) = CSmatch(PayK, PAYCODE_COL)
-            If InStr(.Cells(i, SF_SAIL_COL), "Лидер") <> 0 Then
-                .Cells(i, SF_MATCH_COL).Interior.Color = rgbLightBlue
-            ElseIf .Cells(i, SF_MATCH_COL) = 0 Then
-                .Cells(i, SF_MATCH_COL).Interior.Color = rgbRed
-            End If
-       Next i
-    End With
-End Sub
-Sub SF_Fill(SheetSF As String, Sheet1C As String, ColSF As Integer, Col1C As Integer)
-'
-' - DogSFD_Fill() - заполнение колонки А листа SFD номерами строк - Договоров 1С
-'   10.8.12
-'   18.9.12 - StepIn
-
-    StepIn
-    
-    Dim Rep1C As TOCmatch, RepSF As TOCmatch
-    Dim i As Integer
-
-    RepSF = GetRep(SheetSF)
-    Rep1C = GetRep(Sheet1C)
-    DB_1C.Sheets(Rep1C.SheetN).Activate
-    With DB_SFDC.Sheets(SheetSF)
-        For i = 2 To RepSF.EOL
-            Progress i / RepSF.EOL
-            .Cells(i, 1) = CSmatch(.Cells(i, ColSF), Col1C)
-        Next i
-    End With
-
-End Sub
 Sub ShowControlPanel()
 '
 ' Вывод управляющей панели с командными кнопками по всем отдельным листам
