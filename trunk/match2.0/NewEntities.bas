@@ -6,7 +6,7 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
-'   16.01.13
+'   28.01.13
 
 Option Explicit
 
@@ -35,11 +35,12 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
 ' 27.10.12 - ведение "голубых" листов в общей таблице TOCmatch
 ' 23.11.12 - Optional TabColor
 ' 16.01.13 - использование setColWidth, парсинг ширины колонки
+' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 
     StepIn
     
     Dim R As TOCmatch
-    Dim i As Long, Cols As Long, W As String
+    Dim i As Long, Cols As Long
     Dim Frm As Range
     
     R = GetRep(SheetName)
@@ -64,9 +65,8 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
             .Tab.Color = TabColor
             For i = 1 To Cols
                 Frm.Columns(i).Copy Destination:=.Cells(1, i)
-                W = .Cells(3, i)
 '                If IsNumeric(W) Then .Cells.Columns(i).ColumnWidth = CDbl(W)
-                setColWidth DB_TMP.Name, SheetName, i, Split(W, "/")(0)
+                setColWidth DB_TMP.Name, SheetName, i, .Cells(3, i)
                 
             Next i
             For i = 2 To .UsedRange.Rows.Count
