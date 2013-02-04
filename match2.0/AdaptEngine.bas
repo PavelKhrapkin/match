@@ -96,7 +96,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
     Dim i As Long
-    Dim x As String         '= обрабатываемое значение в SheetDB
+    Dim X As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
@@ -117,12 +117,12 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
             sX = P.Cells(PTRN_COLS, i)
             If sX <> "" Then
                 If sX = EXT_PAR Then
-                    x = ExtPar
+                    X = ExtPar
                 Else
-                    x = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
+                    X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
                 End If
                 
-                Y = Adapter(P.Cells(PTRN_ADAPT, i), x, P.Cells(PTRN_FETCH, i), IsErr)
+                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr)
                 
                 If IsErr Then
                     .Rows(Rnew.EOL).Delete
@@ -166,7 +166,7 @@ Sub xAdapt(F As String, iLine As Long)
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim PtrnType As String                      ' поле Тип Шаблона
     Dim putToRow As Long, putToCol As Long
-    Dim x As String                             ' параметр Адаптера
+    Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
     Dim F_rqst As String                        '
     Dim Y As String
@@ -217,17 +217,17 @@ Sub xAdapt(F As String, iLine As Long)
             iSelect = 2
             Do
                 For iCol = 5 To .UsedRange.Columns.Count
-                    x = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
+                    X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
                     
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    Y = Adapter(Rqst, x, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
                     
                     If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
-                    x = .Cells(iRow + PTRN_COLS - 1, iCol)
-                    If x = "-1" Then Exit For
-                    If Not IsErr And x <> "" Then
+                    X = .Cells(iRow + PTRN_COLS - 1, iCol)
+                    If X = "-1" Then Exit For
+                    If Not IsErr And X <> "" Then
                         width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
                         fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
                     End If
@@ -340,7 +340,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     Dim FF As Range     '= Форма F
     Dim R As TOCmatch
     Dim Rqst As String, F_rqst As String, IsErr As Boolean
-    Dim x As String, Y As String
+    Dim X As String, Y As String
     Dim i As Long, Col As Long, iX As Long, iTo As Long
     Dim R_From As TOCmatch, R_To As TOCmatch
     Dim width() As String
@@ -378,11 +378,11 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
             
             iX = FF(PTRN_COLS, Col)
             If iX > 0 Then
-                x = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
+                X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
                 Rqst = FF.Cells(PTRN_ADAPT, Col)
                 F_rqst = FF.Cells(PTRN_FETCH, Col)
 
-                Y = Adapter(Rqst, x, F_rqst, IsErr, R_From.EOL, i, Col)
+                Y = Adapter(Rqst, X, F_rqst, IsErr, R_From.EOL, i, Col)
 
                 If IsErr Then
                     iTo = iTo - 1
@@ -412,7 +412,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
     LogWr "adapt profile: total = " & Format(tot1, "###0.00") _
         & vbCrLf & "By steps = " & profileStr
 End Sub
-Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean, _
+Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean, _
     Optional EOL_Doc As Long, Optional iRow As Long, Optional iCol As Long) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -440,8 +440,8 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
     IsErr = False
-    x = Compressor(x)
-    InitX = x
+    X = Compressor(X)
+    InitX = X
     
 '--- разбор строки Адаптера вида <Имя>/C1,C2,C3...
     Dim AdapterName As String
@@ -458,11 +458,11 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
 '======== препроцессинг Адаптера для подварительной обработки X перед Fetch =========
     Select Case AdapterName
     Case "MainContract":
-        x = Trim(Replace(x, "Договор", ""))
+        X = Trim(Replace(X, "Договор", ""))
     Case "<>0":
-        If x = "0" Then x = ""
+        If X = "0" Then X = ""
     Case "<>"""""
-        If x = "" Then
+        If X = "" Then
             IsErr = True
             Exit Function
         End If
@@ -471,14 +471,14 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         Dim MainDog As String, iPay As Long
         iPay = DB_TMP.Sheets(WP).Cells(PAY_REF, 4)
         MainDog = DB_1C.Sheets(PAY_SHEET).Cells(iPay, CLng(Par(0)))
-        x = ContrCod(x, MainDog)
+        X = ContrCod(X, MainDog)
     End Select
     
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
-    If F_rqst <> "" And x <> "" Then
+    If F_rqst <> "" And X <> "" Then
         FF = Split(F_rqst, ",")
         For i = LBound(FF) To UBound(FF)
-            x = FetchDoc(FF(i), x, IsErr)
+            X = FetchDoc(FF(i), X, IsErr)
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ' сейчас используется только один указатель на извлекаемую из Doc величину.
 ' В дальнейшем надо использовать массив x(1 to 5) и обращаться к Fetch несколько раз
@@ -496,47 +496,47 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
 '''''    End If
     
     Select Case AdapterName
-    Case "", "MainContract", "<>""""": Adapter = x
+    Case "", "MainContract", "<>""""": Adapter = X
     Case "Мы", "Продавцы", "Продавец_в_SF", "Vendor":
         On Error GoTo AdapterFailure
-        Adapter = WorksheetFunction.VLookup(x, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
+        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
         On Error GoTo 0
-    Case "Dec": Adapter = Dec(x)
+    Case "Dec": Adapter = Dec(X)
     Case "GetCol":
-        If x <> "" Then           ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
-            Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(x), CLng(Par(2)))
+        If X <> "" Then           ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
+            Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
             If UBound(Tmp) > 1 Then
                 Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
             End If
         End If
-    Case "GoodType": Adapter = GoodType(x)
+    Case "GoodType": Adapter = GoodType(X)
     Case "GoodJob":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-        If GoodJob(Z(1), x, CLng(Par(0))) Then Adapter = "1"
-    Case "CurISO":  Adapter = CurISO(x)
-    Case "CurRate": Adapter = Dec(CurRate(x))
-    Case "Дата":    If x <> "" Then Adapter = DDMMYYYY(x)
-    Case "ContrK":  Adapter = x 'преобразование в вид ContrCod в препроцессинге
-    Case "SeekInv": Adapter = SeekInv(x)
+        If GoodJob(Z(1), X, CLng(Par(0))) Then Adapter = "1"
+    Case "CurISO":  Adapter = CurISO(X)
+    Case "CurRate": Adapter = Dec(CurRate(X))
+    Case "Дата":    If X <> "" Then Adapter = DDMMYYYY(X)
+    Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
+    Case "SeekInv": Adapter = SeekInv(X)
     Case "InvN":
-        Tmp = Split(x, " ")
+        Tmp = Split(X, " ")
         If UBound(Tmp) > 0 Then Adapter = Tmp(0)
     Case "SeekPayN":
         Dim Inv As String, Client As String
         Inv = ActiveSheet.Cells(iRow, CLng(Par(0)))
         Client = ActiveSheet.Cells(iRow, CLng(Par(1)))
-        If Inv <> "" And IsDate(x) Then Adapter = SeekPayN(Inv, Client, x)
+        If Inv <> "" And IsDate(X) Then Adapter = SeekPayN(Inv, Client, X)
         If Adapter = "0" Then Adapter = ""
     Case "<>1":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "1" Then
             IsErr = True
         Else
-            Adapter = x
+            Adapter = X
         End If
     Case "OppName":
-        If x <> "" Then
-            Adapter = x
+        If X <> "" Then
+            Adapter = X
         Else
             Call ArrayZ(Z, PAY_SHEET, iRow, Par)
             Adapter = Z(2) & "-" & Z(3) & " " & ContrCod(Z(4), Z(5))
@@ -546,11 +546,11 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         If Z(0) = "1" Then Adapter = "Лицензии"
         If Z(1) = "1" Then Adapter = "Подписки"
         If Z(3) = "1" Then Adapter = "Работы"
-        If x = "Расходники" Then Adapter = x
-        If x = "Оборудование" Then Adapter = "Железо"
+        If X = "Расходники" Then Adapter = X
+        If X = "Оборудование" Then Adapter = "Железо"
     Case "LineOpp":
         Adapter = "Программное обеспечение (ПО)"
-        Select Case x
+        Select Case X
         Case "Расходники": Adapter = "Расходные материалы и ЗИП"
         Case "Работы":     Adapter = "Услуги"
         Case "Печать":     Adapter = "Печать"
@@ -558,17 +558,17 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         End Select
     Case "Max":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-        Adapter = x
+        Adapter = X
         For i = LBound(Z) To UBound(Z)
             Adapter = WorksheetFunction.Max(CLng(Adapter), CLng(Z(i)))
         Next i
     Case "EmptyBuddy":
         On Error GoTo AdapterFailure
-        Adapter = WorksheetFunction.VLookup(x, DB_MATCH.Sheets("We").Range("Продавцы"), Par(0), False)
+        Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range("Продавцы"), Par(0), False)
         On Error GoTo 0
-        If InStr(Adapter, x) = 0 Then Adapter = x
+        If InStr(Adapter, X) = 0 Then Adapter = X
     Case "ForceTxt":
-        Adapter = "'" & x
+        Adapter = "'" & X
     Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
         Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
         Dim sDog As String, DogCur As String            ' имя Договора и его валюта
@@ -576,7 +576,7 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         Vpaid = Z(0): Vinv = Z(1): sDog = Z(2): DogCur = Z(3)
         If sDog <> "" Then
             If Not IsNumeric(sDog) Then
-                ErrMsg FATAL_ERR, "Не числовое значение в сумме Договора по " & x
+                ErrMsg FATAL_ERR, "Не числовое значение в сумме Договора по " & X
                 Stop
                 End
             End If
@@ -586,13 +586,13 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         
     Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
-        Adapter = AdapterWP(AdapterName, x, Par)
+        Adapter = AdapterWP(AdapterName, X, Par)
     Case "IsBalky":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "" Or Z(1) = "1" Or Z(2) <> "Расходники" Then
             IsErr = True
         Else
-            Adapter = x
+            Adapter = X
         End If
     Case "BalkyOppN":  'SFopp/4:2 с проверкой колонки OpportunityActivityKind = "Расходники"
         Dim BalkyExists As Boolean: BalkyExists = False
@@ -601,7 +601,7 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         FromN = 1
         With Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN)
             Do
-                N = CSmatchSht(x, SFOPP_ACC1C_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN), FromN)
+                N = CSmatchSht(X, SFOPP_ACC1C_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN), FromN)
                 If N = 0 Then
                     If BalkyExists Then Exit Function
                     GoTo AdapterFailure
@@ -632,10 +632,10 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
     Exit Function
     
 AdapterFailure:
-    ErrMsg WARNING, "Адаптер " & AdapterName & "(" & x & ") не получил данных"
+    ErrMsg WARNING, "Адаптер " & AdapterName & "(" & X & ") не получил данных"
     IsErr = True
 End Function
-Function AdapterWP(AdapterName, x, Par) As String
+Function AdapterWP(AdapterName, X, Par) As String
 '
 ' - AdapterWP() - обработка Адаптеров для Шаблонов WP
 ' 5.1.2013
@@ -660,22 +660,22 @@ Function AdapterWP(AdapterName, x, Par) As String
             End With
         Case "OppType":             ' инициализация типа Проекта
         ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-            If x = "Оборудование" Then x = "Железо"
-            If x = "Autodesk" Then
+            If X = "Оборудование" Then X = "Железо"
+            If X = "Autodesk" Then
         ''  !          If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
-                If IsSubscription(Z(0), x) Then
-                    x = "Подписка"
+                If IsSubscription(Z(0), X) Then
+                    X = "Подписка"
                 Else
-                    x = "Лицензии"
+                    X = "Лицензии"
                 End If              '!' не рассматриваются Работы!!
             End If
-            Adapter = x
+            Adapter = X
         Case "TypOpp":  '!!' сменить название
         ' -- распознавание типа Проекта по типу и спецификации Товара
             Dim good As String
         '            Stop
             good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-            Adapter = TypOpp(x, good)
+            Adapter = TypOpp(X, good)
         Case "OppFilter":
             Const SEL_REF = 20
         ' проверить есть ли Проект связанный с Договором
@@ -701,7 +701,7 @@ Function AdapterWP(AdapterName, x, Par) As String
                 Dim Rdoc As TOCmatch, Doc As String
         !Doc = .Cells(iRow, 1)
                 Rdoc = GetRep(Doc)
-                Adapter = CSmatchSht(x, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+                Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         !            .Cells(iRow + PTRN_LNS, 11) = "Занести"
         !            .Cells(iRow + PTRN_LNS, 11).Interior.Color = rgbBlue
         !            If Adapter = .Cells(iRow + 1, 4) Then Adapter = "-1"
@@ -709,7 +709,7 @@ Function AdapterWP(AdapterName, x, Par) As String
         Case "SetOppButton":
         !WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1          ' копирование кнопки "Связать"
         !        .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
-            If x = "" Then Adapter = "Занести"  ' Если в Платеже нет Договора - кнопка "Занести"
+            If X = "" Then Adapter = "Занести"  ' Если в Платеже нет Договора - кнопка "Занести"
         Case "NewOppNameFromWP":
         ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
             Dim Typ As String, Dogovor As String, Dat As String
@@ -720,7 +720,7 @@ Function AdapterWP(AdapterName, x, Par) As String
         ''!Dat = .Cells(WP_PAYMENT_LINE, CLng(Par(3)))
             Typ = Z(0): Dogovor = Z(1): MainDog = Z(2): Dat = Z(3)
             Dogovor = ContrCod(Dogovor, MainDog)
-            Adapter = x & "-" & Typ & " " & Dogovor & " " & Dat
+            Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
         End Select
     End With
 End Function
@@ -826,7 +826,7 @@ GetFromActiveSheet:
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
 ex: Exit Function
 End Function
-Function FetchDoc(F_rqst, x, IsErr) As String
+Function FetchDoc(F_rqst, X, IsErr) As String
 '
 ' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
 '                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
@@ -849,7 +849,7 @@ Function FetchDoc(F_rqst, x, IsErr) As String
 ' 4.11.12 - Fetch возвращает номер строки в случае <Doc>/C1:№
 
     FetchDoc = ""
-    If F_rqst = "" Or x = "" Then GoTo ErrExit
+    If F_rqst = "" Or X = "" Then GoTo ErrExit
         
     Dim Tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
@@ -865,7 +865,7 @@ Function FetchDoc(F_rqst, x, IsErr) As String
     If UBound(Cols) < 1 Then
 '--- ситуация С1 - в группе один параметр - извлекаем значение по индексу
         Dim Indx As Long
-        Indx = x
+        Indx = X
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ' сейчас Indx=Х - это просто число, но в дальнейшем тут надо split
 '!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -879,7 +879,7 @@ Function FetchDoc(F_rqst, x, IsErr) As String
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup или №
         If IsNumeric(Cols(1)) Then C2 = Cols(1)
         S = ""
-        N = CSmatchSht(x, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+        N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
         If N <> 0 Then
             If Cols(1) = "№" Then
                 S = N
@@ -893,12 +893,12 @@ Function FetchDoc(F_rqst, x, IsErr) As String
         If UBound(Tmp) >= 2 Then
             If Tmp(2) = "W" Then
                 ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
-                    & "(" & x & ") не работает, результат <пусто>"
+                    & "(" & X & ") не работает, результат <пусто>"
             End If
             If Tmp(2) <> "0" Then GoTo ErrExit
         Else
             ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
-               & "(" & x & ") не работает, результат <пусто>"
+               & "(" & X & ") не работает, результат <пусто>"
             GoTo ErrExit
         End If
     Else

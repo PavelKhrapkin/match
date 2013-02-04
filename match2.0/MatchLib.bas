@@ -1186,7 +1186,7 @@ nextComp:
             Next i
         Else
             pat = Replace(pat, "~", ",")
-            .pattern = pat
+            .Pattern = pat
             patTest = .test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
