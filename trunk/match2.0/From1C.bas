@@ -119,23 +119,24 @@ End Sub
 
 Sub testCSmatch()
     If "G" = "g" Then Stop
-    Dim A
+    Dim a
     ThisWorkbook.Sheets("Sheet1").Select
-    A = CSmatch("g12", 1)
-    A = CSmatch("g121", 1)
+    a = CSmatch("g12", 1)
+    a = CSmatch("g121", 1)
     
     ModStart REP_1C_P_PAINT
     Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
     DB_SFDC.Sheets(SFacc).Select
-    A = CSmatch("ОАО ""ЭХО""", 2)
+    a = CSmatch("ОАО ""ЭХО""", 2)
     ModEnd
 End Sub
-Sub PaymentPaint()
+Sub PaymentPaint(ByVal BottomHDR As String)
 '
-' - PaymentPaint() - Раскрашиваем Лист Платежей 1C
+' - PaymentPaint(BottomHDR) - Раскрашиваем Лист Платежей 1C с пяткой BottomHDR
 ' 24.6.12 переписано для match 2.0
 '  7.8.12 оформлено как Шаг
 ' 31.8.12 - внедрение StepIn
+'  7.2.13 - параметр BottomHDR; окраска всей строки, занесенной в SF
 
     StepIn
 
@@ -149,7 +150,8 @@ Sub PaymentPaint()
         For i = 2 To RepTOC.EOL
             Progress i / RepTOC.EOL
             If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые Платежи в SF
-                Range(Cells(i, 2), Cells(i, AllCol)).Interior.Color = rgbLightGreen
+'                Range(Cells(i, 2), Cells(i, AllCol)).Interior.Color = rgbLightGreen
+                Range(Cells(i, 2), Cells(i, .Columns.Count)).Interior.Color = rgbLightGreen
             ElseIf Trim(.Cells(i, PAYDOC_COL)) = "" Or Trim(.Cells(i, PAYSALE_COL)) = "" Then
                 .Cells(i, 1).EntireRow.Hidden = True    ' нал убираем
             Else
@@ -188,7 +190,7 @@ Sub PaymentPaint()
         Next i
 
 '-- копируем пятку в Платежи1С
-        DB_MATCH.Sheets(Header).Range("Payment_Summary").Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
+        DB_MATCH.Sheets(Header).Range(BottomHDR).Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
     End With
     
 End Sub
