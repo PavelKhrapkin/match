@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 28.1.13
+' П.Л.Храпкин, А.Пасс 20.1.2013
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -307,6 +307,17 @@ FoundRep:
         .Cells(1, 1) = Now
     End With
 End Sub
+Sub TOC_SetUP()
+'
+'
+'
+    Dim i As Long
+    Dim R As TOCmatch, R_TOC As TOCmatch
+    
+    R_TOC = GetRep(TOC)
+
+    For i = TOClineN To R_TOC
+End Sub
 Sub testsetColWidth()
 ' Т testsetColWidth() - отладка setColWidth
 
@@ -314,10 +325,15 @@ Sub testsetColWidth()
     Dim FF As Range
     
     Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
-    Dim i As Long
+    Dim width As String, i As Long, fmt() As String
 a:
     For i = 1 To FF.Columns.Count
-        setColWidth "1C.xlsx", "Платежи", i, FF.Cells(3, i)
+        width = FF.Cells(3, i)
+        If InStr(width, "/") <> 0 Then      ' формат задан?
+            fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
+            width = fmt(0)
+        End If
+        setColWidth "1C.xlsx", "Платежи", i, width
     Next i
         
     Stop
@@ -332,19 +348,14 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
 ' 12.01.2013
 ' 16.1.13 bug fix
 ' 16.1.13 переделал на явную замену десятичной запятой на точку (или наоборот)
-' 28.1.13 width теперь массив: ширина/формат
 '
-    Dim widSplit() As String
-    widSplit = Split(width, "/")
-    If UBound(widSplit) >= 0 Then
-        width = widSplit(0)
-        If Application.DecimalSeparator = "." Then
-            width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
-        ElseIf Application.DecimalSeparator = "," Then
-            width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
-        End If
-        Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
+    
+    If Application.DecimalSeparator = "." Then
+        width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
+    ElseIf Application.DecimalSeparator = "," Then
+        width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
     End If
+    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
 
 End Sub
 
@@ -368,7 +379,6 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 12.01.13 - устанавливает ширину колонoк согласно Application.DecimalSeparator
 ' 13.01.13 - парсинг формата вынесен из setColWidth
 ' 20.01.13 - цикл по вставке колонок заменен на 1 оператор
-' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 
     Const COPY_HDR = "CopyHdr"
 
@@ -377,6 +387,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
     Dim R As TOCmatch   'R - структура TOCmatch для SFD
     Dim FF As Range
     Dim i As Integer
+    Dim fmt() As String, width As String
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     R = GetRep(ActiveSheet.Name)
@@ -392,7 +403,12 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '        Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            setColWidth R.RepFile, R.SheetN, i, FF.Cells(3, i)
+            width = FF.Cells(3, i)
+            If InStr(width, "/") <> 0 Then      ' формат задан?
+                fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
+                width = fmt(0)
+            End If
+            setColWidth R.RepFile, R.SheetN, i, width
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
@@ -1186,7 +1202,7 @@ nextComp:
             Next i
         Else
             pat = Replace(pat, "~", ",")
-            .Pattern = pat
+            .pattern = pat
             patTest = .test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
