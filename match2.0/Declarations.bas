@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  23.1.13
+'  6.4.13
 
 Option Explicit
 
@@ -394,6 +394,7 @@ Public Const STOCK_DATE_COL = 13    ' колонка "Дата"
 Public Const STOCK_OLDSN_COL = 15   ' колонка "Старый S/N"
 
 '~ ~ ~ ~ ~ ~ ~ ~ ~ Письма БТО не проведенные по Складу ~ ~ ~ ~ ~ ~ ~ ~ ~
+Public Const BTOmails = "BTOmails"  ' Исходные письма БТО из файла BTOmails.txt
 Public Const BTO_SHEET = "BTOlog"   ' Письма БТО без проводки по Складу
 
 Public Const BTO_DATE_COL = 1       ' колонка "Дата письма"
