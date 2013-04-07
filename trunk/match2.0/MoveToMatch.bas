@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 22.12.2012
+' П.Л.Храпкин 6.4.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -23,6 +23,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 28.8.12 - сброс Шагов, связанных с использованием загружаемого Документа
 ' 20.9.12 - Created Date -- исправлено для отчетов SF
 ' 22.12.12 - Created Date - введены переводы в ам. формат и обратно
+'  6.4.13 - выход при попытке закгрузить в match один из файлов базы данных
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -57,6 +58,12 @@ RepNameHandle:
     Dim TabColor
     
     With DB_MATCH.Sheets(TOC)
+    
+        If NewRep = .Cells(i, TOC_REPFILE_COL) Then
+            MS "Это файл базы данных match! Его не надо загружать."
+            End
+        End If
+        
         Lines = Lines - .Cells(i, TOC_RESLINES_COL) '= EOL - пятка
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
