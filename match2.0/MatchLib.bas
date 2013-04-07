@@ -2,7 +2,11 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
+<<<<<<< .mine
+' П.Л.Храпкин, А.Пасс 6.4.13
+=======
 ' П.Л.Храпкин, А.Пасс 20.1.2013
+>>>>>>> .r400
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -68,8 +72,7 @@ Option Explicit
 ' переменные с областью действия 'модуль'
     Dim patObject
     Dim patObjectSet As Boolean
-    
-    
+        
 Function GetRep(RepName) As TOCmatch
 '
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
@@ -193,6 +196,7 @@ Function CheckStamp(iTOC As Long, _
 '           Optional параметры используются только для MoveToMatch
 ' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
 ' 27.10.12 - помимо типов Штампа "=" и "I", введено "N" - Штамп не проверять
+'  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -203,6 +207,7 @@ Function CheckStamp(iTOC As Long, _
     Dim Continued As String
     Dim i As Long, j As Long
     
+    On Error GoTo NoStamp
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
@@ -244,7 +249,7 @@ NxtChk:
             Next j
         Next i
         If NewRep = "" Then FatalRep "GetRep.CheckStamp", RepName
-        CheckStamp = False
+NoStamp: CheckStamp = False
     End With
 End Function
 Function FileOpen(RepFile) As Workbook
