@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 6.4.2013
+' П.Л.Храпкин 11.4.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -24,6 +24,8 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 20.9.12 - Created Date -- исправлено для отчетов SF
 ' 22.12.12 - Created Date - введены переводы в ам. формат и обратно
 '  6.4.13 - выход при попытке закгрузить в match один из файлов базы данных
+' 11.4.13 - вместо прямого открытия файла RepFile вызов FileOpen, то есть
+'           при смене Environment рабочие файлы из DirDBs должны быть уже загружены
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -72,7 +74,7 @@ RepNameHandle:
         TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
     End With
     
-    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
+    Set MyDB = FileOpen(RepFile)
     
     With Workbooks(NewRep).Sheets(InSheetN)
         If RepFile = F_SFDC Then
