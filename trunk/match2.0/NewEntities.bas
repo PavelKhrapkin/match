@@ -6,7 +6,7 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
-'   28.01.13
+'   25.04.13
 
 Option Explicit
 
@@ -211,5 +211,45 @@ Sub NEWOPP(Account, ContrK, CloseDate, Sale, Value, CurrencyOpp, TypGood, Sbs, _
         End If
     End With
 End Sub
+Sub NewOrder(NewOrd As String)
+'
+' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
+' 26.4.2013
+
+    StepIn
+    
+    Dim Ord As TOCmatch
+    Dim i As Long
+    
+    NewSheet NewOrd
+    
+    Ord = GetRep(ORDER_SHEET)
+
+    With Workbooks(Ord.RepFile).Sheets(Ord.SheetN)
+        For i = 2 To Ord.EOL
+            Progress i / Ord.EOL
+            If .Cells(i, OL_IDSF_COL) = "" Then
+                WrNewSheet NewOrd, Ord.SheetN, i
+            End If
+        Next i
+    End With
+End Sub
+Sub GetPaidId(IsErr, TMPinv1C, InvDat, TMPsalesRep, TMPgoodType, TMPcustomer)
+'
+' A GetPaidId(IsErr, TMPinv1C, InvDat, TMPsalesRep, TMPgoodType, TMPcustomer)
+'       поиск Платежа1С по параметрам
+'           - TMPinv1C  - номер Счета 1С из Заказа
+'           - InvDat    - дата Счета CSD - отличается от Счета 1С на 50 дней
+'           - TMPsalesRep - Продавец из Заказа
+'           - TMPgoodType - тип товара по Заказу
+'           - TMPcustomer - Заказчик
+' 25.4.2013
+
+    Dim P As TOCmatch
+    P = GetReg(PAY_SHEET)
+
+    IsErr = True
+End Sub
+
 
 

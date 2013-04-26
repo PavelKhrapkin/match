@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 8.04.13 П.Л.Храпкин, А.Пасс
+'23.04.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -440,6 +440,7 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
 '10.1.13 - Адаптер "Литерал; исправления TypeSFopp
 '23.1.13 - новые Адаптеры IsBalky и BalkyOppId
 ' 7.4.13 - Адаптеры для БТО: BTO_Date, BTO_Order, BTO_Ord
+'23.4.13 - Адаптер GetInv1C
 
     Dim FF() As String, Tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -581,6 +582,8 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         If InStr(Adapter, x) = 0 Then Adapter = x
     Case "ForceTxt":
         Adapter = "'" & x
+    Case "GetInv1C":
+        Adapter = ""
     Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
         Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
         Dim sDog As String, DogCur As String            ' имя Договора и его валюта
