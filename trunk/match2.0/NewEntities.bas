@@ -6,7 +6,11 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 
+<<<<<<< .mine
+'   27.04.13
+=======
 '   25.04.13
+>>>>>>> .r424
 
 Option Explicit
 
@@ -216,6 +220,23 @@ Sub NewOrder(NewOrd As String)
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
 ' 26.4.2013
 
+<<<<<<< .mine
+    StepIn
+    
+    Dim Ord As TOCmatch, P As TOCmatch
+    Dim i As Long, j As Long, tmp
+    Dim TMPsalesRep As String   ' Продавец в Заказе
+    Dim TMPinv1C As String      ' Счет 1С в Заказе
+    Dim TMPgoodType As String   ' Категория товара в Заказе
+    Dim TMPcustomer As String   ' Клиент в Заказе
+    Dim CSDinvDate As Date      ' Дата Счета CSD
+    Dim IdSFpaid As String      ' Id Платежа в SF
+    
+    NewSheet NewOrd
+    
+    Ord = GetRep(ORDER_SHEET)
+    P = GetRep(PAY_SHEET)
+=======
     StepIn
     
     Dim Ord As TOCmatch
@@ -224,7 +245,58 @@ Sub NewOrder(NewOrd As String)
     NewSheet NewOrd
     
     Ord = GetRep(ORDER_SHEET)
+>>>>>>> .r424
 
+<<<<<<< .mine
+    With Workbooks(Ord.RepFile).Sheets(Ord.SheetN)
+        For i = 2 To Ord.EOL
+            Progress i / Ord.EOL
+            If .Cells(i, OL_IDSF_COL) = "" Then
+                tmp = .Cells(i, OL_CSDINVDAT_COL)
+                If IsDate(tmp) Then
+                    CSDinvDate = tmp
+                Else
+                    GoTo NextOrd
+                End If
+                If Trim(.Cells(i, OL_ORDERNUM_COL)) = "" Then GoTo NextOrd
+                
+                TMPsalesRep = Trim(.Cells(i, OL_SALES_COL))
+                TMPinv1C = Trim(.Cells(i, OL_INV1C_COL))
+                TMPgoodType = Trim(.Cells(i, OL_GOOD_COL))
+                TMPcustomer = .Cells(i, OL_CUSTOMER_COL)
+                                
+                For j = 2 To P.EOL
+                    With Workbooks(P.RepFile).Sheets(P.SheetN)
+                        If .Cells(j, PAYINSF_COL) <> 1 Then GoTo NextP
+                        If TMPsalesRep <> Trim(.Cells(j, PAYSALE_COL)) Then GoTo NextP
+                        If TMPinv1C <> .Cells(j, PAYINV_COL) Then GoTo NextP
+                        Select Case TMPgoodType
+                        Case "ADSK": If .Cells(j, PAYGOODTYPE_COL) <> "Autodesk" Then GoTo NextP
+                        Case "Расх и ЗИП": If .Cells(j, PAYGOODTYPE_COL) <> "Расходники" Then GoTo NextP
+                        Case "NormaCS": If .Cells(j, PAYGOODTYPE_COL) <> "NormaCS" Then GoTo NextP
+                        Case "SCAD", "Прочее ПО":
+                            If .Cells(j, PAYGOODTYPE_COL) <> "Прочее ПО" Then GoTo NextP
+                        Case "Altium": If .Cells(j, PAYGOODTYPE_COL) <> "Altium" Then GoTo NextP
+                        Case "CS Dev": If .Cells(j, PAYGOODTYPE_COL) <> "ПО CSoft" Then GoTo NextP
+                        Case "Hard": If .Cells(j, PAYGOODTYPE_COL) <> "Оборудование" Then GoTo NextP
+                        Case Else
+                        End Select
+'''Dim days As Integer
+'''days = Abs(.Cells(j, PAYDATE_COL) - CSDinvDate)
+'''
+                        If Abs(.Cells(j, PAYDATE_COL) - CSDinvDate) > 50 Then GoTo NextP
+                        If InStr(.Cells(j, PAYACC_COL), TMPcustomer) = 0 Then GoTo NextP
+                        
+                        WrNewSheet NewOrd, Ord.SheetN, i, .Cells(j, PAYIDSF_COL)
+                        
+                    End With
+NextP:          Next j
+            End If
+NextOrd: Next i
+    End With
+End Sub
+
+=======
     With Workbooks(Ord.RepFile).Sheets(Ord.SheetN)
         For i = 2 To Ord.EOL
             Progress i / Ord.EOL
@@ -253,3 +325,4 @@ End Sub
 
 
 
+>>>>>>> .r424
