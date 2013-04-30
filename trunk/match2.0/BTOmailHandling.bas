@@ -10,9 +10,9 @@ Attribute VB_Name = "BTOmailHandling"
 
 Option Explicit
 
-Sub BTO_Mail_track()
+Sub BTO_Mail_track(BTOlog As String)
 '
-'[*] BTO_Mail_track() - чтение и обработка файла BTOmails
+'S BTO_Mail_track(BTOlog) - чтение и обработка файла BTOmails
 '
 ' When string in file contains BTOstamp, read mail - seek SN on Stock
 '   12.6.12
@@ -34,25 +34,32 @@ Sub BTO_Mail_track()
     Dim SN As String        '= текущий SN
     Dim Seats As Long       'Количество мест
     Dim i As Long, S As String
+    Dim ExtPar(3) As String
     
     StepIn
     R = GetRep(BTOmails)
+    NewSheet BTOlog
     
 '---------------------- CODE SECTION -----------------------------------
     With Workbooks(R.RepFile).Sheets(R.SheetN)
         For i = 1 To R.EOL
             Progress i / R.EOL
-            S = .Cells(i, 1)
-            If InStr(S, "БТО: Обновление по подписке") <> 0 Then
-                iMail = iMail + 1
-                MailDate = Mid(S, 2, WorksheetFunction.FindB("]", S) - 2)
-            ElseIf InStr(S, "Счет:#") <> 0 Then
-                CSD_Inv = Mid(S, 7)
-            ElseIf InStr(S, "Auto") Then
-'''                SN = RemIgnoredSN()
-                BTOmailHandle MailDate, CSD_Inv, Descr, SN, Seats
-            ElseIf InStr(S, "------") Then
-                CSD_Inv = "": MailDate = 0
+'''            S = .Cells(i, 1)
+            If InStr(.Cells(i, 1), "БТО: Обновление по подписке") <> 0 Then
+                ExtPar(1) = .Cells(i + 6, 4)    'SN
+                ExtPar(2) = .Cells(i + 6, 2)    'ADSK Deskription
+                ExtPar(3) = .Cells(i + 6, 5)    'ADSK Seats
+                WrNewSheet BTOlog, R.Name, i, ExtPar
+'''                iMail = iMail + 1
+'''                MailDate = Mid(S, 2, WorksheetFunction.FindB("]", S) - 2)
+'''            ElseIf InStr(S, "Счет:#") <> 0 Then
+'''                CSD_Inv = Mid(S, 7)
+'''            ElseIf InStr(S, "Auto") Then
+'''                WrNewSheet BTOlog, BTOMail, i
+''''''                SN = RemIgnoredSN()
+''''''                BTOmailHandle MailDate, CSD_Inv, Descr, SN, Seats
+'''            ElseIf InStr(S, "------") Then
+'''                CSD_Inv = "": MailDate = 0
             End If
         Next i
     End With
