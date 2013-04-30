@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-'23.04.13 П.Л.Храпкин, А.Пасс
+' 1.05.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -41,6 +41,7 @@ Attribute VB_Name = "AdaptEngine"
 ' 5.1.13   - Merged with Google source
 ' 8.4.13   - форма ссылки #2 в строке Адаптера "Columns" значит "колонка 2 текушей строки
 '                                                                выходного файла"
+' 1.5.13   - передача опционального массива параметров в WrNewSheet
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -77,9 +78,8 @@ Sub ttt()
 WrNewSheet "", "", 0
 Stop
 End Sub
-
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
-    Optional ExtPar As String)
+    Optional ExtPar As Variant)
 '
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
@@ -96,12 +96,15 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
 ' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 ' 8.4.13   - форма ссылки #2 в строке Адаптера "Columns" значит
 '            "колонка 2 текушей строки выходного файла"
+' 1.5.13   - передача массива доп.параметров для Columns в виде ExtArr/3,
+'            то есть третий элемент переданного массива доп.параметров
 
     Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
     Dim i As Long
     Dim x As String         '= обрабатываемое значение в SheetDB
     Dim sX As String        'поле в строке PTRN_COLS Шаблона
+    Dim sXarr() As String   'номер элемента в массиве ExtPar, напр., ExtPar/2
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     
@@ -118,8 +121,18 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
             width = Split(P.Cells(PTRN_WIDTH, i), "/")
             sX = P.Cells(PTRN_COLS, i)
             If sX <> "" Then
-                If sX = EXT_PAR Then
-                    x = ExtPar
+                If InStr(sX, EXT_PAR) > 0 Then
+                    sXarr = Split(sX, "/")
+                    If UBound(sXarr) = 0 Then
+                        x = ExtPar
+                    Else
+                        If Not IsNumeric(sXarr(1)) Then
+ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
+                            End
+                        End If
+                        If UBound(ExtPar) < sXarr(1) Then GoTo ErrExtPar
+                        x = ExtPar(sXarr(1))
+                    End If
                 ElseIf Left(sX, 1) = "#" Then
                     sX = Mid(sX, 2)
                     x = Workbooks(Rnew.RepFile).Sheets(Rnew.SheetN).Cells(Rnew.EOL, CLng(sX))
@@ -551,9 +564,10 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
     Case "BTO_Date":
         Adapter = Mid(x, 2, WorksheetFunction.FindB("]", x) - 2)
     Case "BTO_Order":
-        Adapter = Mid(x, WorksheetFunction.FindB("по счету", x) + 9)
-    Case "BTO_Ord":
-        Adapter = Mid(x, 1, WorksheetFunction.FindB(" ", x) - 1)
+        Dim ChBeg As Long, ChEnd As Long
+        ChBeg = WorksheetFunction.FindB("по счету", x) + 9
+        ChEnd = WorksheetFunction.FindB(" ", x, ChBeg)
+        Adapter = Mid(x, ChBeg, ChEnd - ChBeg)
     Case "TypeSFopp":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "1" Then Adapter = "Лицензии"
@@ -582,8 +596,10 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
         If InStr(Adapter, x) = 0 Then Adapter = x
     Case "ForceTxt":
         Adapter = "'" & x
-    Case "GetInv1C":
-        Adapter = ""
+    Case "GetPaidId":
+        If x <> "" Then GoTo SkipLine
+        Call ArrayZ(Z, ORDER_SHEET, iRow, Par)
+        Adapter = GetPaidId(IsErr, Par(0), Par(1), Par(2), Par(3), Par(4))
     Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
         Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
         Dim sDog As String, DogCur As String            ' имя Договора и его валюта
@@ -648,6 +664,7 @@ Function Adapter(Request, ByVal x As String, F_rqst As String, IsErr As Boolean,
     
 AdapterFailure:
     ErrMsg WARNING, "Адаптер " & AdapterName & "(" & x & ") не получил данных"
+SkipLine:
     IsErr = True
 End Function
 Function AdapterWP(AdapterName, x, Par) As String
