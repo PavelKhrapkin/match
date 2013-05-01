@@ -397,8 +397,11 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
          '--- подготовка X - параметра Адаптера
 '''            iX = FF(PTRN_COLS, Col)
             sX = FF(PTRN_COLS, Col)
+            If sX = "" Then GoTo NextCol
             If IsNumeric(sX) Then
                 iX = sX
+                If iX < 0 Then Exit For
+                X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
             ElseIf Left(sX, 1) = "#" Then
                 sX = Mid(sX, 2)
                 If Not IsNumeric(sX) Or CLng(sX) < 0 Then
@@ -407,11 +410,6 @@ FatalColumn:        ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
                 Else
                     X = Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(i, iX)
                 End If
-            ElseIf iX > 0 Then
-                X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
-
-            ElseIf iX < 0 Then
-                Exit For
             End If
             
           '--- вызов Адаптера
@@ -429,7 +427,7 @@ FatalColumn:        ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
             width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
             fmtCell Workbooks(R_To.RepFile), R_To.SheetN, width, Y, iTo, Col
             
-            tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
+NextCol:    tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
         Next Col
     Next i
 'если ошибка в Адаптере NewSheet последней строки, тогда IsErr остается=True - стираем эту строку
