@@ -5,12 +5,7 @@ Attribute VB_Name = "NewEntities"
 ' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
-
-<<<<<<< .mine
 '   27.04.13
-=======
-'   25.04.13
->>>>>>> .r424
 
 Option Explicit
 
@@ -218,9 +213,18 @@ End Sub
 Sub NewOrder(NewOrd As String)
 '
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
+'
+' Проходим по всем Заказам:
+'  1. если Заказ уже занесен в SF - NOP
+'  2. если номер или дата Счета CSD нераспознаваемы - NOP
+'  3. ищем Платеж
+'       - того же Продавца, что в Заказе -!!- позже RightSale
+'       - с тем же номером Счета 1С -!!- позже проверять и заголовке Заказа
+'       - с подходящей или пустой "Категорией товара"
+'       - -!!- позже проверять наименование организации - клиента
 ' 26.4.2013
+'  2.5.13 дописаны поиск Id Платежа и SN в SF
 
-<<<<<<< .mine
     StepIn
     
     Dim Ord As TOCmatch, P As TOCmatch
@@ -236,18 +240,7 @@ Sub NewOrder(NewOrd As String)
     
     Ord = GetRep(ORDER_SHEET)
     P = GetRep(PAY_SHEET)
-=======
-    StepIn
-    
-    Dim Ord As TOCmatch
-    Dim i As Long
-    
-    NewSheet NewOrd
-    
-    Ord = GetRep(ORDER_SHEET)
->>>>>>> .r424
 
-<<<<<<< .mine
     With Workbooks(Ord.RepFile).Sheets(Ord.SheetN)
         For i = 2 To Ord.EOL
             Progress i / Ord.EOL
@@ -281,9 +274,6 @@ Sub NewOrder(NewOrd As String)
                         Case "Hard": If .Cells(j, PAYGOODTYPE_COL) <> "Оборудование" Then GoTo NextP
                         Case Else
                         End Select
-'''Dim days As Integer
-'''days = Abs(.Cells(j, PAYDATE_COL) - CSDinvDate)
-'''
                         If Abs(.Cells(j, PAYDATE_COL) - CSDinvDate) > 50 Then GoTo NextP
                         If InStr(.Cells(j, PAYACC_COL), TMPcustomer) = 0 Then GoTo NextP
                         
@@ -295,34 +285,3 @@ NextP:          Next j
 NextOrd: Next i
     End With
 End Sub
-
-=======
-    With Workbooks(Ord.RepFile).Sheets(Ord.SheetN)
-        For i = 2 To Ord.EOL
-            Progress i / Ord.EOL
-            If .Cells(i, OL_IDSF_COL) = "" Then
-                WrNewSheet NewOrd, Ord.SheetN, i
-            End If
-        Next i
-    End With
-End Sub
-Sub GetPaidId(IsErr, TMPinv1C, InvDat, TMPsalesRep, TMPgoodType, TMPcustomer)
-'
-' A GetPaidId(IsErr, TMPinv1C, InvDat, TMPsalesRep, TMPgoodType, TMPcustomer)
-'       поиск Платежа1С по параметрам
-'           - TMPinv1C  - номер Счета 1С из Заказа
-'           - InvDat    - дата Счета CSD - отличается от Счета 1С на 50 дней
-'           - TMPsalesRep - Продавец из Заказа
-'           - TMPgoodType - тип товара по Заказу
-'           - TMPcustomer - Заказчик
-' 25.4.2013
-
-    Dim P As TOCmatch
-    P = GetReg(PAY_SHEET)
-
-    IsErr = True
-End Sub
-
-
-
->>>>>>> .r424
