@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 1.05.13 П.Л.Храпкин, А.Пасс
+' 2.05.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -352,6 +352,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 '  6.1.13 - Optional FromDoc и ToDoc - по умолчанию ActiveSheet
 ' 10.1.13 - наличие ToDoc - признак записи в новый лист
 ' 24.1.13 - вызов fmyCell для записи Y вместе с форматом вывода
+'  2.5.13 - в строке Шаблона Column теперь допустима ссылка на выходное поле #n
 
     StepIn
     
@@ -395,7 +396,6 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 
             beg2(Col) = Timer()       ' профилирование
          '--- подготовка X - параметра Адаптера
-'''            iX = FF(PTRN_COLS, Col)
             sX = FF(PTRN_COLS, Col)
             If sX = "" Then GoTo NextCol
             If IsNumeric(sX) Then
@@ -423,7 +423,6 @@ FatalColumn:        ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
                 Exit For
             End If
           '--- записываем в SheetNew значение Y с установкой формата вывода
-'            Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(iTo, Col) = Y
             width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
             fmtCell Workbooks(R_To.RepFile), R_To.SheetN, width, Y, iTo, Col
             
