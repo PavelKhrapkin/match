@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  27.4.13
+'  5.5.13
 
 Option Explicit
 
@@ -398,14 +398,15 @@ Public Const BTOmails = "BTOmails"  ' Исходные письма БТО из файла BTOmails.txt
 Public Const BTO_SHEET = "BTOlog"   ' Письма БТО без проводки по Складу
 
 Public Const BTO_DATE_COL = 1       ' колонка "Дата письма"
-Public Const BTO_CSDATR_COL = 2     ' колонка "Заказ/Счет CSD"
-Public Const BTO_INV1C_COL = 3      ' колонка "Счет 1С" с датой счета
-Public Const BTO_SALE_COL = 4       ' колонка "Продавец"
-Public Const BTO_CLIENT_COL = 5     ' колонка "Заказчик"
-Public Const BTO_SN_COL = 6         ' колонка "SN"
-Public Const BTO_GOOD_COL = 7       ' колонка "Товар ADSK"
-Public Const BTO_SEATS_COL = 8      ' колонка "Мест"
-Public Const BTO_MAIL_COL = 9       ' колонка "Письмо"
+Public Const BTO_INVCSD_COL = 2     ' колонка "Заказ/Счет CSD"
+'''Public Const BTO_INV1C_COL = 3      ' колонка "Счет 1С" с датой счета
+'''Public Const BTO_SALE_COL = 4       ' колонка "Продавец"
+'''Public Const BTO_CLIENT_COL = 5     ' колонка "Заказчик"
+Public Const BTO_SN_COL = 7         ' колонка "SN"
+''Public Const BTO_GOOD_COL = 7       ' колонка "Товар ADSK"
+''Public Const BTO_SEATS_COL = 8      ' колонка "Мест"
+Public Const BTO_UNIQUE_COL = 11    ' колонка "UNIQUE"
+''Public Const BTO_MAIL_COL = 9       ' колонка "Письмо"
 
 '############## Заказы у Дистрибуторов или Поставщиков #################
 Public Const ORDER_SHEET = "Заказы" ' Лист Заказов
@@ -415,6 +416,7 @@ Public Const OL_GOOD_COL = 14       ' колонка "TMPgoodType" - Категория товара в
 Public Const OL_INV1C_COL = 15      ' колонка "TMPinv1C" - Счет 1С в Заказе
 Public Const OL_CUSTOMER_COL = 16   ' колонка "TMPcustomer" - Клиент в Заказе
 Public Const OL_SALES_COL = 17      ' колонка "TMPsalesRep" - Продавец в Заказе
+Public Const OL_ORDERNUM_COL = 18   ' колонка "OrderNumber" - Продавец в Заказе
 Public Const OL_CSDINVDAT_COL = 20  ' колонка "CSDinvDate" - дата Счета CSD в Заказе
 
 '................. Лист новых Организаций A_Acc ..................

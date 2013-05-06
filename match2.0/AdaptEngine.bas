@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 2.05.13 П.Л.Храпкин, А.Пасс
+' 4.05.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -130,7 +130,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
 ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
                             End
                         End If
-                        If UBound(ExtPar) < sXarr(1) Then GoTo ErrExtPar
+                        If UBound(ExtPar) < CLng(sXarr(1)) Then GoTo ErrExtPar
                         X = ExtPar(sXarr(1))
                     End If
                 ElseIf Left(sX, 1) = "#" Then
@@ -353,6 +353,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 ' 10.1.13 - наличие ToDoc - признак записи в новый лист
 ' 24.1.13 - вызов fmyCell для записи Y вместе с форматом вывода
 '  2.5.13 - в строке Шаблона Column теперь допустима ссылка на выходное поле #n
+'  4.5.13 - Адаптер UniqueBTO
 
     StepIn
     
@@ -408,6 +409,7 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 FatalColumn:        ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
                     End
                 Else
+                    iX = sX
                     X = Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(i, iX)
                 End If
             End If
@@ -466,7 +468,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 ' 7.4.13 - Адаптеры для БТО: BTO_Date, BTO_Order, BTO_Ord
 '23.4.13 - Адаптер GetInv1C
 
-    Dim FF() As String, Tmp() As String, InitX As String
+    Dim FF() As String, tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
     Dim WP_Row As Long  ' строка для записи результат Адаптеров, использется в Select
     
@@ -478,10 +480,10 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Dim AdapterName As String
     AdapterName = ""
     If Request <> "" Then
-        Tmp = Split(Request, "/")
-        AdapterName = Tmp(0)
+        tmp = Split(Request, "/")
+        AdapterName = tmp(0)
         If InStr(Request, "/") <> 0 Then
-            Par = Split(Tmp(1), ",")
+            Par = Split(tmp(1), ",")
 '!!'            Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         End If
     End If
@@ -536,8 +538,8 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Case "GetCol":
         If X <> "" Then           ' GetCol/1C.xlsx,Платежи,5 [/SF/2:11]
             Adapter = Workbooks(Par(0)).Sheets(Par(1)).Cells(CLng(X), CLng(Par(2)))
-            If UBound(Tmp) > 1 Then
-                Adapter = FetchDoc(Tmp(2) & "/" & Tmp(3), Adapter, IsErr)
+            If UBound(tmp) > 1 Then
+                Adapter = FetchDoc(tmp(2) & "/" & tmp(3), Adapter, IsErr)
             End If
         End If
     Case "GoodType": Adapter = GoodType(X)
@@ -550,8 +552,8 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Case "ContrK":  Adapter = X 'преобразование в вид ContrCod в препроцессинге
     Case "SeekInv": Adapter = SeekInv(X)
     Case "InvN":
-        Tmp = Split(X, " ")
-        If UBound(Tmp) > 0 Then Adapter = Tmp(0)
+        tmp = Split(X, " ")
+        If UBound(tmp) > 0 Then Adapter = tmp(0)
     Case "SeekPayN":
         Dim Inv As String, Client As String
         Inv = ActiveSheet.Cells(iRow, CLng(Par(0)))
@@ -607,10 +609,6 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
         If InStr(Adapter, X) = 0 Then Adapter = X
     Case "ForceTxt":
         Adapter = "'" & X
-    Case "GetPaidId":
-        If X <> "" Then GoTo SkipLine
-        Call ArrayZ(Z, ORDER_SHEET, iRow, Par)
-        Adapter = GetPaidId(IsErr, Par(0), Par(1), Par(2), Par(3), Par(4))
     Case "DogVal":                                      '=Max(Платежа, Счета, Суммы Договора)
         Dim Vpaid As Long, Vinv As Long, Vdog As Long   ' величины Платежа, Счета и Договора
         Dim sDog As String, DogCur As String            ' имя Договора и его валюта
@@ -629,6 +627,8 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
         Adapter = AdapterWP(AdapterName, X, Par)
+    Case "UniqueBTO":
+        Adapter = X & " " & Par(0) & " " & Par(1)
     Case "IsBalky":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "" Or Z(1) = "1" Or Z(2) <> "Расходники" Then
@@ -894,12 +894,12 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
         
-    Dim Tmp() As String, Cols() As String, S As String
+    Dim tmp() As String, Cols() As String, S As String
     Dim Doc As String, C1 As Long, C2 As Long, Rng As Range, N As Long
             
-    Tmp = Split(F_rqst, "/")
-    Doc = Tmp(0)
-    Cols = Split(Tmp(1), ":")
+    tmp = Split(F_rqst, "/")
+    Doc = tmp(0)
+    Cols = Split(tmp(1), ":")
     C1 = Cols(0)
     
     Dim Rdoc As TOCmatch, W As Workbook
@@ -933,12 +933,12 @@ Function FetchDoc(F_rqst, X, IsErr) As String
     End If
 '--- обработка группы 2 -- если S=""
     If S = "" Then
-        If UBound(Tmp) >= 2 Then
-            If Tmp(2) = "W" Then
+        If UBound(tmp) >= 2 Then
+            If tmp(2) = "W" Then
                 ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
                     & "(" & X & ") не работает, результат <пусто>"
             End If
-            If Tmp(2) <> "0" Then GoTo ErrExit
+            If tmp(2) <> "0" Then GoTo ErrExit
         Else
             ErrMsg WARNING, "Адаптер> ссылка " & F_rqst _
                & "(" & X & ") не работает, результат <пусто>"
