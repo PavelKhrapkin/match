@@ -211,6 +211,14 @@ End Sub
 ''''        End If
 ''''    End With
 ''''End Sub
+
+Sub UniqueHanle(NewSht As String, SFrep As String)
+'
+' S UniqueHanle(NewSht, SFrep)  - заполнение поля Unique листа NewSDht и дедупликация
+'
+' Проходим по всем записям NewSht:
+'  1. если Заказ уже занесен в SF - NOP
+End Sub
 Sub NewOrder(NewOrd As String)
 '
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
@@ -237,6 +245,7 @@ Sub NewOrder(NewOrd As String)
     Dim CSDinvDate As Date      ' Дата Счета CSD
     Dim IdSFpaid As String      ' Id Платежа в SF
     Dim ExtPar(3) As String     ' массив параметром передаваемый в WrNewSheet
+    Dim IdOpp As String, Team As String, IsErr As Boolean
     
     NewSheet NewOrd
     
@@ -263,7 +272,6 @@ Sub NewOrder(NewOrd As String)
                 For j = 2 To P.EOL
                     With Workbooks(P.RepFile).Sheets(P.SheetN)
                         If .Cells(j, PAYINSF_COL) <> 1 Then GoTo NextP
-                        If TMPsalesRep <> Trim(.Cells(j, PAYSALE_COL)) Then GoTo NextP
                         If TMPinv1C <> .Cells(j, PAYINV_COL) Then GoTo NextP
                         If Abs(.Cells(j, PAYDATE_COL) - CSDinvDate) > 50 Then GoTo NextP
                         If InStr(LCase$(.Cells(j, PAYACC_COL)), TMPcustomer) = 0 Then GoTo NextP
@@ -278,8 +286,12 @@ Sub NewOrder(NewOrd As String)
                         Case "Hard": If .Cells(j, PAYGOODTYPE_COL) <> "Оборудование" Then GoTo NextP
                         Case Else
                         End Select
+                        If TMPsalesRep = Trim(.Cells(j, PAYSALE_COL)) Then GoTo IdPfound
+                        IdOpp = FetchDoc("SF/18:19", .Cells(j, PAYIDSF_COL), IsErr)
+                        Team = FetchDoc("SFopp/1:11", IdOpp, IsErr)
+                        If InStr(Team, TMPsalesRep) = 0 Then GoTo NextP
                         
-                        ExtPar(1) = .Cells(j, PAYIDSF_COL)  'Id Платежа 1С
+IdPfound:               ExtPar(1) = .Cells(j, PAYIDSF_COL)  'Id Платежа 1С
                         
                         WrNewSheet NewOrd, Ord.SheetN, i, ExtPar
                         
