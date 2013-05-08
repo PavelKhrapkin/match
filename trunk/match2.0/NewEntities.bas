@@ -6,7 +6,7 @@ Attribute VB_Name = "NewEntities"
 '       Название шапки нового листа берется из названия SheetName,
 '       а ширина колонок шапки- из третьей cтроки формы
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
-'   2.5.2013
+'   7.5.2013
 
 Option Explicit
 
@@ -233,6 +233,7 @@ Sub NewOrder(NewOrd As String)
 '       - -!!- позже проверять наименование организации - клиента
 ' 26.4.2013
 '  2.5.13 поиск и передача Id Платежа и SN в WrNewSheet через массив ExtPar
+'  7.5.13 использование FetchDoc для извлечения поля "Компаньон"
 
     StepIn
     
@@ -294,7 +295,7 @@ Sub NewOrder(NewOrd As String)
 IdPfound:               ExtPar(1) = .Cells(j, PAYIDSF_COL)  'Id Платежа 1С
                         
                         WrNewSheet NewOrd, Ord.SheetN, i, ExtPar
-                        
+                        Exit For
                     End With
 NextP:          Next j
             End If
