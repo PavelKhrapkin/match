@@ -2,7 +2,7 @@ Attribute VB_Name = "BTOmailHandling"
 '------------------------------------------------------------------------------------
 ' BTOhandling - обработка e-mail'ов от CSD по отгрузке Обновлений SN на Склад
 '
-'   6.4.13
+'   3.5.13
 '
 '[*] BTO_Mail_track()   - чтение и обработка файла BTOmails
 ' -  BTOmailHandle (SN, BTOmsg, BTOmsgLines) - обработка письма БТО
@@ -21,20 +21,22 @@ Sub BTO_Mail_track(BTOlog As String)
 '   18.6.12 - проверка Счета CSD по листу Заказов
 '   14.11.12 - перенос в match 2.0
 '    6.04.13 - открываем через TOCmatch и размещаем в Stock.xlsx, переписан код
+'    3.05.13 - обработка Id Заказов и SN
 '
 '------ INITIALIZATION AND LOCAL DECLARATION SECTION ---------------------
 '''''    Const BTOfileName = "BTOmails.txt"  ' входной файл - письма из Outlook
     Dim R As TOCmatch       'входной файл BTOmails для обработки
-    Dim iMail As Integer    '= число обработаных мейлов
+'''    Dim iMail As Integer    '= число обработаных мейлов
 '''    Dim iSN As Integer      '= число SN, не проведенных по Складу
 '''    Dim iADSK As Integer    '= номер строки ADSK из файла BTOmails.txt
-    Dim MailDate As Date    '= дата и время письма БТО в mail Subject
-    Dim CSD_Inv As String   '= Заказ/Счет CSD
-    Dim Descr As String     'Описание продукта Autodesk
+'''    Dim MailDate As Date    '= дата и время письма БТО в mail Subject
+'''    Dim CSD_Inv As String   '= Заказ/Счет CSD
+'''    Dim Descr As String     'Описание продукта Autodesk
     Dim SN As String        '= текущий SN
-    Dim Seats As Long       'Количество мест
+'''    Dim Seats As Long       'Количество мест
+    Dim InvCSD As String
     Dim i As Long, S As String
-    Dim ExtPar(3) As String
+    Dim ExtPar(4) As String, BTOmailDate As String
     
     StepIn
     R = GetRep(BTOmails)
@@ -44,12 +46,18 @@ Sub BTO_Mail_track(BTOlog As String)
     With Workbooks(R.RepFile).Sheets(R.SheetN)
         For i = 1 To R.EOL
             Progress i / R.EOL
-'''            S = .Cells(i, 1)
-            If InStr(.Cells(i, 1), "БТО: Обновление по подписке") <> 0 Then
-                ExtPar(1) = .Cells(i + 6, 4)    'SN
-                ExtPar(2) = .Cells(i + 6, 2)    'ADSK Deskription
+            S = .Cells(i, 1)
+            If InStr(S, "БТО: Обновление по подписке") <> 0 Then
+                SN = .Cells(i + 6, 4)
+                BTOmailDate = Mid(S, 2, WorksheetFunction.Search("]", S))
+                S = Mid(S, WorksheetFunction.Search("по счету ", S) + 9)
+                InvCSD = Left(S, WorksheetFunction.Search(" от ", S))
+                ExtPar(1) = SN                  'SN
+                ExtPar(2) = .Cells(i + 6, 2)    'ADSK Description
                 ExtPar(3) = .Cells(i + 6, 5)    'ADSK Seats
                 WrNewSheet BTOlog, R.Name, i, ExtPar
+                .Cells(i, BTO_UNIQUE_COL) = SN & " " & InvCSD & " " & BTOmailDate
+                
 '''                iMail = iMail + 1
 '''                MailDate = Mid(S, 2, WorksheetFunction.FindB("]", S) - 2)
 '''            ElseIf InStr(S, "Счет:#") <> 0 Then
