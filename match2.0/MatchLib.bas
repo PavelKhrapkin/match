@@ -2,11 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-<<<<<<< .mine
-' П.Л.Храпкин, А.Пасс 6.4.13
-=======
-' П.Л.Храпкин, А.Пасс 20.1.2013
->>>>>>> .r400
+' П.Л.Храпкин, А.Пасс 14.7.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -197,6 +193,7 @@ Function CheckStamp(iTOC As Long, _
 ' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
 ' 27.10.12 - помимо типов Штампа "=" и "I", введено "N" - Штамп не проверять
 '  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
+' 14.7.13 - дополнительная диагностика и действия, если Штамп не найден
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -248,7 +245,22 @@ ex:             Exit Function
 NxtChk:
             Next j
         Next i
-        If NewRep = "" Then FatalRep "GetRep.CheckStamp", RepName
+        If NewRep = "" Then
+            Dim ToChangeEOLinTOC As String, RightEOL As Long
+            RightEOL = EOL(.SheetN) - .ResLines
+            ToChangeEOLinTOC = MsgBox("CheckStamp: не нашли Штамп '" & txt & "' в строке " & Str _
+                & vbCrLf & "полагая,  что EOL = " & .EOL & ";" _
+                & vbCrLf & "на самом деле EOL = " & RightEOL _
+                & vbCrLf & vbCrLf & "Исправить EOL в TOCmatch? ", vbYesNo)
+            If ToChangeEOLinTOC = vbYes Then
+                .EOL = RightEOL
+                WrTOC
+                CheckStamp (iTOC)
+                Exit Function
+            Else
+                FatalRep "GetRep.CheckStamp", RepName
+            End If
+        End If
 NoStamp: CheckStamp = False
     End With
 End Function
@@ -282,6 +294,7 @@ Sub WrTOC()
 '  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
 '   2.9.12 - дополнительные ограничения записи в TOCmatch
 ' 28.10.12 - записывает в TOCmatch дату создания CreateDat
+' 14.07.13 - Save Changes в DBs
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых Документов
@@ -311,17 +324,7 @@ FoundRep:
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
     End With
-End Sub
-Sub TOC_SetUP()
-'
-'
-'
-    Dim i As Long
-    Dim R As TOCmatch, R_TOC As TOCmatch
-    
-    R_TOC = GetRep(TOC)
-
-    For i = TOClineN To R_TOC
+    DB_MATCH.Saved = True
 End Sub
 Sub testsetColWidth()
 ' Т testsetColWidth() - отладка setColWidth
@@ -330,15 +333,10 @@ Sub testsetColWidth()
     Dim FF As Range
     
     Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
-    Dim width As String, i As Long, fmt() As String
+    Dim i As Long
 a:
     For i = 1 To FF.Columns.Count
-        width = FF.Cells(3, i)
-        If InStr(width, "/") <> 0 Then      ' формат задан?
-            fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
-            width = fmt(0)
-        End If
-        setColWidth "1C.xlsx", "Платежи", i, width
+        setColWidth "1C.xlsx", "Платежи", i, FF.Cells(3, i)
     Next i
         
     Stop
@@ -353,14 +351,19 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
 ' 12.01.2013
 ' 16.1.13 bug fix
 ' 16.1.13 переделал на явную замену десятичной запятой на точку (или наоборот)
+' 28.1.13 width теперь массив: ширина/формат
 '
-    
-    If Application.DecimalSeparator = "." Then
-        width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
-    ElseIf Application.DecimalSeparator = "," Then
-        width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
+    Dim widSplit() As String
+    widSplit = Split(width, "/")
+    If UBound(widSplit) >= 0 Then
+        width = widSplit(0)
+        If Application.DecimalSeparator = "." Then
+            width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
+        ElseIf Application.DecimalSeparator = "," Then
+            width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
+        End If
+        Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
     End If
-    Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
 
 End Sub
 
@@ -384,6 +387,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 12.01.13 - устанавливает ширину колонoк согласно Application.DecimalSeparator
 ' 13.01.13 - парсинг формата вынесен из setColWidth
 ' 20.01.13 - цикл по вставке колонок заменен на 1 оператор
+' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 
     Const COPY_HDR = "CopyHdr"
 
@@ -392,7 +396,6 @@ Sub InsMyCol(F As String, Optional FS As String = "")
     Dim R As TOCmatch   'R - структура TOCmatch для SFD
     Dim FF As Range
     Dim i As Integer
-    Dim fmt() As String, width As String
     Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     R = GetRep(ActiveSheet.Name)
@@ -408,12 +411,7 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '        Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-            width = FF.Cells(3, i)
-            If InStr(width, "/") <> 0 Then      ' формат задан?
-                fmt = Split(width, "/")         ' выделяем ширину из описания (width/fmt)
-                width = fmt(0)
-            End If
-            setColWidth R.RepFile, R.SheetN, i, width
+            setColWidth R.RepFile, R.SheetN, i, FF.Cells(3, i)
             If FF.Cells(2, i) = COPY_HDR Then
                 FF.Cells(1, i).Copy Destination:=.Cells(1, i)
             End If
@@ -838,20 +836,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, x, EOL_SheetN As Integer
+    Dim i, prev, X, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        x = Sheets(SheetN).Cells(i, Col)
-        If x = prev Then
+        X = Sheets(SheetN).Cells(i, Col)
+        If X = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = x
+            prev = X
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -863,7 +861,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, x As String
+    Dim prev As String, X As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -873,8 +871,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            x = .Cells(i, ColSort)
-            If x = prev Then
+            X = .Cells(i, ColSort)
+            If X = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -895,7 +893,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = x
+                prev = X
             End If
         Loop While i < EOL_SheetN
     End With
@@ -1093,15 +1091,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim x() As String
+    Dim X() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    x = Split(DicList, ",")
+    X = Split(DicList, ",")
     
-    For i = LBound(x) To UBound(x)
-        If InStr(lW, LCase$(x(i))) <> 0 Then
+    For i = LBound(X) To UBound(X)
+        If InStr(lW, LCase$(X(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If
@@ -1207,7 +1205,7 @@ nextComp:
             Next i
         Else
             pat = Replace(pat, "~", ",")
-            .pattern = pat
+            .Pattern = pat
             patTest = .test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
