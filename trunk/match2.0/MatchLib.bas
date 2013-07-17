@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 14.7.13
+' П.Л.Храпкин, А.Пасс 17.7.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -480,10 +480,11 @@ Sub LogWr(Msg)
 '   15.2.2012
 '   26.6.12 - match 2.0
 '    9.9.12 - вместо множества Log в разных файлах вседа пишем в Log match.xlsm
+'   17.7.13 - Workbooks(F_MATCH) вместо DB_MATCH
 
     Dim N   ' номер строки в Log
     
-    With DB_MATCH.Sheets(Log)
+    With Workbooks(F_MATCH).Sheets(Log)
         N = .Cells(1, 4)
         N = N + 1
         .Cells(N, 1) = Date
