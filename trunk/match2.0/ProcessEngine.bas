@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 11.11.12 П.Л.Храпкин, А.Пасс
+' 11.8.13 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -228,6 +228,7 @@ Sub StepOut(Step As String, iProc)
 '   8/10/12
 '  28.10.12 - более аккуратная работа с TOCmatch по документам, обрабатываемым в Шаге
 '   9.11.12 - имя Документа пустое?
+'  11.08.13 - Записываем EOL обрабатываемого документа в TOCmatch
 
     Dim Proc As String, R As TOCmatch
     
@@ -245,6 +246,7 @@ Sub StepOut(Step As String, iProc)
         Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
         If Proc = "" Then Exit Sub
         R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
+        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile))
         R.Made = Step
         R.Dat = Now
         RepTOC = R
@@ -255,6 +257,7 @@ Function ToStep(Proc, Optional Step As String = "") As Integer
 '
 ' - ToStep(Proc, [Step]) - возвращает номер строки таблицы Процессов
 '   7.8.12
+'  11.8.13 - более подробное сообщение об ошибке
     
     Dim P As TOCmatch           'строка таблицы Процессов в виде TOCmatch
     Dim StepName As String      '=Имя текущего Шага
@@ -269,7 +272,8 @@ Function ToStep(Proc, Optional Step As String = "") As Integer
             StepName = .Cells(i, PROC_STEP_COL)
             If StepName = PROC_START And ProcName = Proc Then GoTo MyProc
         Next i
-        ErrMsg FATAL_ERR, "ToProc: Не найден Процесс " & Proc
+        ErrMsg FATAL_ERR, "ToProc: Не найден Процесс " & Proc _
+                        & vbCrLf & "Следует проверить таблицу Process и ее EOL в TOCmatch."
         Stop
         End
 

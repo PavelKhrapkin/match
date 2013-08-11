@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 4.05.13 П.Л.Храпкин, А.Пасс
+' 11.08.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -353,7 +353,6 @@ Sub Adapt(F As String, Optional FromDoc As String = "", Optional ToDoc As String
 ' 10.1.13 - наличие ToDoc - признак записи в новый лист
 ' 24.1.13 - вызов fmyCell для записи Y вместе с форматом вывода
 '  2.5.13 - в строке Шаблона Column теперь допустима ссылка на выходное поле #n
-'  4.5.13 - Адаптер UniqueBTO
 
     StepIn
     
@@ -467,6 +466,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 '23.1.13 - новые Адаптеры IsBalky и BalkyOppId
 ' 7.4.13 - Адаптеры для БТО: BTO_Date, BTO_Order, BTO_Ord
 '23.4.13 - Адаптер GetInv1C
+'11.8.13 - Адаптеры "SN+" и "=Registered"
 
     Dim FF() As String, tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -492,10 +492,15 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Select Case AdapterName
     Case "MainContract":
         X = Trim(Replace(X, "Договор", ""))
-    Case "<>0":
+    Case "<>0", "SN+":
         If X = "0" Then X = ""
     Case "<>"""""
         If X = "" Then
+            IsErr = True
+            Exit Function
+        End If
+    Case "=Registered"
+        If X <> "Registered" Then
             IsErr = True
             Exit Function
         End If
@@ -529,7 +534,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
 '''''    End If
     
     Select Case AdapterName
-    Case "", "MainContract", "<>""""": Adapter = X
+    Case "", "MainContract", "<>""""", "=Registered": Adapter = X
     Case "Мы", "Продавцы", "Продавец_в_SF", "Vendor":
         On Error GoTo AdapterFailure
         Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)
@@ -567,6 +572,8 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
         Else
             Adapter = X
         End If
+    Case "SN+":
+        Adapter = X & "+"
     Case "OppName":
         If X <> "" Then
             Adapter = X
@@ -575,7 +582,7 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
             Adapter = Z(2) & "-" & Z(3) & " " & ContrCod(Z(4), Z(5))
         End If
     Case "BTO_Date":
-        Adapter = Mid(X, 2, WorksheetFunction.FindB("]", X) - 2)
+        Adapter = Mid(X, 2, WorksheetFunction.FindB(" ", X) - 2)
     Case "BTO_Order":
         Dim ChBeg As Long, ChEnd As Long
         ChBeg = WorksheetFunction.FindB("по счету", X) + 9
@@ -627,8 +634,6 @@ Function Adapter(Request, ByVal X As String, F_rqst As String, IsErr As Boolean,
     Case "CopyToVal", "CopyFrVal", "OppType", " TypOpp", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
         Adapter = AdapterWP(AdapterName, X, Par)
-    Case "UniqueBTO":
-        Adapter = X & " " & Par(0) & " " & Par(1)
     Case "IsBalky":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "" Or Z(1) = "1" Or Z(2) <> "Расходники" Then
