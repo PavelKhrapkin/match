@@ -108,7 +108,6 @@ RepNameHandle:
     With DB_MATCH.Sheets(TOC)
         .Activate
         .Cells(i, TOC_DATE_COL) = Now
-''''''        .Cells(i, TOC_CREATED_COL) = ""
         .Cells(i, TOC_EOL_COL) = Lines
         .Cells(i, TOC_MADE_COL) = REP_LOADED
         RepLoader = .Cells(i, TOC_REPLOADER_COL)
