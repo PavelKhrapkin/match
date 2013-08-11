@@ -2,10 +2,12 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  5.5.13
+'  11.8.13
 
 Option Explicit
 
+'---- Каталог "Загрузки" или "Downloads" ----
+Public Const DownloadDir = "C:\Users\Пользователь\Downloads\"
 '============================ файлы DBs ===============================
 ''Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
 Public DirDBs As String    ' каталог файлов DBs из 'match.xlsm'!We
