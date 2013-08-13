@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 13.5.2013
+' П.Л.Храпкин 13.9.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -152,6 +152,7 @@ Sub StepReset(iStep)
 ' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
 ' 28.8.12
 '  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
+' 13.9.13 - bug fix - не сбрасываем Шаги <*>ProcStart
 
     Dim Step As String, PrevStep As String
     Dim Proc As String, ThisProc As String
@@ -164,7 +165,9 @@ Sub StepReset(iStep)
         For i = 6 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_STEP_COL) = PROC_START Then iProc = i
             If i = iStep Then
-                .Cells(i, PROC_STEPDONE_COL) = ""
+                If .Cells(i, PROC_STEPDONE_COL) = "1" Then ' пропускаем <*>ProcStart
+                    .Cells(i, PROC_STEPDONE_COL) = ""
+                End If
                 .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
                 .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 0
                 Exit For
