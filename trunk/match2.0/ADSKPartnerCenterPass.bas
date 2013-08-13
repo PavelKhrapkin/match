@@ -1,39 +1,43 @@
 Attribute VB_Name = "ADSKPartnerCenterPass"
 '----------------------------------------------------------------------------
-' Модуль ADSKPartnerCenterPass - работа с PartnerCenter.Autodesk.com по Третьему Проходу
+' Модуль ADSKPartnerCenterPass - работа с License Inquiry PartnerCenter.Autodesk.com
 '
-' название Третий проход (3PASS) сложилось исторически
-' суть этой процедуры в головной программе SN3PASS:
-' 1)                - очищаем лист 3PASS
-' 2) SNselection    - готовим список SN из листа ADSKfrSF
-' 3)   **           - из списка на листе 3PASS переносим (Copy/Paste) SN
-'                     порциями на портал ADSK в Tab <License Inquiry>, затем <Go>
-'                     эту подпрограмму запускаем по кнопке [2] многократно
-'                     до исчерпания списка SN в А2 - начало порции, в А3 - конец
-' 4) Load3passSN    - считываем на лист 3PASS выходные файлы из Autodesk
-' 5) DoDeDupSN      - дедупликация серийных номеров на листе 3PASS
-' 6) WrDL3pass      - запись из таблицы 3PASS в файл CSV для Data Loader
+''' суть этой процедуры в головной программе SN3PASS:
+''' 1)                - очищаем лист 3PASS
+''' 2) SNselection    - готовим список SN из листа ADSKfrSF
+''' 3)   **           - из списка на листе 3PASS переносим (Copy/Paste) SN
+'''                     порциями на портал ADSK в Tab <License Inquiry>, затем <Go>
+'''                     эту подпрограмму запускаем по кнопке [2] многократно
+'''                     до исчерпания списка SN в А2 - начало порции, в А3 - конец
+''' 4) Load3passSN    - считываем на лист 3PASS выходные файлы из Autodesk
+''' 5) DoDeDupSN      - дедупликация серийных номеров на листе 3PASS
+''' 6) WrDL3pass      - запись из таблицы 3PASS в файл CSV для Data Loader
 '
 '   8.2.2012
+'  13.8.2013 - переписано для match 2.0
 
     Option Explicit     ' Force explicit variable declaration
     
-'    Public Const A3PASS = "3PASS"       ' лист для процедур 3PASS
-
     Dim Stage               ' стадия процесса 3PASS
     Private N As Integer    ' номер нижней строки с SN на листе 3PASS
     
-Sub SN3pass()
+Sub SN_PC_pass()
 '
-' [*] - запуск 3PASS - третьего прохода, т.е. запись порций серийный номеров
-'       в окно License Inquiry портала PartnerCenter по списку из отчета SF.
-'       Затем считанные данные из PartnerCenter обрабатываются на листе 3PASS
+' S SN_PC_Pass - получение серийных номеров (SN) из PartnerCenter.Autodesk.com
+'                по списку в SN_LIST по порциям, а затем сортировка этих данных
+'                на SN_ACTIVE и SN_UPDATE.
 '
-'   8.2.2012
+'   13.8.2013
 
-    Dim FrN, ToN, LastN ' начало и конец порции SN, последний SN
+    Const SN_LIST = "A_PC_1"
+    Const SN_TMP = "A_PC_2"
+    Const ST_ACTIVE = "A_PC_3"
+    Const ST_UPDATE = "A_PC_4"
+    
+    Dim R As TOCmatch
     Dim i, N As Integer ' номера порции, строки
-    Const HelpStage2 = " скопирована в буфер клипборд." & vbCrLf & _
+    Dim FrN, ToN, LastN ' начало и конец порции SN, последний SN
+    Const HelpStage = " скопированы в буфер клипборд." & vbCrLf & _
         vbCrLf & "Теперь:" & _
         vbCrLf & "1. в окне Serial Number <License Inquiry>" & _
         vbCrLf & "   PartnerCenter.Autodesk.com нажми Ctrl/V, затем [Go]" & _
@@ -42,43 +46,66 @@ Sub SN3pass()
         vbCrLf & "После появления output.csv в каталоге <Загрузки> жми [OK]."
                         
     Const SNstep = 100  ' максимальная порция SN
-      
-    Lines = Start3PASS("Cоcтавление списка SN")
     
-    Rows("5:7777").Delete       ' очищаем прежнее содержимое листа 3PASS
-    On Error Resume Next
-'    Kill DownloadDir & "output*.csv"    '   .. и файлы output*.csv
-    On Error GoTo 0             ' на случай, когда output*.csv отсутствует
+    StepIn
+    R = GetRep(SN_LIST)
+    MS "Проверяем в PartnerCenter.Autodesk.com " & R.EOL & " строк Registered SN"
     
-    SNselectionForm.Show
-    Sheets(A3PASS).Select
-    FrN = Cells(2, 1)
-    ToN = Cells(3, 1)
-    If FrN >= ToN Then End      ' если ни одного SN не выбрали - выход
-     
-'** получаем данные из PartnerCenter в файлы output.csv каталога "Загрузки"
-    Start3PASS ("Считывание SN из PartnerCenter порциями в файлы output*.csv")
-    LastN = ToN
-    N = Round((LastN - FrN) / SNstep) + 1
+ '---------- инициализация -------------------
+    iActive = 1: iUpdate = 1
+    nActive = 0: nUpdate = 0: nToClean = 0
+    
+    Dim Rtmp As TOCmatch, Ractive As TOCmatch, Rupdate As TOCmatch
+    
+    Rtmp = GetRep(SNtmp)
+    Ractive = GetRep(SNactive)
+    Rupdate = GetRep(SNupdate)
+    NewSheet Ractive.Name
+    NewSheet Rupdate.Name
+    
+  '--------------- цикл по SN_List ---------------
+    i = 2
+    With Workbooks(R.RepFile).Sheets(R.SheetN)
+        .Activate
+        Do While i <= R.EOL
+            ToN = i + SNstep
+            If ToN > R.EOL Then ToN = R.EOL
+            .Cells(ToN, 1) = Left(.Cells(ToN, 1), 12)   ' убираем последний +
+            Range(.Cells(i, 1), .Cells(ToN, 1)).Select  ' выбираем порцию
+            Selection.Copy
+            Selection.Interior.Color = rgbYellow        ' окрашиваем порцию желтым
+            
+            On Error Resume Next
+            Kill DownloadDir & "output*.csv"    ' Очищаем все старые файлы output*.csv
+            On Error GoTo 0                     ' на случай, когда output*.csv отсутствует
+            
+            MsgBox "SN от " & i & " до " & ToN & HelpStage
+            SNread SN_TMP
+            SNsortOut SN_TMP, SN_ACTIVE, SN_UPDATE
+        Loop
+    End With
+ End Sub
+Sub SNsortOut(SNtmp, SNactive, SNupdate)
+'
+' - SNsortOut(SNtmp, SNactive, SNupdate) - разбор и селекция SN из SNtmp.
+'      - в SNactive заносятся данные о Registered SN
+'      - в SNudpade - об Upgraded SN, которые надо изменить в SF
+'   Кроме того в SNtmp изменяется цвет SN:
+'           - белый      - SN найден, он Registered
+'           - коричневый - найден, требуется Update
+'           - остается желтый - не найден или требует ручной проверки
+'
+'   13.8.2013
 
-    For i = 1 To N
-        If ToN - FrN > SNstep Then ToN = FrN + SNstep
-        Cells(ToN, 1) = Left(Cells(ToN, 1), 12) ' убираем последний +
-        Range("A" & FrN & ":A" & ToN).Select    ' выбираем порцию
-        Selection.Copy
-        Selection.Interior.Color = rgbYellow    ' окрашиваем порцию желтым
-        MsgBox i & "/" & N & ": SN от " & FrN & " до " & ToN & HelpStage2
-        FrN = ToN + 1
-        ToN = LastN
-    Next i
+    Dim iTmp As Long    '- указатель - номер строки в SNtmp
+    Call SheetSort(Rtmp.Name, 1)
     
-    Load3passSN
-''    DoDeDupSN
-''    WrDL3pass
-''    End3PASS 3
+    For iTmp = 2 To Rtmp.EOL
+    
+    Next iTmp
 End Sub
 
-Sub Load3passSN()
+Sub LoadSNfrOutputCSV()
 '
 ' [3] - чтение SN полученных из Licence Inquiry в файлов output.csv
 ' Файлов может быть несколько. После обработки они стираются.
@@ -211,15 +238,25 @@ Sub End3PASS(M)
     Sheets(A3PASS).Tab.Color = Colr     '   .. и Tab 3PASS
     ModEnd A3PASS
 End Sub
-Sub SNread(FileNM, R, C)
+Sub SNread(F)
 '
-' функция чтения файла серийных номеров FileNM на лист 3PASS в позицию (R,C)
+' - SNread  - функция чтения файла серийных номеров из Output.CSV
+'             в верхний левый угол листа F
 '   31/1/2012
+'   13.08.13 - упрощен интерфейс - чтение всегда в A_SN_2
 
- '   FileNM = "C:\Users\Пользователь\Downloads\output.csv"
-    With ActiveSheet.QueryTables.Add(Connection:="TEXT;" & FileNM, _
-        Destination:=Cells(R, C))
-'        .Name = "output"
+    Dim R As TOCmatch
+
+    NewSheet F      ' Сбрасываем файл SN из PartnerCenter
+    
+    R = GetRep(F)
+    If R.EOL <> 1 Then ErrMsg FATAL_ERR, "Лист \\W_TMP.A_PC_2' не очищен!"
+    Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+    
+    With ActiveSheet.QueryTables.Add( _
+            Connection:="TEXT;" & DownloadDir & "output.csv", _
+            Destination:=Cells(1, 1))
+        .Name = "output"
         .FieldNames = True
         .RowNumbers = False
         .FillAdjacentFormulas = False
@@ -243,6 +280,17 @@ Sub SNread(FileNM, R, C)
         .TextFileColumnDataTypes = _
             Array(2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2)
         .TextFileTrailingMinusNumbers = True
+        On Error GoTo Rep
         .Refresh BackgroundQuery:=False
     End With
+    Exit Sub
+Rep:
+    If MsgBox("В каталоге 'Загрузки' не найден файл 'output.csv'." _
+        & vbCrLf & "'" & DownloadDir & "output.csv" & "'" _
+        & vbCrLf & vbCrLf & "Убедись, что он загружен из PartnerCenter и повтори.") _
+        = vbYes Then
+            Call SNread
+    Else
+            End
+    End If
 End Sub
