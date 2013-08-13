@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 17.7.13
+' П.Л.Храпкин, А.Пасс 13.8.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -79,6 +79,7 @@ Function GetRep(RepName) As TOCmatch
 '    9.9.12 - запись в Log только в match.xlsm; отладка записи Pass DBs; EOL для sfdc.xlsm
 '   21.9.12 - отладка логики работы с match_environment при перемещении DirDBs
 '   27.10.12 - работа с "голубыми" листами в TOCmatch
+'   13.8.13 - добавлено поле iTOC в структуру TOCmatch - номер строки в TOC
 
     Dim i As Long, EOL_TOC As Long
     Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
@@ -127,6 +128,7 @@ Function GetRep(RepName) As TOCmatch
         FatalRep "GetRep ", RepName
 
 FoundRep:
+        RepTOC.iTOC = i             ' номер строки в TOC - Read Only!
         RepTOC.Dat = .Cells(i, TOC_DATE_COL)
         RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
@@ -324,7 +326,7 @@ FoundRep:
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
     End With
-    DB_MATCH.Saved = True
+    DB_MATCH.Save
 End Sub
 Sub testsetColWidth()
 ' Т testsetColWidth() - отладка setColWidth

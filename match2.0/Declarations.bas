@@ -2,12 +2,12 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  11.8.13
+'  14.8.13
 
 Option Explicit
 
 '---- Каталог "Загрузки" или "Downloads" ----
-Public Const DownloadDir = "C:\Users\Пользователь\Downloads\"
+Public Const DownloadDir = "C:\Users\Pavel_Khrapkin\Downloads\"
 '============================ файлы DBs ===============================
 ''Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
 Public DirDBs As String    ' каталог файлов DBs из 'match.xlsm'!We
@@ -146,6 +146,7 @@ Public Const TOCstart = 4       ' первая строка TOCmatch - вначале служебная час
 Public Const TOCrepLines = 8    ' первая стока Документов. после служебных строк
     
 Type TOCmatch
+    iTOC As Long        '=номер строки в таблице TOCmatch - Read ONLY!
     Dat As Date         '=Now   - дата и время загрузки отчета
     Name As String      'не изм.- имя отчета в базе данных
     EOL  As Long        '=изм.только MoveToMatch - EOL отчета без пятки
@@ -502,6 +503,13 @@ Public Const NEWSN_SN_COL = 1           ' SN
 Public Const NEWSN_CONTRADSK_COL = 2    ' ContrADSK
 Public Const NEWSN_ACCN_COL = 3         ' ФссТ
 
+'................ Листs обработки Серийных номеров Autodesk .................
+Public iActive As Long '- номер строки в SNactive
+Public iUpdate As Long '- номер строки в SNupdate
+Public nActive As Long '= счетчик Registered
+Public nUpdate As Long '= счетчик Update
+Public nToClean As Long '=счетчик "Разбираться вручную"
+    
 '----------------------------------------------------------------------------
 Public Const WP = "WP"                  ' лист WP
 
