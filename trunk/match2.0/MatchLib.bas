@@ -288,24 +288,32 @@ Function FileOpen(RepFile) As Workbook
     
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
 End Function
-Sub WrTOC()
+Sub WrTOC(Optional ByVal Name As String = "")
 '
-' - WrTOC() - записывает структуру Public RepTOC в оглавление match.Sheets(TOC)
+' - WrTOC([Name]) - записывает данные по документу Name в оглавление
+'                   По умолчанию Name последнего открытого GetRep документа
+'
+'     * записываются не все данные из WrTOC. Некоторые элементы структуры, например,
+'       данные Штампа, являются Read Only
+'
 '   5.8.2012
 '  12.8.12 - "серые" колонки описывающие Штамп не записываем
 '  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
 '   2.9.12 - дополнительные ограничения записи в TOCmatch
 ' 28.10.12 - записывает в TOCmatch дату создания CreateDat
 ' 14.07.13 - Save Changes в DBs
+' 15.08.13 - Optional Name - имя документа, по которому сохраняем строку TOCmatch
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых Документов
     
+    If Name = "" Then Name = RepTOC.Name    ' по умолчанию Name по последнему GetRep
+    
     If RepTOC.Name = "" Then FatalRep "WrTOC", "<пусто>"
     For i = BEGIN To BIG
-        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = RepTOC.Name Then GoTo FoundRep
+        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = Name Then GoTo FoundRep
     Next i
-    FatalRep "WrTOC", RepTOC.SheetN
+    FatalRep "WrTOC", Name
 
 FoundRep:
     With DB_MATCH.Sheets(TOC)
