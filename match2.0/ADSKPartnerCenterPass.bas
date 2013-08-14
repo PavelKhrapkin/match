@@ -14,12 +14,10 @@ Attribute VB_Name = "ADSKPartnerCenterPass"
 ''' 6) WrDL3pass      - запись из таблицы 3PASS в файл CSV для Data Loader
 '
 '   8.2.2012
-'  13.8.2013 - переписано для match 2.0
+'  15.8.2013 - переписано для match 2.0
 
     Option Explicit     ' Force explicit variable declaration
     
-    Dim Stage               ' стадия процесса 3PASS
-    Private N As Integer    ' номер нижней строки с SN на листе 3PASS
     
 Sub SN_PC_pass()
 '
@@ -63,7 +61,7 @@ Sub SN_PC_pass()
     NewSheet Ractive.Name
     NewSheet Rupdate.Name
     
-  '--------------- цикл по SN_List ---------------
+  '--------------- цикл порциями по SN_List ---------------
     i = 2
     With Workbooks(R.RepFile).Sheets(R.SheetN)
         .Activate
@@ -90,7 +88,7 @@ Sub SNsortOut(SNtmp, SNactive, SNupdate)
 ' - SNsortOut(SNtmp, SNactive, SNupdate) - разбор и селекция SN из SNtmp.
 '      - в SNactive заносятся данные о Registered SN
 '      - в SNudpade - об Upgraded SN, которые надо изменить в SF
-'   Кроме того в SNtmp изменяется цвет SN:
+'   Кроме того в SN_LIST изменяется цвет SN:
 '           - белый      - SN найден, он Registered
 '           - коричневый - найден, требуется Update
 '           - остается желтый - не найден или требует ручной проверки
@@ -98,10 +96,9 @@ Sub SNsortOut(SNtmp, SNactive, SNupdate)
 '   13.8.2013
 
     Dim iTmp As Long    '- указатель - номер строки в SNtmp
-    Call SheetSort(Rtmp.Name, 1)
     
     For iTmp = 2 To Rtmp.EOL
-    
+        SN =
     Next iTmp
 End Sub
 
@@ -201,49 +198,13 @@ Sub WrDL3pass()
 
     End3PASS (4)
 End Sub
-Function Start3PASS(Msg)
-'
-' начало процедур 3PASS. Возвращает номер последней значащей строки ADSKfrSF
-'   2.2.2012
-    Const txt = "Процедура 3PASS: получение SN из PartnerCenter --  "
-    Const A3PASSstamp = "SNfromSF"          ' штамп листа 3PASS
-    Const ResLines = 6  ' число строк в пятке Отчета ADSKfrSF
-    
-
-    ModStart A3PASS, txt & Msg
-    Start3PASS = EOL(ADSKfrSF) - ResLines
-    CheckSheet ADSKfrSF, Start3PASS + 2, 1, ADSKfrSFstamp
-    CheckSheet A3PASS, 1, 1, A3PASSstamp
-End Function
-Sub End3PASS(M)
-'
-' завершение подпрограмм Stage3PASS
-'   30/1/2012
-
-    Const Colr1 = &HFFCC00  ' цвет [1] - голубой
-    Const Colr2 = &HFF9900  ' цвет [2] - синий
-    Const Colr3 = &HFF6600  ' цвет [1] - темно-синий
-    Dim Colr
-    
-    Sheets(A3PASS).Select
-    Select Case M
-        Case 1
-            Colr = Colr1
-        Case 2
-            Colr = Colr2
-        Case 3
-            Colr = Colr3
-    End Select
-    Cells(1, 1).Interior.Color = Colr   ' Окрашиваем ячейку А1
-    Sheets(A3PASS).Tab.Color = Colr     '   .. и Tab 3PASS
-    ModEnd A3PASS
-End Sub
 Sub SNread(F)
 '
 ' - SNread  - функция чтения файла серийных номеров из Output.CSV
 '             в верхний левый угол листа F
 '   31/1/2012
 '   13.08.13 - упрощен интерфейс - чтение всегда в A_SN_2
+'   15.08.13 - сортировка прочитанного файла по SN
 
     Dim R As TOCmatch
 
@@ -283,6 +244,14 @@ Sub SNread(F)
         On Error GoTo Rep
         .Refresh BackgroundQuery:=False
     End With
+    
+    Call SheetSort(R.Name, 1)
+    R.EOL = EOL(R.SheetN, R.RepFile)
+    R.Dat = Now
+    R.Made = "SNread"
+    R.CreateDat = Now
+    
+    Call WrTOC
     Exit Sub
 Rep:
     If MsgBox("В каталоге 'Загрузки' не найден файл 'output.csv'." _
