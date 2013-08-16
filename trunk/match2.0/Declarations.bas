@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  14.8.13
+'  16.8.13
 
 Option Explicit
 
@@ -503,12 +503,18 @@ Public Const NEWSN_SN_COL = 1           ' SN
 Public Const NEWSN_CONTRADSK_COL = 2    ' ContrADSK
 Public Const NEWSN_ACCN_COL = 3         ' ФссТ
 
-'................ Листs обработки Серийных номеров Autodesk .................
+'................ Лист обработки Серийных номеров Autodesk .................
 Public iActive As Long '- номер строки в SNactive
 Public iUpdate As Long '- номер строки в SNupdate
 Public nActive As Long '= счетчик Registered
 Public nUpdate As Long '= счетчик Update
 Public nToClean As Long '=счетчик "Разбираться вручную"
+
+'.............. Лист SNtmp - SN из  License Inquiry PCв Autodesk ...........
+Public Const SNTMP_SN_COL = 1           ' SN
+Public Const SNTMP_ACTDATE_COL = 9      ' Most Recent Activation Date
+Public Const SNTMP_STATUS_COL = 12      ' Статус SN
+Public Const SNTMP_STATUS_REGISTERED = "Registered"
     
 '----------------------------------------------------------------------------
 Public Const WP = "WP"                  ' лист WP
