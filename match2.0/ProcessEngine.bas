@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 17.8.13 П.Л.Храпкин, А.Пасс
+' 18.8.13 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -46,6 +46,7 @@ Sub ProcStart(Proc As String)
     i = ToStep(Proc)
     
     With DB_MATCH.Sheets(Process)
+        .Activate
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
         Do While .Cells(i + 1, PROC_STEP_COL) <> PROC_END
             i = i + 1
@@ -69,7 +70,7 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
-        MergeReps i
+        MergeReps i + 1
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
 ''        MS "<*> Процесс " & Proc & " завершен!"
@@ -89,7 +90,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
     Dim i As Integer
     Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
-    Dim X() As String   '=каждая часть может быть вида <Proc>/<Step>
+    Dim x() As String   '=каждая часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
     
     Proc = Trim(Proc): Step = Trim(Step)
@@ -114,9 +115,9 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         S = Split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                X = Split(S(i), "/")
-                If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
-                If Not IsDone(X(0), X(1)) Then ProcStart X(0)
+                x = Split(S(i), "/")
+                If Proc = x(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
+                If Not IsDone(x(0), x(1)) Then ProcStart x(0)
             Else
                 iStep = ToStep(Proc, S(i))
                 If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
@@ -249,9 +250,9 @@ Sub StepOut(Step As String, iProc)
         Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
         If Proc = "" Then Exit Sub
         R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
-        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - R.ResLines
         R.Made = Step
         R.Dat = Now
+        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - R.ResLines
         RepTOC = R
         WrTOC
     End With
@@ -373,7 +374,7 @@ Sub MergeReps(iProc)
 '   * выполняется в конце каждого Процесса по Шагу <*>ProcEnd
 '   * в Шаге <*>ProcEnd указан основной документ Процесса, он извлекается в StepIn
 '
-' 17.8.13
+' 18.8.13
 
     Dim R As TOCmatch
     Dim OldRepName As String
@@ -387,7 +388,7 @@ Sub MergeReps(iProc)
     OldRepName = RepName & "_OLD"
         
     If Not SheetExists(OldRepName) Then GoTo Ex
-    RoldEOL = EOL(OldRepName)
+    RoldEOL = EOL(OldRepName) - R.ResLines
     
 '-- что вставлять
 ''    Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy

@@ -139,7 +139,8 @@ FoundRep:
         Dim LoadMode As Boolean
         LoadMode = False
         If RepTOC.Made <> REP_LOADED Then LoadMode = True
-        RepTOC.ResLines = GetReslines(.Cells(i, TOC_RESLINES_COL), LoadMode)
+        RepTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
+'''        RepTOC.ResLines = GetReslines(RepTOC.Name)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
@@ -179,26 +180,42 @@ FoundRep:
         End If
     End With
 End Function
-Function GetReslines(ByVal x As String, Optional ByVal LoadMode As Boolean = False) As Long
+Function GetReslines(Optional ByVal Doc As String, _
+    Optional ByVal LoadMode As Boolean = False, Optional Resl As String = "") As Long
 '
-' - GetReslines(x,LoadMode) - извлечение размера пятки из х с учетом контекста LoadMode
+' - GetReslines([Doc],[LoadMode],[ResL]) - извлечение размера пятки Doc с учетом
+'            контекста LoadMode; строка ResL со значениями размера пятки
+'            может быть явно указана в обращении, чтобы ее не искать повторно
+'
+' ! таким образом первый Шаг после загрузки документа должен добавлять пятку в ResLines
 '
 ' 18.8.13
+' 18.3.13 - по умолчанию LoadMode проверяем статус документа в RepTOC.Made
 
-        Dim ss() As String
+        Dim ss() As String, R As TOCmatch
         
         GetReslines = 0
-        If x = "" Then Exit Function
+        If Resl = "" Then
+            If Doc = "" Or Doc = TOC Or Doc = Process Then Exit Function
+            If IsMissing(Doc) Then FatalRep "GetResLines", Doc
+            R = GetRep(Doc)
+            Resl = DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_RESLINES_COL)
+        End If
+        If Resl = "" Then Exit Function
         
-        If InStr(x, "/") <> 0 Then
-            ss = Split(x, "/")
+        If InStr(Resl, "/") <> 0 Then
+            ss = Split(Resl, "/")
+            If IsMissing(LoadMode) Then
+                LoadMode = False
+                If R.Made = REP_LOADED Then LoadMode = True
+            End If
             If LoadMode Then
                 GetReslines = ss(0)
             Else
                 GetReslines = ss(UBound(ss))
             End If
-        ElseIf IsNumeric(x) Then
-            GetReslines = x
+        ElseIf IsNumeric(Resl) Then
+            GetReslines = Resl
         End If
 End Function
 Sub FatalRep(SubName, RepName)
@@ -424,12 +441,13 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 '---- вставляем пятку по шаблону в FS
         If FS = "" Then Exit Sub
         Set FF = DB_MATCH.Sheets(Header).Range(FS)
-        For i = 1 To FF.Columns.Count
-            If FF.Cells(1, i) <> "" Then
-                FF.Columns(i).Copy Destination:=.Cells( _
-                    R.EOL + R.ResLines - FF.Rows.Count + 1, i)
-            End If
-        Next i
+        FF.Copy Destination:=.Cells(R.EOL + 2, 1)
+''''        For i = 1 To FF.Columns.Count
+''''            If FF.Cells(1, i) <> "" Then
+''''                FF.Columns(i).Copy Destination:=.Cells( _
+''''                    R.EOL + R.ResLines - FF.Rows.Count + 1, i)
+''''            End If
+''''        Next i
     End With
 End Sub
 Sub testsetColWidth()
@@ -766,7 +784,7 @@ Sub testCSmatch()
 End Sub
 Function CSmatch(Val, Col) As Double
 '
-' - CSmatch(Val,Col) - .
+' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
 '                   Если Val не найден- возвращает 0. Лист для поиска Val должен быть Selected.
 ' 8/7/12
 
