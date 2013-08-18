@@ -5,6 +5,7 @@ Attribute VB_Name = "MatchLib"
 ' П.Л.Храпкин, А.Пасс 18.8.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
+' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
 ' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
@@ -82,6 +83,7 @@ Function GetRep(RepName) As TOCmatch
 '   21.9.12 - отладка логики работы с match_environment при перемещении DirDBs
 '   27.10.12 - работа с "голубыми" листами в TOCmatch
 '   13.8.13 - добавлено поле iTOC в структуру TOCmatch - номер строки в TOC
+'   18.8.13 - с подпрограммой GetReslines - изменение размера пятки при загрузке и далее
 
     Dim i As Long, EOL_TOC As Long
     Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
@@ -363,47 +365,6 @@ FoundRep:
     End With
     DB_MATCH.Save
 End Sub
-Sub testsetColWidth()
-' Т testsetColWidth() - отладка setColWidth
-
-    Set DB_MATCH = FileOpen(F_MATCH)
-    Dim FF As Range
-    
-    Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
-    Dim i As Long
-a:
-    For i = 1 To FF.Columns.Count
-        setColWidth "1C.xlsx", "Платежи", i, FF.Cells(3, i)
-    Next i
-        
-    Stop
-    GoTo a
-
-End Sub
-Sub setColWidth(ByVal file As String, ByVal sheet As String, _
-                ByVal Col As Long, ByVal width As String)
-'
-' S setColWidth(file, sheet, col, range, width) -
-'           устанавливает ширину i-й колонки листа
-' 12.01.2013
-' 16.1.13 bug fix
-' 16.1.13 переделал на явную замену десятичной запятой на точку (или наоборот)
-' 28.1.13 width теперь массив: ширина/формат
-'
-    Dim widSplit() As String
-    widSplit = Split(width, "/")
-    If UBound(widSplit) >= 0 Then
-        width = widSplit(0)
-        If Application.DecimalSeparator = "." Then
-            width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
-        ElseIf Application.DecimalSeparator = "," Then
-            width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
-        End If
-        Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
-    End If
-
-End Sub
-
 Sub InsMyCol(F As String, Optional FS As String = "")
 '
 ' S InsMyCol(F [,FS]) - вставляем колонки в лист слева по шаблону F и пятку из FS
@@ -470,6 +431,47 @@ Sub InsMyCol(F As String, Optional FS As String = "")
             End If
         Next i
     End With
+End Sub
+Sub testsetColWidth()
+' Т testsetColWidth() - отладка setColWidth
+'12.1.13
+
+    Set DB_MATCH = FileOpen(F_MATCH)
+    Dim FF As Range
+    
+    Set FF = DB_MATCH.Sheets(Header).Range("HDR_1C_Payment_MyCol")
+    Dim i As Long
+a:
+    For i = 1 To FF.Columns.Count
+        setColWidth "1C.xlsx", "Платежи", i, FF.Cells(3, i)
+    Next i
+        
+    Stop
+    GoTo a
+
+End Sub
+Sub setColWidth(ByVal file As String, ByVal sheet As String, _
+                ByVal Col As Long, ByVal width As String)
+'
+' - setColWidth(file, sheet, col, range, width) -
+'           устанавливает ширину i-й колонки листа
+' 12.01.2013
+' 16.1.13 bug fix
+' 16.1.13 переделал на явную замену десятичной запятой на точку (или наоборот)
+' 28.1.13 width теперь массив: ширина/формат
+'
+    Dim widSplit() As String
+    widSplit = Split(width, "/")
+    If UBound(widSplit) >= 0 Then
+        width = widSplit(0)
+        If Application.DecimalSeparator = "." Then
+            width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
+        ElseIf Application.DecimalSeparator = "," Then
+            width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
+        End If
+        Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
+    End If
+
 End Sub
 Sub MS(Msg)
 '
@@ -546,8 +548,9 @@ Sub LogReset()
 End Sub
 Function AutoFilterReset(SheetN) As Integer
 '
-' подпрограмма сброса и взвода фильтра листа SheetN в первой строке
-'      возвращает количество строк в SheetN
+' - AutoFilterReset(SheetN)   - подпрограмма сброса и взвода фильтра
+'                               листа SheetN в первой строке
+'                               возвращает количество строк в SheetN
 ' 16.1.2012
 ' 15.12.12 - исправлено при переходе на MS Office 2013:
 '       - EOL в соответствии с идеологией match2.0 берется из TOCmatch
@@ -763,7 +766,7 @@ Sub testCSmatch()
 End Sub
 Function CSmatch(Val, Col) As Double
 '
-' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
+' - CSmatch(Val,Col) - .
 '                   Если Val не найден- возвращает 0. Лист для поиска Val должен быть Selected.
 ' 8/7/12
 
