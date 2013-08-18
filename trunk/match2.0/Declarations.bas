@@ -1,15 +1,14 @@
 Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
-' Declarations - декларация структур, используемых в match 2.0
+' Declarations - декларация структур, используемых в match 2.1
 '
-'  17.8.13
+'  18.8.13
 
 Option Explicit
 
 '---- Каталог "Загрузки" или "Downloads" ----
 Public Const DownloadDir = "C:\Users\Pavel_Khrapkin\Downloads\"
 '============================ файлы DBs ===============================
-''Public Const F_DIR = "C:\work\Match\match2.0\DBs\"
 Public DirDBs As String    ' каталог файлов DBs из 'match.xlsm'!We
 ' вспомогательный файл 'match_environment.xlsx' содержит DirDBs
 Public Const F_match_environment = "C:\match_environment.xlsx"
@@ -76,13 +75,6 @@ Public Silent As Boolean    ' если True - не выводить сообщений об ошибках
 '=============== База DB_MATCH - файл match.xlsm ==============
 Public Const Header = "Header"              ' лист заголовков (Шапок) и Адаптеров
 Public Const A_Dic = "A_Dic"                ' лист - Словарь Организаций
-'''Public Const P_Paid = "P_Paid"              ' лист новых Платежей
-'''Public Const O_NewOpp = "O_NewOpp"          ' лист новых Проектов
-'''Public Const NewContract = "NewContract"            ' лист новых Договоров
-'''Public Const NewContractLnk = "NewContractLnk"      ' лист связок Договоров с Проектами
-'''Public Const P_PaymentUpd = "P_PaymentUpd"  ' лист связей Платежей и Договоров
-'''Public Const P_ADSKlink = "P_ADSKlink"      ' лист связок Платежей с Контрактом ADSK
-'''Public Const ADSKstatistics = "ADSKstatistics"      ' имя листа статистики по ADSK
 
 Public EOL_PaySheet     ' последняя строка отчета 1С по Платежам без пятки
 Public EOL_DogSheet     ' последняя строка отчета 1С по Договорам без пятки
@@ -136,15 +128,21 @@ Public Const TOC_PAR_3_COL = 17         ' колонка Штампа Параметр 3
 Public Const TOC_PAR_4_COL = 18         ' колонка Штампа Параметр 4
 Public Const TOC_PAR_5_COL = 19         ' колонка Штампа Параметр 5
 Public Const TOC_PAR_6_COL = 20         ' колонка Штампа Параметр 6
+                        '--- при частичном обновлении отчета, а не при замене
+Public Const TOC_NEW_FRDATEROW_COL = 22 ' строка нового отчета где FromDate
+Public Const TOC_NEW_FRDATECOL_COL = 23 ' колонка нового отчета где FromDate
+Public Const TOC_NEW_TODATEROW_COL = 24 ' строка нового отчета где ToDate
+Public Const TOC_NEW_TODATECOL_COL = 25 ' колонка нового отчета где ToDate
+Public Const TOC_NEW_FRDATE_COL = 26    ' FrDate нового отчета
+Public Const TOC_NEW_TODATE_COL = 27    ' ToDate нового отчета
 
 Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
 Public Const TOC_FORMNAME = TOC_PAR_2_COL       ' колонка - Имя Шаблона
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
-Public Const TOC_NEW_FRDATE_COL = TOC_PAR_2_COL ' колонка- FrDate отчета
-Public Const TOC_NEW_TODATE_COL = TOC_PAR_3_COL ' колонка- FrDate нового отчета
-Public Const TOC_FRDATE_COL = TOC_PAR_4_COL     ' колонка- FrDate нового отчета
-Public Const TOC_TODATE_COL = TOC_PAR_5_COL     ' колонка- FrDate отчета
+Public Const TOC_PARTILUPDATE_COL = TOC_PAR_3_COL '1-частичное обновление отчета
+Public Const TOC_FRDATE_COL = TOC_PAR_4_COL     ' колонка- FrDate полного отчета
+Public Const TOC_TODATE_COL = TOC_PAR_5_COL     ' колонка- ToDate полного отчета
 
 Public Const TOCstart = 4       ' первая строка TOCmatch - вначале служебная часть
 Public Const TOCrepLines = 8    ' первая стока Документов. после служебных строк
