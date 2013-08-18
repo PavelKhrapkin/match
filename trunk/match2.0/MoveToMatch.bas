@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 13.9.2013
+' П.Л.Храпкин 18.8.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -25,12 +25,19 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 22.12.12 - Created Date - введены переводы в ам. формат и обратно
 '  6.4.13 - выход при попытке загрузить в match один из файлов базы данных
 ' 13.5.13 - пропускаем строки-продолжения в TOCmatch
+' 17.8.13 - загрузка отчетов с частичным диапазоном дат
+' 18.8.13 - ResLines теперь имеет вид 2 / 8
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
     Dim IsSF As Boolean     '=TRUE, если входной Документ из Salesforce
+    Dim IsPartialUpdate     '=TRUE, если входной документ заменяет лишь часть отчета
+    Dim FrDateTOC As Date, ToDateTOC As Date, NewFrDate As Date, NewToDate As Date
+    Dim NewFrDate_Row As Long, NewFrDate_Col As Long
+    Dim NewToDate_Row As Long, NewToDate_Col As Long
     Dim InSheetN As Integer 'поле в TOCmatch- номер листа входного Документа для MoveToMatch
     
+    IsPartialUpdate = False
     NewRep = ActiveWorkbook.Name
     RepName = ActiveSheet.Name
     Lines = EOL(RepName, Workbooks(NewRep))
@@ -65,13 +72,27 @@ RepNameHandle:
             MS "Это файл базы данных match! Его не надо загружать."
             End
         End If
-        
-        Lines = Lines - .Cells(i, TOC_RESLINES_COL) '= EOL - пятка
+           'Lines = EOL - пятка
+        Lines = Lines - GetReslines(.Cells(i, TOC_RESLINES_COL), True)
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
         RepFile = .Cells(i, TOC_REPFILE_COL)
         RepName = .Cells(i, TOC_REPNAME_COL)
         TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
+      '--получение диапазона дат в match и новом отчете ---
+        FrDateTOC = .Cells(i, TOC_FRDATE_COL)   ' Даты прежнего отчета
+        ToDateTOC = .Cells(i, TOC_TODATE_COL)   '.. в Match
+        NewFrDate_Row = .Cells(i, TOC_NEW_FRDATEROW_COL)
+        NewFrDate_Col = .Cells(i, TOC_NEW_FRDATECOL_COL)
+        Dim ToStr As String
+        ToStr = .Cells(i, TOC_NEW_TODATEROW_COL)
+        If ToStr = "EOL" Then
+            NewToDate_Row = Lines
+        ElseIf WorksheetFunction.IsNumber(ToStr) Then
+            NewToDate_Row = ToStr
+        End If
+        NewToDate_Col = .Cells(i, TOC_NEW_TODATECOL_COL)
+        
     End With
     
     Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
@@ -83,12 +104,18 @@ RepNameHandle:
             Created = GetDate(Right(.Cells(Lines + 5, 1), 16))
         ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
             Created = GetDate(Right$(.Name, 8))
+            NewFrDate = GetDate(.Cells(NewFrDate_Row, NewFrDate_Col))
+            NewToDate = GetDate(.Cells(NewToDate_Row, NewToDate_Col))
+            If NewFrDate <> FrDateTOC Or NewToDate < ToDateTOC Then
+                IsPartialUpdate = True
+            End If
         ElseIf RepName = Acc1C Then
             Created = GetDate(Right$(.Cells(1, 1), 8))
         ElseIf RepFile = F_STOCK Then
             Created = GetDate(MyDB.BuiltinDocumentProperties(12))   'дата последнего Save
         Else
             Created = "0:0"
+            NewFrDate = "0:0": NewToDate = "0:0"
         End If
         .UsedRange.Rows.RowHeight = 15
         .Name = "TMP"
@@ -97,7 +124,20 @@ RepNameHandle:
     
     With MyDB
         .Activate
-        Application.DisplayAlerts = False
+  '-- если частичное обновление - прежний отчет не стираем, а переименовываем
+  '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
+  '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "новый" отчет
+        If IsPartialUpdate Then
+            Dim OldRepName As String, sht As Worksheet
+            OldRepName = RepName & "_OLD"
+            For Each sht In MyDB.Sheets
+'            For Each sht In ThisWorkbook.Sheets
+'                If sht.Name = OldRepName Then GoTo DelRep
+                If sht.Name = OldRepName Then GoTo DelRep
+            Next sht
+            .Sheets(RepName).Name = OldRepName
+        End If
+DelRep: Application.DisplayAlerts = False
         .Sheets(RepName).Delete
         Application.DisplayAlerts = True
         .Sheets("TMP").Name = RepName
@@ -112,6 +152,8 @@ RepNameHandle:
         .Cells(i, TOC_MADE_COL) = REP_LOADED
         RepLoader = .Cells(i, TOC_REPLOADER_COL)
         .Cells(i, TOC_CREATED_COL) = Created
+        .Cells(i, TOC_NEW_FRDATE_COL) = NewFrDate
+        .Cells(i, TOC_NEW_TODATE_COL) = NewToDate
         .Cells(1, 1) = Now
         .Cells(1, TOC_F_DIR_COL) = DirDBs
 '----------- окрашиваем даты в TOCmatch на сегодня -------------
