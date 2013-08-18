@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.0
 '
-'  16.8.13
+'  17.8.13
 
 Option Explicit
 
@@ -141,6 +141,10 @@ Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
 Public Const TOC_FORMNAME = TOC_PAR_2_COL       ' колонка - Имя Шаблона
 Public Const TOC_REPLOADER_COL = TOC_PAR_6_COL  ' колонка- Loader отчета
+Public Const TOC_NEW_FRDATE_COL = TOC_PAR_2_COL ' колонка- FrDate отчета
+Public Const TOC_NEW_TODATE_COL = TOC_PAR_3_COL ' колонка- FrDate нового отчета
+Public Const TOC_FRDATE_COL = TOC_PAR_4_COL     ' колонка- FrDate нового отчета
+Public Const TOC_TODATE_COL = TOC_PAR_5_COL     ' колонка- FrDate отчета
 
 Public Const TOCstart = 4       ' первая строка TOCmatch - вначале служебная часть
 Public Const TOCrepLines = 8    ' первая стока Документов. после служебных строк
