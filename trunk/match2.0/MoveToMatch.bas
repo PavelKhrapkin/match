@@ -73,11 +73,12 @@ RepNameHandle:
             End
         End If
            'Lines = EOL - пятка
-        Lines = Lines - GetReslines(.Cells(i, TOC_RESLINES_COL), True)
+'        Lines = Lines - GetReslines(.Cells(i, TOC_RESLINES_COL), True)
+        RepName = .Cells(i, TOC_REPNAME_COL)
+        RepFile = .Cells(i, TOC_REPFILE_COL)
+        Lines = Lines - GetReslines(RepName, True, .Cells(i, TOC_RESLINES_COL))
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
-        RepFile = .Cells(i, TOC_REPFILE_COL)
-        RepName = .Cells(i, TOC_REPNAME_COL)
         TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
       '--получение диапазона дат в match и новом отчете ---
         FrDateTOC = .Cells(i, TOC_FRDATE_COL)   ' Даты прежнего отчета
@@ -126,15 +127,11 @@ RepNameHandle:
         .Activate
   '-- если частичное обновление - прежний отчет не стираем, а переименовываем
   '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
-  '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "новый" отчет
+  '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
         If IsPartialUpdate Then
             Dim OldRepName As String, sht As Worksheet
             OldRepName = RepName & "_OLD"
-            For Each sht In MyDB.Sheets
-'            For Each sht In ThisWorkbook.Sheets
-'                If sht.Name = OldRepName Then GoTo DelRep
-                If sht.Name = OldRepName Then GoTo DelRep
-            Next sht
+            If SheetExists(OldRepName) Then GoTo DelRep
             .Sheets(RepName).Name = OldRepName
         End If
 DelRep: Application.DisplayAlerts = False
@@ -181,8 +178,17 @@ DelRep: Application.DisplayAlerts = False
             End If
         Next i
     End With
+    Dim PartStatus As String
+    PartStatus = vbCrLf & "Это "
+    If IsPartialUpdate Then
+        PartStatus = PartStatus & "изменяемая ЧАСТЬ данных."
+    Else
+        PartStatus = PartStatus & "ПОЛНЫЙ документ."
+    End If
     LogWr "MoveToMatch: В файл '" & RepFile & "' загружен новый отчет '" _
-        & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld
+        & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld _
+        & PartStatus
+        
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
         ProcStart RepLoader
