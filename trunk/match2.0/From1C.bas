@@ -1,15 +1,15 @@
 Attribute VB_Name = "From1C"
 '---------------------------------------------------------------------------
-' Макросы для загрузки отчетов из 1С
+' Загрузка отчетов из 1С
 '
 ' S PaymentPaint(BottomHDR) - Раскрашиваем Лист Платежей 1C с пяткой BottomHDR
 ' S ContractPaint() - Раскрашиваем Лист Договоров
-' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячеки (iStr,Col) в цвет Color
+' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячейки (iStr,Col) в цвет Color
 ' - Acc1C_Bottom()  - перенос первыx трех строк Acc1С в пятку
 ' S AccPaint()      - окраска колонки А - Организация есть в SF
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 17.8.13 - чистка модуля
+' 18.8.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint(ByVal BottomHDR As String)
@@ -19,6 +19,7 @@ Sub PaymentPaint(ByVal BottomHDR As String)
 '  7.8.12 оформлено как Шаг
 ' 31.8.12 - внедрение StepIn
 '  7.2.13 - параметр BottomHDR; окраска всей строки, занесенной в SF
+' 18.8.13 - стираем строки нал
 
     StepIn
 
@@ -32,13 +33,9 @@ Sub PaymentPaint(ByVal BottomHDR As String)
     With DB_1C.Sheets(PAY_SHEET)
         i = 2
         Do
- '       For i = 2 To RepTOC.EOL
             Progress i / RepTOC.EOL
             If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые Платежи в SF
-'                Range(Cells(i, 2), Cells(i, AllCol)).Interior.Color = rgbLightGreen
                 Range(Cells(i, 2), Cells(i, .Columns.Count)).Interior.Color = rgbLightGreen
-'            ElseIf Trim(.Cells(i, PAYDOC_COL)) = "" Or Trim(.Cells(i, PAYSALE_COL)) = "" Then
-'                .Cells(i, 1).EntireRow.Hidden = True    ' нал убираем
             Else
 '-- окраска еще не занесенных Платежей в зависимости от суммы
                 Rub = .Cells(i, PAYRUB_COL)
@@ -69,9 +66,8 @@ Sub PaymentPaint(ByVal BottomHDR As String)
                 End If
             End If
             
-'-- скрываем нал
+'-- сстираем нал
             Doc = Trim(.Cells(i, PAYDOC_COL))
-'            If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then .Rows(i).Hidden = True
             If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then
                 .Rows(i).Delete
                 i = i - 1
@@ -79,7 +75,6 @@ Sub PaymentPaint(ByVal BottomHDR As String)
             End If
             i = i + 1
         Loop While i < RepTOC.EOL
-'        Next i
         RepTOC.EOL = EOL(RepTOC.Name)
 
 '-- копируем пятку в Платежи1С
@@ -118,7 +113,7 @@ Sub ContractPaint()
     
     ScreenUpdate True
     
-'-- копируем пятку в Платежи1С
+'-- копируем пятку в Договоры
     DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
             Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
             
