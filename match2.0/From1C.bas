@@ -121,6 +121,7 @@ Sub ContractPaint()
 '-- копируем пятку в Платежи1С
     DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
             Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
+            
 End Sub
 Sub Paint(iStr As Long, Col As Long, Criteria As String, Color, Optional Mode As Integer = 0)
 '
