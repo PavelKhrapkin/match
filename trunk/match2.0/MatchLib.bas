@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 15.8.13
+' П.Л.Храпкин, А.Пасс 18.8.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
@@ -27,12 +27,14 @@ Attribute VB_Name = "MatchLib"
 ' - Dec(a)                      - формат числа а в виде текста с десятичной точкой
 ' - EOL(SheetN)                 - возвращает номер последней строки листа SheetN
 ' - RowDel(RowStr)              - удаляет строки активного листа в соответствии с RowStr
+' T testCSmatch()               - отладка CSmatch
 ' - CSmatch(Val,Col)            - Case Sensitive match - возвращает номер строки с Val
 '                                 в колонке Col. Если Val не найден- возвращает 0.
 '                                 Лист для поиска Val должен быть Selected.
 ' - CSmatchSht(Val,Col,Sht)     - Case Sensitive match возвращает номер строки с Val в
 '                                 колонке Col листа Sht. Если Val не найден- возвращает 0.
-' - ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
+' - SheetExists(SheetName)      - проверка, что лист SheetName доступен
+'[X]ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
 ' - SheetSort(SheetN, Col)      - сортировка листа SheetN по колонке Col
 ' - SheetDedup(SheetN, Col)     - cортировка и дедупликация SheetN по колонке Col
 ' - SheetDedup2(SheetN, ColSort,ColAcc) - сортировка и слияние листа SheetN
@@ -132,7 +134,10 @@ FoundRep:
         RepTOC.Dat = .Cells(i, TOC_DATE_COL)
         RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
-        RepTOC.ResLines = .Cells(i, TOC_RESLINES_COL)
+        Dim LoadMode As Boolean
+        LoadMode = False
+        If RepTOC.Made <> REP_LOADED Then LoadMode = True
+        RepTOC.ResLines = GetReslines(.Cells(i, TOC_RESLINES_COL), LoadMode)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
@@ -171,6 +176,28 @@ FoundRep:
             FatalRep "GetRep", RepName
         End If
     End With
+End Function
+Function GetReslines(ByVal x As String, Optional ByVal LoadMode As Boolean = False) As Long
+'
+' - GetReslines(x,LoadMode) - извлечение размера пятки из х с учетом контекста LoadMode
+'
+' 18.8.13
+
+        Dim ss() As String
+        
+        GetReslines = 0
+        If x = "" Then Exit Function
+        
+        If InStr(x, "/") <> 0 Then
+            ss = Split(x, "/")
+            If LoadMode Then
+                GetReslines = ss(0)
+            Else
+                GetReslines = ss(UBound(ss))
+            End If
+        ElseIf IsNumeric(x) Then
+            GetReslines = x
+        End If
 End Function
 Sub FatalRep(SubName, RepName)
 '
@@ -214,7 +241,7 @@ Function CheckStamp(iTOC As Long, _
         SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-        If Typ = "N" Then GoTo ex
+        If Typ = "N" Then GoTo Ex
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
@@ -243,7 +270,7 @@ Function CheckStamp(iTOC As Long, _
                 End If
             
                 If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-ex:             Exit Function
+Ex:             Exit Function
 NxtChk:
             Next j
         Next i
@@ -721,6 +748,19 @@ Sub RowDel(RowStr As String)
     StepIn
     ActiveSheet.Rows(RowStr).Delete
 End Sub
+Sub testCSmatch()
+    If "G" = "g" Then Stop
+    Dim a
+    ThisWorkbook.Sheets("Sheet1").Select
+    a = CSmatch("g12", 1)
+    a = CSmatch("g121", 1)
+    
+    ModStart REP_1C_P_PAINT
+    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=False, ReadOnly:=True)
+    DB_SFDC.Sheets(SFacc).Select
+    a = CSmatch("ОАО ""ЭХО""", 2)
+    ModEnd
+End Sub
 Function CSmatch(Val, Col) As Double
 '
 ' - CSmatch(Val,Col) - Case Sensitive match возвращает номер строки с Val в колонке Col.
@@ -740,7 +780,7 @@ Function CSmatch(Val, Col) As Double
         N = CSmatch + 1
     Loop While Val <> CheckCS
 End Function
-Function CSmatchSht(Val, Col, Sht, Optional ByVal FromN As Long = 1) As Long
+Function CSmatchSht(Val, Col, sht, Optional ByVal FromN As Long = 1) As Long
 '
 ' - CSmatch(Val,Col,Sht) - Case Sensitive match возвращает номер строки с Val в колонке Col.
 '                   Если Val не найден- возвращает 0. Sht - лист для поиска Val.
@@ -754,14 +794,23 @@ Function CSmatchSht(Val, Col, Sht, Optional ByVal FromN As Long = 1) As Long
     Do
         CSmatchSht = 0
         On Error Resume Next
-        CSmatchSht = Application.Match(Val, Range(Sht.Cells(FromN, Col), Sht.Cells(BIG, Col)), 0) _
+        CSmatchSht = Application.Match(Val, Range(sht.Cells(FromN, Col), sht.Cells(BIG, Col)), 0) _
             + FromN - 1
-        CheckCS = Sht.Cells(CSmatchSht, Col)
+        CheckCS = sht.Cells(CSmatchSht, Col)
         On Error GoTo 0
 ''        If IsEmpty(CSmatchSht) Or Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
         If Not IsNumeric(CSmatchSht) Or CSmatchSht <= 0 Then Exit Function
         FromN = CSmatchSht + 1
     Loop While Val <> CheckCS
+End Function
+Function SheetExists(SheetName As String) As Boolean
+'
+' - SheetExists(SheetName)  - проверка, что лист SheetName доступен
+'
+' 18.8.13 из Интернета
+
+    On Error Resume Next
+    SheetExists = Not Sheets(SheetName) Is Nothing
 End Function
 Sub ClearSheet(SheetN, HDR_Range As Range)
 '
@@ -847,20 +896,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, X, EOL_SheetN As Integer
+    Dim i, prev, x, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        X = Sheets(SheetN).Cells(i, Col)
-        If X = prev Then
+        x = Sheets(SheetN).Cells(i, Col)
+        If x = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = X
+            prev = x
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -872,7 +921,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, X As String
+    Dim prev As String, x As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -882,8 +931,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            X = .Cells(i, ColSort)
-            If X = prev Then
+            x = .Cells(i, ColSort)
+            If x = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -904,7 +953,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = X
+                prev = x
             End If
         Loop While i < EOL_SheetN
     End With
@@ -1102,15 +1151,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim X() As String
+    Dim x() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    X = Split(DicList, ",")
+    x = Split(DicList, ",")
     
-    For i = LBound(X) To UBound(X)
-        If InStr(lW, LCase$(X(i))) <> 0 Then
+    For i = LBound(x) To UBound(x)
+        If InStr(lW, LCase$(x(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If
@@ -1191,14 +1240,14 @@ Function patTest(longTxt As String, pat As String) As Boolean
          
         If Left(pat, 1) = "$" Then
             pat = Trim(Mid(pat, 2))             ' убираем спец. символ
-            If pat = "" Then GoTo ex
+            If pat = "" Then GoTo Ex
             
             Dim comps() As String, pats() As String, i As Long
                 ' В случае 2-го знака '$' - компоненты описания товара, разделенные запятыми,
                 '       рассматриваются независимо
                 '       и в паттерне должно быть ровно 2 части
             pats = Split(pat, ";")
-            If UBound(pats) <> 1 Then GoTo ex  ' в паттерне должно быть ровно 2 части
+            If UBound(pats) <> 1 Then GoTo Ex  ' в паттерне должно быть ровно 2 части
             
             comps = Split(longTxt, ";")
             For i = 0 To UBound(comps)
@@ -1208,7 +1257,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
                 If Not patTest(comps(i), pats(0)) Then   ' 1-я часть - false
                     If patTest(comps(i), pats(1)) Then   ' 2-я часть д.б. true
                         patTest = True
-                        GoTo ex              ' найден образец
+                        GoTo Ex              ' найден образец
                     End If
                     GoTo nextComp
                 End If
@@ -1225,6 +1274,5 @@ nextComp:
     '        End If
         End If
     End With
-ex:
+Ex:
 End Function
-
