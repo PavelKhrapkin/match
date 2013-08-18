@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 11.8.13 П.Л.Храпкин, А.Пасс
+' 17.8.13 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -19,6 +19,7 @@ Attribute VB_Name = "ProcessEngine"
 ' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd таблицы Процессов
 ' S ProcReset(Proc)     - сброс и новый запуск Процесса Proc
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
+' S MergeReps()         - слияние "полных" отчетов в суффиксом "_OLD" и "новых" - Update'ов
 
 Option Explicit
 
@@ -33,6 +34,7 @@ Sub ProcStart(Proc As String)
 ' - ProcStart(Proc) - запуск Процесса Proc по таблице Process в match.xlsm
 '   7.8.12
 '  26.8.12 - окраска выполненного Процесса
+'  17.8.13 - поддержка "частичной" загрузки документов - MergeReps
 
     Dim Step As String, PrevStep As String
     Dim i As Integer
@@ -67,10 +69,11 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
+        MergeReps i
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
+''        MS "<*> Процесс " & Proc & " завершен!"
     End With
-''    MS "<*> Процесс " & Proc & " завершен!"
     Exit Sub
 Err:
     ErrMsg FATAL_ERR, "Нарушена последовательность шагов процедуры " & Proc
@@ -246,7 +249,7 @@ Sub StepOut(Step As String, iProc)
         Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
         If Proc = "" Then Exit Sub
         R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
-        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile))
+        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - R.ResLines
         R.Made = Step
         R.Dat = Now
         RepTOC = R
@@ -363,3 +366,59 @@ Sub CheckProc0(NewProcResult As String)
         End
     End If
 End Sub
+Sub MergeReps(iProc)
+'
+' S MergeReps(iProc)    - слияние "полных" отчетов в суффиксом "_OLD" и "новых" - Update'ов
+'                         iProc - строка листа процессов с шагом <*>ProcEnd
+'   * выполняется в конце каждого Процесса по Шагу <*>ProcEnd
+'   * в Шаге <*>ProcEnd указан основной документ Процесса, он извлекается в StepIn
+'
+' 17.8.13
+
+    Dim R As TOCmatch
+    Dim OldRepName As String
+    Dim RoldEOL As Long, Col As Long, i As Long, FrRow As Long, ToRow As Long
+    Dim FrDate As Date, ToDate As Date
+    
+    StepIn
+    
+    RepName = ActiveSheet.Name
+    R = GetRep(RepName)
+    OldRepName = RepName & "_OLD"
+        
+    If Not SheetExists(OldRepName) Then GoTo Ex
+    RoldEOL = EOL(OldRepName)
+    
+'-- что вставлять
+''    Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy
+    
+'-- куда вставлять
+    With DB_MATCH.Sheets(TOC)
+        Col = R.MyCol + .Cells(R.iTOC, TOC_NEW_FRDATEROW_COL)
+        FrDate = .Cells(R.iTOC, TOC_NEW_FRDATE_COL)
+        ToDate = .Cells(R.iTOC, TOC_NEW_TODATE_COL)
+    End With
+    
+    With Workbooks(R.RepFile).Sheets(OldRepName)
+        .Activate
+        FrRow = 0: ToRow = 0
+        For i = 2 To RoldEOL
+            If .Cells(i, Col) >= FrDate And FrRow = 0 Then FrRow = i
+            If .Cells(i, Col) >= ToDate And ToRow = 0 Then
+                ToRow = i
+                GoTo InsR
+            End If
+        Next i
+        ToRow = RoldEOL
+InsR:   Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
+            Destination:=.Rows(FrRow & ":" & RoldEOL)
+'''InsR: .Rows(FrRow & ":" & ToRow).Paste
+'''!!!        ErrMsg FATAL_ERR, "Не удалось слить Документы " & RepName & " и " & OldRepName
+    End With
+    
+'-- Переписать пятку
+    Stop
+    
+Ex: StepOut PROC_END, iProc
+End Sub
+
