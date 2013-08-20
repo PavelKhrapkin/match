@@ -134,9 +134,11 @@ RepNameHandle:
             If SheetExists(OldRepName) Then GoTo DelRep
             .Sheets(RepName).Name = OldRepName
         End If
-DelRep: Application.DisplayAlerts = False
-        .Sheets(RepName).Delete
-        Application.DisplayAlerts = True
+DelRep: If SheetExists(RepName) Then
+            Application.DisplayAlerts = False
+            .Sheets(RepName).Delete
+            Application.DisplayAlerts = True
+        End If
         .Sheets("TMP").Name = RepName
         .Sheets(RepName).Tab.Color = TabColor
     End With
