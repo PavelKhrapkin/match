@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 18.8.13 П.Л.Храпкин, А.Пасс
+' 20.8.13 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -252,7 +252,7 @@ Sub StepOut(Step As String, iProc)
         R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
         R.Made = Step
         R.Dat = Now
-        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - R.ResLines
+        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - GetReslines(R.Name, False)
         RepTOC = R
         WrTOC
     End With
@@ -374,14 +374,14 @@ Sub MergeReps(iProc)
 '   * выполняется в конце каждого Процесса по Шагу <*>ProcEnd
 '   * в Шаге <*>ProcEnd указан основной документ Процесса, он извлекается в StepIn
 '
-' 18.8.13
+' 20.8.13
 
     Dim R As TOCmatch
     Dim OldRepName As String
     Dim RoldEOL As Long, Col As Long, i As Long, FrRow As Long, ToRow As Long
     Dim FrDate As Date, ToDate As Date
     
-    StepIn
+'!'    StepIn
     
     RepName = ActiveSheet.Name
     R = GetRep(RepName)
@@ -395,7 +395,7 @@ Sub MergeReps(iProc)
     
 '-- куда вставлять
     With DB_MATCH.Sheets(TOC)
-        Col = R.MyCol + .Cells(R.iTOC, TOC_NEW_FRDATEROW_COL)
+        Col = R.MyCol + .Cells(R.iTOC, TOC_NEW_FRDATECOL_COL)
         FrDate = .Cells(R.iTOC, TOC_NEW_FRDATE_COL)
         ToDate = .Cells(R.iTOC, TOC_NEW_TODATE_COL)
     End With
@@ -419,6 +419,8 @@ InsR:   Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
     
 '-- Переписать пятку
     Stop
+    
+'-- переписать листы
     
 Ex: StepOut PROC_END, iProc
 End Sub
