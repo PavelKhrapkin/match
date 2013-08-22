@@ -320,7 +320,7 @@ Dim t0 As Single, t1 As Single, t2 As Single
 '''        LogWr ErMsg & OppId & "(" & OppN & ") тип Платежа '" & T _
 '''            & "' не соответствует типу Проекта '" & OppT & "'"
 '''End Function
-Function OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) As Boolean
+Function OppFilter(iOpp, Sale, Account, t, Rub, Dat, Dogovor, MainDog) As Boolean
 '
 ' - OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) - Адаптер Select
 '                   iOpp - номер строки в SFopp, остальные параметры из платежа
@@ -536,7 +536,7 @@ Function GoodType(ByVal G As String) As String
         Next j
     Next iG
     ErrMsg FATAL_ERR, "Неизвестный тип товара " & G
-    End
+''''    End
 Found:
 End Function
     Sub testGoodJob()
@@ -550,7 +550,7 @@ End Function
     Call GoodJob("настройка xxx Zprinter xxx", "Оборудование", 4)
     Next i
 End Sub
-Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
+Function GoodJob(good As String, GoodType As String, JobType As Long) As Boolean
 '
 ' - GoodJob(Good,GoodType,JobType)  - возвращает True если товар Good типа GoodType
 '                                     соответствует типу номер JobType
@@ -566,7 +566,7 @@ Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
     
     GoodJob = False
        
-    If Good = "" Then Exit Function
+    If good = "" Then Exit Function
 t1a = Now
     With DB_MATCH.Sheets(We).Range("Goods")
         Set Rng = .Columns(1)
@@ -584,9 +584,9 @@ t1 = t1 + (Now - t1a)
         GoodW = Trim(Goods(i))
         If GoodW <> "" Then
             If Left(GoodW, 1) = "$" Then
-                If patTest(Good, Mid(GoodW, 2)) Then GoTo Found
+                If patTest(good, Mid(GoodW, 2)) Then GoTo Found
             Else
-                If InStr(Good, GoodW) > 0 Then GoTo Found
+                If InStr(good, GoodW) > 0 Then GoTo Found
             End If
         End If
     Next i
@@ -596,7 +596,7 @@ Found:
     GoodJob = True
 End Function
 
-Function IsSubscription(Good, GT) As Boolean
+Function IsSubscription(good, GT) As Boolean
 '
 ' возвращает True, если товар - подписка/Subscription/Maintanence
 ' в зависимости от типа товара GT. Иначе - поставка лицензии, т.е. False.
@@ -627,7 +627,7 @@ Function IsSubscription(Good, GT) As Boolean
     Dim i As Integer
     Dim SbsWords() As String
     Dim LGood As String
-    LGood = LCase$(Good)
+    LGood = LCase$(good)
     
     SbsWords = Split(LCase$(Sbs), ",")
     For i = LBound(SbsWords) To UBound(SbsWords)
@@ -637,7 +637,7 @@ Function IsSubscription(Good, GT) As Boolean
         End If
     Next i
 End Function
-Function IsWork(ByVal Good As String) As Boolean
+Function IsWork(ByVal good As String) As Boolean
 '
 ' - IsWork(Good)    - возвращает True, если
 ' 29.10.12
@@ -649,16 +649,16 @@ Function IsWork(ByVal Good As String) As Boolean
 '
 '    Next iG
 '
-    Good = LCase(Good)
+    good = LCase(good)
     Wokabulary = DB_MATCH.Sheets(We).Range("WorksTable").Cells(1, 2)
     Wrd = Split(LCase(Wokabulary), ",")
     IsWork = True
     For i = LBound(Wrd) To UBound(Wrd)
-        If InStr(Good, Trim(Wrd(i))) > 0 Then Exit Function
+        If InStr(good, Trim(Wrd(i))) > 0 Then Exit Function
     Next i
     IsWork = False
 End Function
-Function TypOpp(GoodType, Good) As String
+Function TypOpp(GoodType, good) As String
 '
 ' - TypeOpp(GoodType, Good) - классификация типа Проекта по типу и спецификации товара
 '
@@ -672,11 +672,11 @@ Function TypOpp(GoodType, Good) As String
         If iG.Cells(1, 1) = GoodType Then
             TypOpp = iG.Cells(1, 11)
             If TypOpp <> "" Then Exit Function
-            If IsWork(Good) Then
+            If IsWork(good) Then
                 TypOpp = "Работа"
                 Exit Function
             End If
-            If IsSubscription(Good, GoodType) Then
+            If IsSubscription(good, GoodType) Then
                 TypOpp = "Подписка"
             Else
                 TypOpp = "Лицензии"
