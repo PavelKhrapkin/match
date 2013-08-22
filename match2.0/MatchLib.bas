@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 18.8.13
+' П.Л.Храпкин, А.Пасс 21.8.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
@@ -138,9 +138,8 @@ FoundRep:
         RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
         Dim LoadMode As Boolean
         LoadMode = False
-        If RepTOC.Made <> REP_LOADED Then LoadMode = True
+        If RepTOC.Made = REP_LOADED Then LoadMode = True
         RepTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
-'''        RepTOC.ResLines = GetReslines(RepTOC.Name)
         RepTOC.Made = .Cells(i, TOC_MADE_COL)
         RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
         RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
@@ -491,14 +490,14 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
     End If
 
 End Sub
-Sub MS(Msg)
+Sub MS(msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
 '   11.6.12
-    ErrMsg TYPE_ERR, Msg
+    ErrMsg TYPE_ERR, msg
 End Sub
 
-Sub ErrMsg(ErrMode, Msg)
+Sub ErrMsg(ErrMode, msg)
 '
 ' - ErrMsg(ErrMode, MSG) - вывод сообщения об ощибке в Log и на экран
 '                          Коды ErrMode определены в Declaration
@@ -508,12 +507,12 @@ Sub ErrMsg(ErrMode, Msg)
 
     Select Case ErrMode
     Case WARNING:
-        LogWr "< WARNING > " & Msg
+        LogWr "< WARNING > " & msg
         Exit Sub
         
     Case TYPE_ERR:
-        LogWr "ВНИМАНИЕ:" & Msg
-        Respond = MsgBox(Msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
+        LogWr "ВНИМАНИЕ:" & msg
+        Respond = MsgBox(msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
         If Respond = vbNo Then
             ExRespond = False
             Stop
@@ -522,8 +521,8 @@ Sub ErrMsg(ErrMode, Msg)
         
     Case FATAL_ERR:
 Fatal:  ErrType = "<! ERROR !> "
-        LogWr ErrType & Msg
-        MsgBox Msg, , ErrType
+        LogWr ErrType & msg
+        MsgBox msg, , ErrType
         Stop
         Exit Sub
     Case Else:
@@ -531,7 +530,7 @@ Fatal:  ErrType = "<! ERROR !> "
         GoTo Fatal
     End Select
 End Sub
-Sub LogWr(Msg)
+Sub LogWr(msg)
 '
 ' запись сообщения msg в Log-лист
 '   15.2.2012
@@ -546,7 +545,7 @@ Sub LogWr(Msg)
         N = N + 1
         .Cells(N, 1) = Date
         .Cells(N, 2) = Time
-        .Cells(N, 3) = Msg
+        .Cells(N, 3) = msg
         .Cells(1, 4) = N
     End With
 End Sub
@@ -892,11 +891,12 @@ Sub SheetSort(SheetN, Col)
 '   22.1.2012
 '   21.2.2012 - Option Explicit
 '   19.4.12 - AutoFilterReset
+'   21.8.13 - если фильтруем новый входной документ- не включаем AutoFilterReset
 
     Dim Name As String
 
 '    Sheets(SheetN).Select
-    Call AutoFilterReset(SheetN)
+    If Not IsNumeric(SheetN) Then Call AutoFilterReset(SheetN)
 
     Name = ActiveSheet.Name
     
@@ -986,28 +986,34 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '   3.10.12 - GetRep вместо EOL
 '   2.1.13  - добавил 2000 к году, если он двузначный, и конвертировал к локальному формату
 '   3.1.13  - исправил расчет года
+'  21.8.13  - для MoveInMatch
 
-    Dim i, dd, MM, YY As Integer
+    Dim i As Long, dd As Long, MM As Long, YY As Long
     Dim Dat As Date
     Dim D() As String
     
     Dim R As TOCmatch
-    R = GetRep(SheetN)
+    If Not IsNumeric(SheetN) Then
+        R = GetRep(SheetN)
+        Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+        Lines = R.EOL
+    End If
     
-    For i = 1 To R.EOL
-        D = Split(Sheets(SheetN).Cells(i, Col), ".")
-        If UBound(D) = 2 Then
-            dd = D(0)
-            If dd < 1 Or dd > 31 Then GoTo Nxt
-            MM = D(1)
-            If MM < 1 Or MM > 12 Then GoTo Nxt
-            YY = D(2)
-            If YY < 100 Then YY = 2000 + YY
-            Dat = GetDate(dd & "." & MM & "." & YY)
-            Sheets(SheetN).Cells(i, Col) = Dat
-        End If
-Nxt:
-    Next i
+    With ActiveSheet
+        For i = 2 To Lines
+            D = Split(.Cells(i, Col), ".")
+            If UBound(D) = 2 And IsNumeric(D(0)) And IsNumeric(D(1)) And IsNumeric(D(2)) Then
+                dd = D(0)
+                If dd < 1 Or dd > 31 Then GoTo Nxt
+                MM = D(1)
+                If MM < 1 Or MM > 12 Then GoTo Nxt
+                YY = D(2)
+                If YY < 100 Then YY = 2000 + YY
+                Dat = GetDate(dd & "." & MM & "." & YY)
+                .Cells(i, Col) = Dat
+            End If
+Nxt:    Next i
+    End With
 End Sub
 Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
 '
@@ -1015,8 +1021,9 @@ Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
 '                           и сортировка по этой колонке от старых к новым датам
 '   31.7.12
 '   31.8.12 - оформлен как Step со StepIn
+'   21.8.13 - для MoveToMatch
 
-    StepIn
+    If Not IsNumeric(SheetN) Then StepIn
 '''    Sheets(SheetN).Activate
     DateCol SheetN, Col
     SheetSort SheetN, Col

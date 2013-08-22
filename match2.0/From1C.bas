@@ -9,7 +9,7 @@ Attribute VB_Name = "From1C"
 ' S AccPaint()      - окраска колонки А - Организация есть в SF
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 18.8.13 - ревизия для match2.1
+' 21.8.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint(ByVal BottomHDR As String)
@@ -20,19 +20,20 @@ Sub PaymentPaint(ByVal BottomHDR As String)
 ' 31.8.12 - внедрение StepIn
 '  7.2.13 - параметр BottomHDR; окраска всей строки, занесенной в SF
 ' 18.8.13 - стираем строки нал
+' 21.8.13 - пятку не обрабатываем - это должно делаться в InsMyCol, чистка
 
     StepIn
 
     Dim i As Integer
     Dim Rub, Doc    'поля "Итого руб" и "Плат.док"
     
-    RepTOC.EOL = EOL(RepTOC.Name)
+'''    RepTOC.EOL = EOL(RepTOC.Name)
     Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
     Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
     
     With DB_1C.Sheets(PAY_SHEET)
         i = 2
-        Do
+        Do While i <= RepTOC.EOL
             Progress i / RepTOC.EOL
             If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые Платежи в SF
                 Range(Cells(i, 2), Cells(i, .Columns.Count)).Interior.Color = rgbLightGreen
@@ -66,7 +67,7 @@ Sub PaymentPaint(ByVal BottomHDR As String)
                 End If
             End If
             
-'-- сстираем нал
+'-- стираем нал
             Doc = Trim(.Cells(i, PAYDOC_COL))
             If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then
                 .Rows(i).Delete
@@ -74,13 +75,13 @@ Sub PaymentPaint(ByVal BottomHDR As String)
                 RepTOC.EOL = RepTOC.EOL - 1
             End If
             i = i + 1
-        Loop While i < RepTOC.EOL
-        RepTOC.EOL = EOL(RepTOC.Name)
-
-'-- копируем пятку в Платежи1С
-        DB_MATCH.Sheets(Header).Range(BottomHDR).Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
+        Loop
+'''        RepTOC.EOL = EOL(RepTOC.Name)
+'''
+''''-- копируем пятку в Платежи1С
+'''        DB_MATCH.Sheets(Header).Range(BottomHDR).Copy Destination:=.Cells(RepTOC.EOL + 1, 1)
     End With
-    
+'''
 End Sub
 Sub ContractPaint()
 '
@@ -113,9 +114,9 @@ Sub ContractPaint()
     
     ScreenUpdate True
     
-'-- копируем пятку в Договоры
-    DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
-            Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
+''''-- копируем пятку в Договоры
+'''    DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
+'''            Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
             
 End Sub
 Sub Paint(iStr As Long, Col As Long, Criteria As String, Color, Optional Mode As Integer = 0)
