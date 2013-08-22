@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 18.8.2013
+' П.Л.Храпкин 23.8.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -26,7 +26,8 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 '  6.4.13 - выход при попытке загрузить в match один из файлов базы данных
 ' 13.5.13 - пропускаем строки-продолжения в TOCmatch
 ' 17.8.13 - загрузка отчетов с частичным диапазоном дат
-' 18.8.13 - ResLines теперь имеет вид 2 / 8
+' 18.8.13 - ResLines теперь имеет вид 2 / 7
+' 23.8.13 - SheetSort загружуемого документа, если это часть полного
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -56,7 +57,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
             If CheckStamp(i, NewRep, Lines, IsSF, InSheetN) Then GoTo RepNameHandle
 NxDoc:  Next i
     End With
-    FatalRep "MoveToMatch: файл " & NewRep, RepName
+    GoTo FatalInFile
         
 '----- новый отчет распознан. Заменяем прежний отчет новым -----
 RepNameHandle:
@@ -72,10 +73,9 @@ RepNameHandle:
             MS "Это файл базы данных match! Его не надо загружать."
             End
         End If
-           'Lines = EOL - пятка
-'        Lines = Lines - GetReslines(.Cells(i, TOC_RESLINES_COL), True)
         RepName = .Cells(i, TOC_REPNAME_COL)
         RepFile = .Cells(i, TOC_REPFILE_COL)
+         'Lines = EOL - пятка
         Lines = Lines - GetReslines(RepName, True, .Cells(i, TOC_RESLINES_COL))
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
@@ -104,9 +104,34 @@ RepNameHandle:
             tst = .Cells(Lines + 5, 1)
             Created = GetDate(Right(.Cells(Lines + 5, 1), 16))
         ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
+            .Activate
+            .Rows("1:" & Lines).AutoFilter
+            DateSort InSheetN, NewToDate_Col
             Created = GetDate(Right$(.Name, 8))
-            NewFrDate = GetDate(.Cells(NewFrDate_Row, NewFrDate_Col))
-            NewToDate = GetDate(.Cells(NewToDate_Row, NewToDate_Col))
+            Dim DateCell As String
+            Do
+                DateCell = .Cells(NewFrDate_Row, NewFrDate_Col)
+                If IsDate(DateCell) Then
+                    Exit Do
+                Else
+                    NewFrDate_Row = NewFrDate_Row + 1
+                    If NewFrDate_Row > Lines Then GoTo FatalFrDate
+                End If
+            Loop
+            NewFrDate = GetDate(DateCell)
+            Do
+                DateCell = .Cells(NewToDate_Row, NewToDate_Col)
+                If IsDate(DateCell) Then
+                    Exit Do
+                Else
+                    NewToDate_Row = NewFrDate_Row - 1
+                    If NewToDate_Row < NewFrDate_Row Then GoTo FatalToDate
+                End If
+            Loop
+            DateCell = .Cells(NewToDate_Row, NewToDate_Col)
+            If Not IsDate(DateCell) Then GoTo FatalToDate
+            NewToDate = GetDate(DateCell)
+            If NewFrDate < NewToDate Then GoTo FatalFrToDate
             If NewFrDate <> FrDateTOC Or NewToDate < ToDateTOC Then
                 IsPartialUpdate = True
             End If
@@ -196,6 +221,15 @@ DelRep: If SheetExists(RepName) Then
         ProcStart RepLoader
     End If
     MyDB.Save
+    Exit Sub
+    Dim msg As String
+FatalInFile:    msg = "Не найден Штамп": GoTo FatMsg
+FatalFrDate:    msg = "FrDate": GoTo FatErMsg
+FatalToDate:    msg = "ToDate"
+FatErMsg:       msg = " не дата в ячейке " & msg & "='" & DateCell & "'": GoTo FatMsg
+FatalFrToDate:  msg = " странные даты входного документа '" & NewRep _
+                    & "': NewFrDate=" & NewFrDate & " < " & "NewToDate=" & NewToDate
+FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & msg & vbCrLf & "Входной документ " & NewRep
 End Sub
 Sub StepReset(iStep)
 '
