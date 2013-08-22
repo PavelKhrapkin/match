@@ -2,30 +2,19 @@ Attribute VB_Name = "NewEntities"
 '-----------------------------------------------------------------------------
 ' NewEntities   - новые Платежи, Договоры, etc в "голубых" листах WP_TMP
 '
-' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
-'       Название шапки нового листа берется из названия SheetName,
-'       а ширина колонок шапки- из третьей cтроки формы
+' S NewSheet(SheetName,[TabColor]) - создает новый лист SheetName цвета TabColor
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
-'   7.5.2013
+'
+'   23.8.2013
 
 Option Explicit
 
-Sub testNewSheet()
-a:
-    Set DB_MATCH = FileOpen(F_MATCH)
-    DB_MATCH.Sheets("Process").Cells(1, PROCESS_NAME_COL) = "HANDL_PaidOpp"
-    DB_MATCH.Sheets("Process").Cells(1, STEP_NAME_COL) = "NewSheet"
-    NewSheet "NewPayment"
-'    WrNewSheet "NewPayment", F_TMP, 3
-    Stop
-    GoTo a
-End Sub
-
-Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
+Sub NewSheet(SheetName As String, Optional TabColor As Long = 0)
 '
 ' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
-'       Название шапки нового листа берется из названия SheetName,
-'       а ширина колонок шапки- из третьей cтроки формы
+'       * Название шапки нового листа берется из названия SheetName,
+'       * ширина колонок шапки- из третьей cтроки формы
+'       * по умолчанию TabColor цвет берется из TOCmatch
 '
 ' 19.8.12
 '  3.9.12 - StepIn
@@ -36,6 +25,7 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
 ' 23.11.12 - Optional TabColor
 ' 16.01.13 - использование setColWidth, парсинг ширины колонки
 ' 28.01.13 - width в setColWidth теперь массив: ширина/формат
+' 23.8.13 - по умолчанию цвет Tab нового листа как в у поля в TOC
 
     StepIn
     
@@ -45,6 +35,9 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
     
     R = GetRep(SheetName)
     
+    If TabColor = 0 Then
+        TabColor = DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_SHEETN_COL).Interior.Color
+    End If
     On Error GoTo NoHdr
     Set Frm = DB_MATCH.Sheets(Header).Range(R.FormName)
     Cols = Frm.Columns.Count
@@ -52,7 +45,7 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
     
     If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP
-'-- уничтожаем прежний одноименный лист
+'-- заменяем прежний одноименный лист
         Application.DisplayAlerts = False
         On Error Resume Next
         .Sheets(SheetName).Delete
@@ -67,7 +60,6 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = rgbLightBlue)
                 Frm.Columns(i).Copy Destination:=.Cells(1, i)
 '                If IsNumeric(W) Then .Cells.Columns(i).ColumnWidth = CDbl(W)
                 setColWidth DB_TMP.Name, SheetName, i, .Cells(3, i)
-                
             Next i
             For i = 2 To .UsedRange.Rows.Count
                 .Rows(2).Delete
@@ -89,6 +81,16 @@ ErrHdr:
     ErrMsg FATAL_ERR, "NewSheet> Ошибка Шаблона (шапки) '" & R.FormName _
         & "' для листа " & SheetName & " -- неправильный EOL"
     End
+End Sub
+Sub testNewSheet()
+a:
+    Set DB_MATCH = FileOpen(F_MATCH)
+    DB_MATCH.Sheets("Process").Cells(1, PROCESS_NAME_COL) = "HANDL_PaidOpp"
+    DB_MATCH.Sheets("Process").Cells(1, STEP_NAME_COL) = "NewSheet"
+    NewSheet "NewPayment"
+'    WrNewSheet "NewPayment", F_TMP, 3
+    Stop
+    GoTo a
 End Sub
 '''Sub NewPay(i, OppN, ContrId)
 ''''
@@ -212,13 +214,13 @@ End Sub
 ''''    End With
 ''''End Sub
 
-Sub UniqueHanle(NewSht As String, SFrep As String)
-'
-' S UniqueHanle(NewSht, SFrep)  - заполнение поля Unique листа NewSDht и дедупликация
-'
-' Проходим по всем записям NewSht:
-'  1. если Заказ уже занесен в SF - NOP
-End Sub
+''''Sub UniqueHanle(NewSht As String, SFrep As String)
+'''''
+''''' S UniqueHanle(NewSht, SFrep)  - заполнение поля Unique листа NewSDht и дедупликация
+'''''
+''''' Проходим по всем записям NewSht:
+'''''  1. если Заказ уже занесен в SF - NOP
+''''End Sub
 Sub NewOrder(NewOrd As String)
 '
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL

@@ -51,11 +51,11 @@ Function OwnerId(Owner, Buddy) As String
 '   6.3.12 - переход к фамилии Продавца Owner в We
 '   12.3.12 - определение Компаньона OppBuddy
     
-    Dim X As Range
+    Dim x As Range
 
-    For Each X In Range("Продавцы").Rows
-        If InStr(Owner, X.Cells(1, 1)) <> 0 Then GoTo Found
-    Next X
+    For Each x In Range("Продавцы").Rows
+        If InStr(Owner, x.Cells(1, 1)) <> 0 Then GoTo Found
+    Next x
     LogWr "ERROR! Не найден Продавец " & Owner & _
         ". Это ошибка в Match/We или новый сотрудник в 1С"
     Stop
@@ -63,12 +63,12 @@ Found:
 '    If InStr(Owner, "Тучков") Then
 '''        MsgBox "Тучков"
 '    End If
-    If InStr(X.Cells(1, 3), X.Cells(1, 1)) = 0 Then
-        Buddy = X.Cells(1, 1)
+    If InStr(x.Cells(1, 3), x.Cells(1, 1)) = 0 Then
+        Buddy = x.Cells(1, 1)
     Else
         Buddy = ""
     End If
-    OwnerId = X.Cells(1, 4)
+    OwnerId = x.Cells(1, 4)
 End Function
 Function OppByPay(PayKod)
 '
@@ -248,15 +248,15 @@ Function InvoiceN(Str) As Integer
 ' - InvoiceN(Str) возвращает число - номер Счета по текстовой строке Str
 '   24.5.12
 
-    Dim X As Integer        ' номер символа - пробела в Str
+    Dim x As Integer        ' номер символа - пробела в Str
     Dim Y As Integer        ' позиция "Cч-" в Str
     Dim S As String         ' фрагмент Str с номером Счета
     
     InvoiceN = 0
     If Str = "" Then Exit Function
-    X = WorksheetFunction.Search(" ", Str)
+    x = WorksheetFunction.Search(" ", Str)
     Y = WorksheetFunction.Search("Сч-", Str)
-    S = Mid(Str, Y + 3, X - Y - 3)
+    S = Mid(Str, Y + 3, x - Y - 3)
     
     If Not IsNumeric(S) Then Exit Function
     InvoiceN = S

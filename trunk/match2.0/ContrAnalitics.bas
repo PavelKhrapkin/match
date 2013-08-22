@@ -75,7 +75,7 @@ Sub ContrPass()
     Dim Contr As Range
     Dim i, OppN, OppIs, OppNew, NoOpp As Integer
     Dim IsGenOpp As Integer
-    Dim DogSFstat, ContrK, ContrId, OppTyp, T, Stage As String
+    Dim DogSFstat, ContrK, ContrId, OppTyp, t, Stage As String
     Dim Acc, Dat, Sale, DogValue, DogCur, OppStage As String
     Dim VendorSF, Vendor1C As String
     
@@ -156,7 +156,7 @@ Function OppForDog(iDog) As Boolean
 
     Dim OppLnk As String        ' номер Проекта, с которым можно связать Договор
     Dim Acc, Dat, Sale, DogValue, DogCur As String  ' параметры нового Проекта
-    Dim Stage, T As String      ' Этап и Тип нового Проекта по Договору
+    Dim Stage, t As String      ' Этап и Тип нового Проекта по Договору
     Dim ContrK As String        ' Код Договора в форме Осн/Договор
     
     Dim t0, Tend
@@ -170,9 +170,9 @@ Function OppForDog(iDog) As Boolean
         DogCur = CurISO(.Cells(iDog, DOGCUR1C_COL))
         DogValue = .Cells(iDog, DOGSUM1C_COL) * CurRate(DogCur)
         ContrK = .Cells(iDog, DOGCOD_COL)
-        T = OppT(.Cells(iDog, VENDOR1C_COL), Sale)
+        t = OppT(.Cells(iDog, VENDOR1C_COL), Sale)
            
-        OppLnk = IsOpp(Sale, Acc, T, DogValue, Dat, ContrK)
+        OppLnk = IsOpp(Sale, Acc, t, DogValue, Dat, ContrK)
     
         If OppLnk = "" Then     ' есть подходящий Проект, куда войдет Договор?
                                     '---- нет - создаем новый Проект
@@ -297,14 +297,14 @@ Sub DogOppLink()
 '    Shell "quota2.bat"
     ModEnd SFD
 End Sub
-Function Deviation(X, Y)
+Function Deviation(x, Y)
 '
 ' возвращает относительную разницу Х и Y
 '   15.3.12
 
     Const ErrVal = 999999
-    If X <> 0 Then
-        Deviation = Abs((X - Y) / X)
+    If x <> 0 Then
+        Deviation = Abs((x - Y) / x)
     ElseIf Y = 0 Then
         Deviation = 0
     Else

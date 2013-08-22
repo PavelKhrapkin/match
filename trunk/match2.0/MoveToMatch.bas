@@ -124,14 +124,12 @@ RepNameHandle:
                 If IsDate(DateCell) Then
                     Exit Do
                 Else
-                    NewToDate_Row = NewFrDate_Row - 1
+                    NewToDate_Row = NewToDate_Row - 1
                     If NewToDate_Row < NewFrDate_Row Then GoTo FatalToDate
                 End If
             Loop
-            DateCell = .Cells(NewToDate_Row, NewToDate_Col)
-            If Not IsDate(DateCell) Then GoTo FatalToDate
             NewToDate = GetDate(DateCell)
-            If NewFrDate < NewToDate Then GoTo FatalFrToDate
+            If NewFrDate > NewToDate Then GoTo FatalFrToDate
             If NewFrDate <> FrDateTOC Or NewToDate < ToDateTOC Then
                 IsPartialUpdate = True
             End If
@@ -222,14 +220,14 @@ DelRep: If SheetExists(RepName) Then
     End If
     MyDB.Save
     Exit Sub
-    Dim msg As String
-FatalInFile:    msg = "Не найден Штамп": GoTo FatMsg
-FatalFrDate:    msg = "FrDate": GoTo FatErMsg
-FatalToDate:    msg = "ToDate"
-FatErMsg:       msg = " не дата в ячейке " & msg & "='" & DateCell & "'": GoTo FatMsg
-FatalFrToDate:  msg = " странные даты входного документа '" & NewRep _
+    Dim Msg As String
+FatalInFile:    Msg = "Не найден Штамп": GoTo FatMsg
+FatalFrDate:    Msg = "FrDate": GoTo FatErMsg
+FatalToDate:    Msg = "ToDate"
+FatErMsg:       Msg = " не дата в ячейке " & Msg & "='" & DateCell & "'": GoTo FatMsg
+FatalFrToDate:  Msg = " странные даты входного документа '" & NewRep _
                     & "': NewFrDate=" & NewFrDate & " < " & "NewToDate=" & NewToDate
-FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & msg & vbCrLf & "Входной документ " & NewRep
+FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & Msg & vbCrLf & "Входной документ " & NewRep
 End Sub
 Sub StepReset(iStep)
 '
