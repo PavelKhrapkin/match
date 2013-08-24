@@ -1,63 +1,57 @@
 Attribute VB_Name = "Paint"
-'------------------------------------------------------------------------------------
-' Форматирование и раскрашивание листов Платежей, Договоров и колонки 1 в 1C.xlsm
-'(*) PaymentPaint   - раскрашиваем и форматируем Лист Платежей из 1С
-'(*) ContractPaint  - раскрашиваем и форматируем лист Договоров
-' T TestAccFill()   - отладка SFaccColFill для листа Платежей
-' - SFaccColFill(SheetN)    - заполняем колонку 1 листа SheetN "1",
-'                             если Организация в AccCol есть в SF
-' -  SFaccCol(SheetN, ResLines)  - раскраска колонки 1 по SFacc
-' -  ADSK_P_Paint() - раскраска Платежей ADSK, с учетом наличия связи SF_PA
-' -  IsP_AbyN(Nstr) - возвращает TRUE, если строка Nstr Платежа связзана с ADSK
+'---------------------------------------------------------------------------
+' Загрузка и раскраска отчетов из 1С и SalesForce.com
 '
-' 30.6.2012 match2.0
+' S PaymentPaint()  - Раскрашиваем Лист Платежей 1C и восстанавливаем пятку
+' S ContractPaint() - Раскрашиваем Лист Договоров
+' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячейки (iStr,Col) в цвет Color
+' - Acc1C_Bottom()  - перенос первыx трех строк Acc1С в пятку
+' S AccPaint()      - окраска колонки А - Организация есть в SF
+' S SF_Paint()      - окраска колонки А отчета SF по Платежам
+' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
+'
+' 8.11.2012 П.Л.Храпкин match 2.0
+' 24.8.13 - ревизия для match2.1
 
 Option Explicit
-
 Sub PaymentPaint()
-Attribute PaymentPaint.VB_ProcData.VB_Invoke_Func = "P\n14"
 '
-' - PaymentPaint() - Раскрашиваем Лист Платежей 1C
+' S PaymentPaint()  - Раскрашиваем Лист Платежей 1C и восстанавливаем пятку
+'
 ' 24.6.12 переписано для match 2.0
+'  7.8.12 оформлено как Шаг
+' 31.8.12 - внедрение StepIn
+'  7.2.13 - параметр BottomHDR; окраска всей строки, занесенной в SF
+' 18.8.13 - стираем строки нал
+' 24.8.13 - восстанавливаем пятку, если она есть
+
+    StepIn
 
     Dim i As Integer
-    Dim Rub             'поле "Итого руб"
-
-    ModStart REP_1C_P_PAINT    ' Отчет "Раскраска Платежей 1С"
-     
-    Worksheets(PAY_SHEET).Columns("A:AC").Select
-    Selection.EntireColumn.Hidden = False ' проявляем все невидимые (Hide) ячейки
-    Range("J:Q,T:U,W:X").Select          ' делаем невидимыми ненужные колонки
-    Selection.EntireColumn.Hidden = True 'валютных проводок, расходных кредитов,
-                                         'отделов и фирм
-' поправляем ширину колонок для удобства дальнейшей работы с SF
-    Columns("G:G").ColumnWidth = 8      ' Дата прихода денег
-    Columns("F:F").ColumnWidth = 13     ' Платежный документ
-    Columns("H:H").ColumnWidth = 7.29   ' Счет
-    Columns("Y:Y").ColumnWidth = 8.5    ' Договор
-    Columns("Z:Z").ColumnWidth = 14     ' Основной Договор
+    Dim Rub, Doc            'поля "Итого руб" и "Плат.док"
+    Dim Fsummary As String  'имя пятки Платежей в TOC
     
-    Range("A1:AC" & EOL_PaySheet).Interior.Color = rgbWhite   ' сбрасываем окраску
-    Rows("2:" & EOL_PaySheet).RowHeight = 15    ' высота строк до конца = 15
+    RepTOC.EOL = EOL(RepTOC.Name)
+    Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
+    Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
     
-    With Sheets(PAY_SHEET)
-        For i = 2 To EOL_PaySheet
-            Progress i / EOL_PaySheet
+    With DB_1C.Sheets(PAY_SHEET)
+        i = 2
+        Do While i <= RepTOC.EOL
+            Progress i / RepTOC.EOL
             If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые Платежи в SF
-                Range(Cells(i, 2), Cells(i, AllCol)).Interior.Color = rgbLightGreen
-            ElseIf Trim(.Cells(i, PAYDOC_COL)) = "" Or Trim(.Cells(i, PAYSALE_COL)) = "" Then
-                .Cells(i, 1).EntireRow.Hidden = True    ' нал убираем
+                Range(Cells(i, 2), Cells(i, .Columns.Count)).Interior.Color = rgbLightGreen
             Else
 '-- окраска еще не занесенных Платежей в зависимости от суммы
                 Rub = .Cells(i, PAYRUB_COL)
                 If Rub >= 1000000 Then
-                    PntCell .Cells(i, PAYRUB_COL), rgbBrown
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBrown
                 ElseIf Rub > 500000 Then
-                    PntCell .Cells(i, PAYRUB_COL), rgbOrange
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbOrange
                 ElseIf Rub > 300000 Then
-                    PntCell .Cells(i, PAYRUB_COL), rgbBisque
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBisque
                 ElseIf Rub > 30000 Then
-                    PntCell .Cells(i, PAYRUB_COL), rgbBeige
+                    .Cells(i, PAYRUB_COL).Interior.Color = rgbBeige
                 End If
             End If
             
@@ -76,222 +70,157 @@ Attribute PaymentPaint.VB_ProcData.VB_Invoke_Func = "P\n14"
                     .Cells(i, PAYGOOD_COL).Interior.Color = rgbPink
                 End If
             End If
-'-- окраска колонки А - Организация есть в SF
-            If .Cells(i, PAYISACC_COL) = "1" Then
-                .Cells(i, PAYISACC_COL).Interior.Color = rgbYellow
-            Else
-                .Cells(i, PAYISACC_COL).Interior.Color = rgbRed
-            End If
             
-        Next i
+'-- стираем нал
+            Doc = Trim(.Cells(i, PAYDOC_COL))
+            If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then
+                .Rows(i).Delete
+                i = i - 1
+                RepTOC.EOL = RepTOC.EOL - 1
+            End If
+            i = i + 1
+        Loop
+        
+'-- переписываем пятку, если она есть
+        RepTOC.EOL = EOL(RepTOC.Name)
+        With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
+            For i = 1 To PAYGOODTYPE_COL
+                If Trim(.Cells(RepTOC.EOL, i)) <> "" Then GoTo AddSummary
+            Next i
+            .Rows(RepTOC.EOL + 1 & ":" & RepTOC.EOL + 2).Delete 'пятка есть- стереть
+            RepTOC.EOL = RepTOC.EOL - 2
+            
+AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(RepTOC.iTOC, TOC_FORMSUMMARY)
+            DB_MATCH.Sheets(Header).Range(Fsummary).Copy _
+                Destination:=.Cells(RepTOC.EOL + 1, 1)
+        End With
     End With
-    ModEnd REP_1C_P_PAINT
-End Sub
-Sub PntCell(CelRef, Color)
-'
-' - PntCell(CelRef, Color) - окраска ячейки
-'   24.6.12
-
-    CelRef.Interior.Color = Color
 End Sub
 Sub ContractPaint()
-Attribute ContractPaint.VB_ProcData.VB_Invoke_Func = "D\n14"
 '
-' Раскрашиваем Лист Договоров
-'   26.1.2012
-'   1.3.12 -  добавлена колонка Поставщик
-'  30.4.12 - SFaccColFill
-'   1.5.12 - убрали ContrToDl и вообще занесение новых Договоров в SF
+' S ContractPaint() - Раскрашиваем Лист Договоров
+' 10.8.12
+'  1.9.12 - StepIn
+' 14.9.12 - раскраска с Paint
+'  4.11.12 - флаг "Не отсканировано" - красный
 
-    Const reslines = 7  ' количество строк в сводке внизу отчета
+    StepIn
     
-    Lines = ModStart(3, "Раскрашиваем лист Договоров")
+    Dim D As TOCmatch
+    D = GetRep(DOG_SHEET)
+    Dim i As Long
     
-'*** вначале всегда восстанавливаем обычный формат листа Договоров
-    SheetSort 3, 4          ' сортируем лист Платежей по порядку номеров в колонке В
+    ScreenUpdate False
     
-    ' все колонки листа Договоров - видимые
-    ActiveSheet.UsedRange.EntireColumn.Hidden = False
-
-    Rows("1:" & Lines).Font.Name = "Calibri"    ' весь отчет в формате Calibri 8
-    Rows("1:" & Lines).Font.size = 8
+    For i = 2 To D.EOL
+        ActiveSheet.Rows(i).Interior.Color = rgbWhite
+        Paint i, DOGSFSTAT_COL, "Закрыт", rgbLightGreen ' Договоры Закрытые в SF- зеленые
+        Paint i, DOGSFSTAT_COL, "Открыт", rgbOrange     ' Открытые Договоры - оранжевые
+        Paint i, DOGSFSTAT_COL, "Черновик", rgbLightBlue ' Черновики - голубые
+        Paint i, DOGSFSTAT_COL, "Не состоялся", Antique ' Не состоялся - Antique
+        Paint i, DOGSFSTAT_COL, "Нет в SF", rgbWhite    ' Нет в SF - не окрашиваем
+        Paint i, DOGPAID1C_COL, "1", LimeG, 1           ' Оплаченные - темно зеленый
+        Paint i, DOGISINV1C_COL, "1", rgbOlive, 1       ' Выставлен Счет - оливковый
+        Paint i, DOG1CSCAN_COL, "1", rgbViolet, 1       ' Отсканировано - фиолетовый
+        Paint i, DOG1CSCAN_COL, "0", rgbRed, 1          ' НЕ Отсканировано - красный
+    Next i
     
-    Range("T" & Lines - 5 & ":V" & Lines - 5).NumberFormat = "#,##0"
+    ScreenUpdate True
     
-' поправляем ширину колонок для удобства дальнейшей работы с SF
-    Columns("A:A").ColumnWidth = 1.86   ' SF Орг - Имя Организации в SF
-    Columns("B:B").ColumnWidth = 7.86   ' Статус в SF
-    Columns("C:C").ColumnWidth = 6.57   ' Тест Организации в SF <!> надо бы им заняться 2.1.12
-    Columns("D:D").ColumnWidth = 6.57   ' Номер в SF
-    Columns("E:E").ColumnWidth = 1.71   ' Получено - оплачено по Счету в 1С
-    Columns("F:F").ColumnWidth = 1.57   ' Выставлены Счета
-    Columns("G:G").ColumnWidth = 1.43   ' Отсканировано
-    Columns("H:H").ColumnWidth = 0.75   ' <Основной>/<Договор>
-    Columns("I:I").ColumnWidth = 0.75
-    Columns("J:J").ColumnWidth = 8.45   ' Номер Договора в 1С
-    Columns("K:K").ColumnWidth = 0.75
-    Columns("L:L").ColumnWidth = 9      ' Дата подписания
-    Columns("M:M").ColumnWidth = 7.57   ' наша фирма
-    Columns("N:N").ColumnWidth = 10.29  ' Продавец
-    Columns("O:O").ColumnWidth = 20.57  ' Заказчик в 1С
-    Columns("P:P").ColumnWidth = 12.75  ' Поставщик
-    Columns("Q:Q").ColumnWidth = 15.86  ' Тип договора
-    Columns("R:R").ColumnWidth = 8.14   ' Основной Договор
-    Columns("S:S").ColumnWidth = 5.57   ' Номер у заказчика
-    Columns("T:T").ColumnWidth = 14     ' Сумма (план)
-    Columns("U:U").ColumnWidth = 10     ' Сумма по счетам
-    Columns("V:V").ColumnWidth = 10     ' Сумма по платежам
-    Columns("W:W").ColumnWidth = 5.14   ' Вылюта
-    Columns("X:X").ColumnWidth = 11.43  ' Счета и платежи
-    Columns("Y:Y").ColumnWidth = 24.57  ' Примечание
-    
-    Lines = Lines - reslines    ' В дальнейшем с сводками не работаем
-    
-    Pnt 2, "Закрыт", rgbLightGreen      ' Договоры Закрытые в SF - зеленые
-    Pnt 2, "Открыт", rgbOrange          ' Открытые Договоры - оранжевые
-    Pnt 2, "Черновик", rgbLightBlue     ' Черновики - голубые
-    Pnt 2, "Не состоялся", Antique      ' Не состоялся - Antique
-    Pnt 5, 1, LimeG, 1                  ' Оплаченные - темно зеленый
-    Pnt 6, 1, rgbOlive, 1               ' Выставлен Счет - оливковый
-    Pnt 7, 1, rgbViolet, 1              ' Выставлен Счет - оливковый
-    
-    ModEnd 3
+''''-- копируем пятку в Договоры
+'''    DB_MATCH.Sheets(Header).Range("HDR_1C_Contract_Summary").Copy _
+'''            Destination:=ActiveSheet.Cells(D.EOL + 1, 1)
+            
 End Sub
-Sub TestAccFill()
+Sub Paint(iStr As Long, Col As Long, Criteria As String, Color, Optional Mode As Integer = 0)
 '
-' T TestAccFill() - отладка SFaccColFill для листа Платежей
-'   26.6.2012
+' - Paint(iStr,Col,Criteria,Color,[Mode]) - раскраска ячеки (iStr,Col) в цвет Color
+'                            при значении Criteria, или вся строка если указано Mode=1
+' 14.9.12
 
-    SFaccColFill PAY_SHEET  ' в колонке 1 если Организация есть в SF
-    SFaccCol PAY_SHEET, PAY_RESLINES    ' раскрашиваем колонку A
-End Sub
-Sub SFaccColFill(SheetN)
-'
-' - SFaccColFill(SheetN)    - заполняем колонку 1 листа SheetN "1",
-'                             если Организация в AccCol есть в SF
-' это Case Sensitive для имен Организаций, в отличие от VLOOKUP
-'   30.4.12
-'  1.5.12 - проверка на пустое поле Клиент в Договоре
-'  3.5.12 - использование Hash таблиц А.Пасс
-' 25.6.12 - match 2.0
-'  2.7.12 - CSmatch(Acc, SFACC_ACC1C_COL, SFacc, DB_SFDC)
-
-'    Dim SFDC As workbook
-     
-    Dim L, i, j, AccCol As Integer
-    Dim Acc As String
-    Dim accInSF As String
-    Dim t0, t1
+    Const DOG_COLS = 26     ' число колонок в таблице Договоров
     
-''''''''''    Static accHTable(0 To 5000) As String
-''''''''''    Static accVTable(0 To 5000) As String
-''''''''''
-''''''''''    hashInit accHTable, accVTable
-    
-    t0 = Timer
-       
-    ModStart REP_1C_SFACCFIL
-
-    Select Case SheetN
-        Case PAY_SHEET:
-            L = EOL_PaySheet
-            AccCol = PAYACC_COL
-        Case DOG_SHEET:
-            L = EOL_DogSheet
-            AccCol = DOG1CACC_COL
-        Case Acc1C:
-            L = EOL_Acc1C
-            AccCol = A1C_NAME_COL
-        Case Else
-            ErrMsg FATAL_ERR, "неправильный лист в SFaccColFill"
-            Stop
-    End Select
-
- ' -- проход по листу Организаций в SF SFacc для каждой строки SheetN
-'    Set DB_SFDC = Workbooks.Open(F_SFDC, UpdateLinks:=True, ReadOnly:=True)
-    With ThisWorkbook.Sheets(SheetN)
-        For i = 2 To L
-            Progress i / L
-
-            Acc = Replace(Compressor(.Cells(i, AccCol)), vbCrLf, "")
-            If Acc = "" Then
-                accInSF = ""
+    With ActiveSheet
+        If .Cells(iStr, Col) = Criteria Then
+            If Mode = 1 Then
+                .Cells(iStr, Col).Interior.Color = Color
             Else
-                accInSF = hashGet(accHTable, accVTable, Acc)
+                Range(Cells(iStr, 2), Cells(iStr, DOG_COLS)).Interior.Color = Color
             End If
-            If accInSF = "$" Then
-                .Cells(i, 1) = ""
-                If Acc <> "" Then
-                    For j = 2 To EOL_SFacc
-'                        If Acc = Replace(DB_SFDC.Sheets(SFacc).Cells(j, SFACC_ACC1C_COL), "" & vbCrLf, "") Then
-                        If CSmatch(Acc, SFACC_ACC1C_COL, SFacc, DB_SFDC) Then
-                            .Cells(i, 1) = "1"
-                            Exit For
-                        End If
-                    Next j
-                End If
-                hashSet accHTable, accVTable, Acc, .Cells(i, 1)
-            Else
-                .Cells(i, 1) = accInSF
-            End If
-        Next i
+        End If
     End With
-    DB_SFDC.Close SaveChanges:=False
-
-
-    t1 = Timer - t0
-    LogWr "[SFaccColFill] Time =" & t1
-
-    ModEnd
 End Sub
-Sub SFaccCol(SheetN, Optional reslines As Integer = 0)
+Sub Acc1C_Bottom()
 '
-' Раскрашиваем колонку А:А в листе SheetsN по SFacc - справочнику Организаций
-' Если данная Организация есть в SF (значение в колонке =1)она желтая, иначе красная
-'   12.1.2012
-'   25.1.2012 - исправлена ошибка с Lines; теперь используется Private L
-'   29.2.2012 - bug fix, EOL вместо AutoFulterReset
-'   13.5.2012 - сброс прежней раскраски листа
+' - Acc1C_Bottom() - перенос первыx трех строк Acc1С в пятку
+'   14.8.12
 
-    Dim L
+    Dim R As TOCmatch
+    Dim b As Range
     
-    L = EOL(SheetN) - reslines
-    
-    Range("B2:AZ" & L).Interior.Color = rgbWhite    ' сбрасываем старую раскраску листа
-    Range("A2:A" & L).Interior.Color = rgbYellow
-    Range("A1:A" & L).AutoFilter Field:=1, Criteria1:="="
-    Range("A2:A" & L).Interior.Color = rgbRed  ' неизвестные SF Организации в колонке 1 красные
-    ActiveSheet.UsedRange.AutoFilter Field:=1
-    
-    Rows("1:1").RowHeight = 45          ' первый ряд тройной высоты
-    Rows("2:" & L).RowHeight = 15       ' высота строк до конца = 15
-    
+    R = GetRep(Acc1C)
+    DB_1C.Sheets(Acc1C).Activate
+    Set b = ActiveSheet.Rows("1:3")
+    b.Copy Destination:=Cells(R.EOL + 2, 1)
+    b.Delete
 End Sub
-Sub ADSK_P_Paint()
+Sub AccPaint()
 '
-' - ADSK_P_Paint()  - раскраска Платежей ADSK, с учетом наличия связи SF_PA
-'   18.5.12
+' S AccPaint() - окраска колонки А - Организация есть в SF
+'   14.8.12
+'   31.8.12 - внедрение StepIn
+
+    StepIn
 
     Dim i As Long
-    Dim j As Long
+    Dim RepTo As TOCmatch
+    Dim R As Range
     
-    With Sheets(PAY_SHEET)
-        For i = 2 To EOL_PaySheet
-            If .Cells(i, PAYINSF_COL) = 1 Then
-                If GoodType(.Cells(i, PAYGOOD_COL)) = WE_GOODS_ADSK Then
-                    If IsP_AbyN(i - 1) Then
-                        .Cells(i, PAYGOOD_COL).Interior.Color = rgbPink
-                    End If
-                End If
+    ScreenUpdate False
+    
+    RepTo = GetRep(ActiveSheet.Name)
+    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
+        For i = 2 To RepTo.EOL
+            Progress i / RepTo.EOL
+            Set R = .Cells(i, PAYISACC_COL)
+            If R <> "" Then
+                R.Interior.Color = rgbYellow
+            Else
+                R.Interior.Color = rgbRed
             End If
         Next i
     End With
     
+    ScreenUpdate True
+End Sub
+Sub SF_Paint()
+'
+' S SF_Paint() - окраска колонки А отчета SF по Платежам
+'
+'   24.8.13
+
+    StepIn
+    
+    Dim i As Long, R As TOCmatch
+    R = GetRep(ActiveSheet.Name)
+    R.EOL = EOL(R.SheetN) - R.ResLines
+    
+    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
+        For i = 2 To RepTo.EOL
+            Progress i / RepTo.EOL
+            If .Cells(i, 1) = "" Then
+                If InStr(.Cells(i, SF_SAIL_COL), "Лидер") Then
+                    .Cells(i, 1).Interior.Color = vbBlue
+                Else
+                    .Cells(i, 1).Interior.Color = vbRed
+                End If
+            End If
+        Next i
 End Sub
 
 Function IsP_AbyN(Nstr) As Boolean
 '
-' - IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связзана с ADSK
+' - IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
 '   18.5.2012
 
     Dim SFid As String
