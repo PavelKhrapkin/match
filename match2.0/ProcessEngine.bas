@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 20.8.13 П.Л.Храпкин, А.Пасс
+' 24.8.13 П.Л.Храпкин, А.Пасс
 '
 ' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -19,7 +19,7 @@ Attribute VB_Name = "ProcessEngine"
 ' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd таблицы Процессов
 ' S ProcReset(Proc)     - сброс и новый запуск Процесса Proc
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
-' S MergeReps()         - слияние "полных" отчетов в суффиксом "_OLD" и "новых" - Update'ов
+' S MergeReps()         - слияние "полных" отчетов в суффиксом "_OLD" и "Update"
 
 Option Explicit
 
@@ -34,10 +34,10 @@ Sub ProcStart(Proc As String)
 ' - ProcStart(Proc) - запуск Процесса Proc по таблице Process в match.xlsm
 '   7.8.12
 '  26.8.12 - окраска выполненного Процесса
-'  17.8.13 - поддержка "частичной" загрузки документов - MergeReps
+'  24.8.13 - по завершению Процесса записываем <*>ProcEnd в ТОС Документа
 
     Dim Step As String, PrevStep As String
-    Dim i As Integer
+    Dim i As Integer, Doc As String, К As TOCmatch
 '---- инициализируем флаги Trace
     TraceStep = False:    TraceStop = False:    TraceWidth = False
     
@@ -70,9 +70,12 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
-        MergeReps i + 1
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
+        i = ToStep(Proc)
+        GetRep .Cells(i, PROC_REP1_COL)
+        RepTOC.Made = PROC_END
+        WrTOC
 ''        MS "<*> Процесс " & Proc & " завершен!"
     End With
     Exit Sub
@@ -367,37 +370,38 @@ Sub CheckProc0(NewProcResult As String)
         End
     End If
 End Sub
-Sub MergeReps(iProc)
+Sub MergeReps()
 '
-' S MergeReps(iProc)    - слияние "полных" отчетов в суффиксом "_OLD" и "новых" - Update'ов
-'                         iProc - строка листа процессов с шагом <*>ProcEnd
-'   * выполняется в конце каждого Процесса по Шагу <*>ProcEnd
-'   * в Шаге <*>ProcEnd указан основной документ Процесса, он извлекается в StepIn
+' S MergeReps()    - слияние "полных" отчетов в суффиксом "_OLD" и "Update"
 '
-' 20.8.13
+'   * Отлажено для Платежей и Договоров 1С
+'
+' 24.8.13
 
+    Dim RefSummary As String
     Dim R As TOCmatch
     Dim OldRepName As String
     Dim RoldEOL As Long, Col As Long, i As Long, FrRow As Long, ToRow As Long
     Dim FrDate As Date, ToDate As Date
+    Dim FrDateRow, ToDateRow
     
-'!'    StepIn
+    StepIn
     
     RepName = ActiveSheet.Name
     R = GetRep(RepName)
     OldRepName = RepName & "_OLD"
-        
-    If Not SheetExists(OldRepName) Then GoTo Ex
-    RoldEOL = EOL(OldRepName) - R.ResLines
+    If Not SheetExists(OldRepName) Then Exit Sub
+    R.EOL = EOL(RepName) - GetReslines(RepName)
+    RoldEOL = EOL(OldRepName) - GetReslines(RepName)
     
-'-- что вставлять
-''    Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy
-    
-'-- куда вставлять
+'-- куда вставлять - чтение TOC
     With DB_MATCH.Sheets(TOC)
-        Col = R.MyCol + .Cells(R.iTOC, TOC_NEW_FRDATECOL_COL)
+        FrDateRow = .Cells(R.iTOC, TOC_FRDATEROW_COL)
+        ToDateRow = .Cells(R.iTOC, TOC_TODATEROW_COL)
+        Col = R.MyCol + .Cells(R.iTOC, TOC_DATECOL_COL)
         FrDate = .Cells(R.iTOC, TOC_NEW_FRDATE_COL)
         ToDate = .Cells(R.iTOC, TOC_NEW_TODATE_COL)
+        RefSummary = .Cells(R.iTOC, TOC_FORMSUMMARY)
     End With
     
     With Workbooks(R.RepFile).Sheets(OldRepName)
@@ -407,21 +411,36 @@ Sub MergeReps(iProc)
             If .Cells(i, Col) >= FrDate And FrRow = 0 Then FrRow = i
             If .Cells(i, Col) >= ToDate And ToRow = 0 Then
                 ToRow = i
-                GoTo InsR
+                GoTo InsRow
             End If
         Next i
-        ToRow = RoldEOL
-InsR:   Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
-            Destination:=.Rows(FrRow & ":" & RoldEOL)
-'''InsR: .Rows(FrRow & ":" & ToRow).Paste
-'''!!!        ErrMsg FATAL_ERR, "Не удалось слить Документы " & RepName & " и " & OldRepName
+        ToRow = RoldEOL + 1
+InsRow: If FrRow = 0 Then FrRow = ToRow
+'-- копируем Update и пятку в прежний документ (_OLD)
+   .Rows(RoldEOL + 1 & ":" & RoldEOL + 1111).Delete    ' стираем старую пятку
+        Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
+            Destination:=.Rows(FrRow & ":" & ToRow)
+        RoldEOL = EOL(OldRepName)
+        DB_MATCH.Sheets(Header).Range(RefSummary).Copy _
+            Destination:=.Cells(RoldEOL + 2, 1)
+'-- переписываем FrDate и ToDate
+        If ToDateRow = "EOL" Then ToDateRow = RoldEOL
+        FrDate = .Cells(FrDateRow, Col)
+        ToDate = .Cells(ToDateRow, Col)
+    End With
+
+'-- переменовываем листы и уничтожаем Update документ
+    With Workbooks(R.RepFile)
+        Application.DisplayAlerts = False
+        .Sheets(R.SheetN).Delete
+        Application.DisplayAlerts = True
+        .Sheets(OldRepName).Name = R.SheetN
     End With
     
-'-- Переписать пятку
-    Stop
-    
-'-- переписать листы
-    
-Ex: StepOut PROC_END, iProc
+'---- переписываем FrDate и ToDate в TOCmatch
+    With DB_MATCH.Sheets(TOC)
+        .Cells(R.iTOC, TOC_FRDATE_COL) = FrDate
+        .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
+    End With
 End Sub
 
