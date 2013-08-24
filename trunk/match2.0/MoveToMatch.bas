@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 23.8.2013
+' П.Л.Храпкин 24.8.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -27,7 +27,8 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 13.5.13 - пропускаем строки-продолжения в TOCmatch
 ' 17.8.13 - загрузка отчетов с частичным диапазоном дат
 ' 18.8.13 - ResLines теперь имеет вид 2 / 7
-' 23.8.13 - SheetSort загружуемого документа, если это часть полного
+' 23.8.13 - SheetSort загружаемого документа, если это часть полного
+' 24.8.13 - упразднил InSheetN в TOC. Теперь Документ всегда должен быть в листе 1
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -51,9 +52,9 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
         For i = TOCrepLines To RepTOC.EOL
             If .Cells(i, TOC_REPNAME_COL) = "" Then GoTo NxDoc
             InSheetN = 1
-            If .Cells(i, TOC_INSHEETN) <> "" Then
-                InSheetN = .Cells(i, TOC_INSHEETN)
-            End If
+''            If .Cells(i, TOC_INSHEETN) <> "" Then
+''                InSheetN = .Cells(i, TOC_INSHEETN)
+''            End If
             If CheckStamp(i, NewRep, Lines, IsSF, InSheetN) Then GoTo RepNameHandle
 NxDoc:  Next i
     End With
@@ -83,16 +84,16 @@ RepNameHandle:
       '--получение диапазона дат в match и новом отчете ---
         FrDateTOC = .Cells(i, TOC_FRDATE_COL)   ' Даты прежнего отчета
         ToDateTOC = .Cells(i, TOC_TODATE_COL)   '.. в Match
-        NewFrDate_Row = .Cells(i, TOC_NEW_FRDATEROW_COL)
-        NewFrDate_Col = .Cells(i, TOC_NEW_FRDATECOL_COL)
+        NewFrDate_Row = .Cells(i, TOC_FRDATEROW_COL)
+        NewFrDate_Col = .Cells(i, TOC_DATECOL_COL)
         Dim ToStr As String
-        ToStr = .Cells(i, TOC_NEW_TODATEROW_COL)
+        ToStr = .Cells(i, TOC_TODATEROW_COL)
         If ToStr = "EOL" Then
             NewToDate_Row = Lines
         ElseIf WorksheetFunction.IsNumber(ToStr) Then
             NewToDate_Row = ToStr
         End If
-        NewToDate_Col = .Cells(i, TOC_NEW_TODATECOL_COL)
+        NewToDate_Col = .Cells(i, TOC_DATECOL_COL)
         
     End With
     
@@ -234,7 +235,7 @@ Sub StepReset(iStep)
 ' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
 ' 28.8.12
 '  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
-' 13.9.13 - bug fix - не сбрасываем Шаги <*>ProcStart
+' 13.9.12 - bug fix - не сбрасываем Шаги <*>ProcStart
 
     Dim Step As String, PrevStep As String
     Dim Proc As String, ThisProc As String

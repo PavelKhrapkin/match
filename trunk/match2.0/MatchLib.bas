@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.0"
 '
-' П.Л.Храпкин, А.Пасс 21.8.13
+' П.Л.Храпкин, А.Пасс 24.8.13
 '
 ' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
 ' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
@@ -11,7 +11,7 @@ Attribute VB_Name = "MatchLib"
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
-' S InsMyCol(F[,FS])            - вставляем колонки в лист слева по шаблону F и пятку из FS
+' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
@@ -259,7 +259,7 @@ Function CheckStamp(iTOC As Long, _
         SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-        If Typ = "N" Then GoTo Ex
+        If Typ = "N" Then GoTo ex
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
@@ -288,7 +288,7 @@ Function CheckStamp(iTOC As Long, _
                 End If
             
                 If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-Ex:             Exit Function
+ex:             Exit Function
 NxtChk:
             Next j
         Next i
@@ -381,9 +381,9 @@ FoundRep:
     End With
     DB_MATCH.Save
 End Sub
-Sub InsMyCol(F As String, Optional FS As String = "")
+Sub InsMyCol()
 '
-' S InsMyCol(F [,FS]) - вставляем колонки в лист слева по шаблону F и пятку из FS
+' S InsMyCol() - вставляем колонки MyCol в лист слева и пятку по шаблонам в ТОС
 '
 '   * Если заголовок колонки шаблона пятки пустой - пропускаем
 '   * Если в строке 2 шапки шаблона "V" - переписываем шапку из шаблона
@@ -402,27 +402,30 @@ Sub InsMyCol(F As String, Optional FS As String = "")
 ' 13.01.13 - парсинг формата вынесен из setColWidth
 ' 20.01.13 - цикл по вставке колонок заменен на 1 оператор
 ' 28.01.13 - width в setColWidth теперь массив: ширина/формат
+' 24.08.13 - имена Шаблонов беруться из TOC
 
     Const COPY_HDR = "CopyHdr"
 
     StepIn
     
     Dim R As TOCmatch   'R - структура TOCmatch для SFD
-    Dim FF As Range
+    Dim FF As Range, Fsummary As String
     Dim i As Integer
-    Set FF = DB_MATCH.Sheets(Header).Range(F)
+'''    Set FF = DB_MATCH.Sheets(Header).Range(F)
     
     R = GetRep(ActiveSheet.Name)
+    
+    With DB_MATCH.Sheets(TOC)
+        Set FF = DB_MATCH.Sheets(Header).Range(.Cells(R.iTOC, TOC_FORMNAME))
+        Fsummary = .Cells(R.iTOC, TOC_FORMSUMMARY)
+    End With
+    
     With Workbooks(R.RepFile).Sheets(R.SheetN)
 '---- А может мы уже эту колонку вставляли?
         If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
 
 '---- вставляем колонки по числу MyCol
-
         .Range(Cells(1, 1), Cells(1, R.MyCol)).EntireColumn.Insert
-'        For i = 1 To R.MyCol
-'            .Cells(1, 1).EntireColumn.Insert
-'        Next i
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
             setColWidth R.RepFile, R.SheetN, i, FF.Cells(3, i)
@@ -437,16 +440,10 @@ Sub InsMyCol(F As String, Optional FS As String = "")
         Next i
         .Rows(1).RowHeight = FF.Rows(1).RowHeight
         .Range(.Cells(2, 1), .Cells(R.EOL, R.MyCol)).FillDown
-'---- вставляем пятку по шаблону в FS
-        If FS = "" Then Exit Sub
-        Set FF = DB_MATCH.Sheets(Header).Range(FS)
+'---- вставляем пятку по шаблону в Fsummary
+        If Fsummary = "" Then Exit Sub
+        Set FF = DB_MATCH.Sheets(Header).Range(Fsummary)
         FF.Copy Destination:=.Cells(R.EOL + 2, 1)
-''''        For i = 1 To FF.Columns.Count
-''''            If FF.Cells(1, i) <> "" Then
-''''                FF.Columns(i).Copy Destination:=.Cells( _
-''''                    R.EOL + R.ResLines - FF.Rows.Count + 1, i)
-''''            End If
-''''        Next i
     End With
 End Sub
 Sub testsetColWidth()
@@ -490,14 +487,14 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
     End If
 
 End Sub
-Sub MS(msg)
+Sub MS(Msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
 '   11.6.12
-    ErrMsg TYPE_ERR, msg
+    ErrMsg TYPE_ERR, Msg
 End Sub
 
-Sub ErrMsg(ErrMode, msg)
+Sub ErrMsg(ErrMode, Msg)
 '
 ' - ErrMsg(ErrMode, MSG) - вывод сообщения об ощибке в Log и на экран
 '                          Коды ErrMode определены в Declaration
@@ -507,12 +504,12 @@ Sub ErrMsg(ErrMode, msg)
 
     Select Case ErrMode
     Case WARNING:
-        LogWr "< WARNING > " & msg
+        LogWr "< WARNING > " & Msg
         Exit Sub
         
     Case TYPE_ERR:
-        LogWr "ВНИМАНИЕ:" & msg
-        Respond = MsgBox(msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
+        LogWr "ВНИМАНИЕ:" & Msg
+        Respond = MsgBox(Msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
         If Respond = vbNo Then
             ExRespond = False
             Stop
@@ -521,8 +518,8 @@ Sub ErrMsg(ErrMode, msg)
         
     Case FATAL_ERR:
 Fatal:  ErrType = "<! ERROR !> "
-        LogWr ErrType & msg
-        MsgBox msg, , ErrType
+        LogWr ErrType & Msg
+        MsgBox Msg, , ErrType
         Stop
         Exit Sub
     Case Else:
@@ -530,7 +527,7 @@ Fatal:  ErrType = "<! ERROR !> "
         GoTo Fatal
     End Select
 End Sub
-Sub LogWr(msg)
+Sub LogWr(Msg)
 '
 ' запись сообщения msg в Log-лист
 '   15.2.2012
@@ -545,7 +542,7 @@ Sub LogWr(msg)
         N = N + 1
         .Cells(N, 1) = Date
         .Cells(N, 2) = Time
-        .Cells(N, 3) = msg
+        .Cells(N, 3) = Msg
         .Cells(1, 4) = N
     End With
 End Sub
@@ -1268,14 +1265,14 @@ Function patTest(longTxt As String, pat As String) As Boolean
          
         If Left(pat, 1) = "$" Then
             pat = Trim(Mid(pat, 2))             ' убираем спец. символ
-            If pat = "" Then GoTo Ex
+            If pat = "" Then GoTo ex
             
             Dim comps() As String, pats() As String, i As Long
                 ' В случае 2-го знака '$' - компоненты описания товара, разделенные запятыми,
                 '       рассматриваются независимо
                 '       и в паттерне должно быть ровно 2 части
             pats = Split(pat, ";")
-            If UBound(pats) <> 1 Then GoTo Ex  ' в паттерне должно быть ровно 2 части
+            If UBound(pats) <> 1 Then GoTo ex  ' в паттерне должно быть ровно 2 части
             
             comps = Split(longTxt, ";")
             For i = 0 To UBound(comps)
@@ -1285,7 +1282,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
                 If Not patTest(comps(i), pats(0)) Then   ' 1-я часть - false
                     If patTest(comps(i), pats(1)) Then   ' 2-я часть д.б. true
                         patTest = True
-                        GoTo Ex              ' найден образец
+                        GoTo ex              ' найден образец
                     End If
                     GoTo nextComp
                 End If
@@ -1302,5 +1299,5 @@ nextComp:
     '        End If
         End If
     End With
-Ex:
+ex:
 End Function
