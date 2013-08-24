@@ -1,6 +1,6 @@
 Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
-' Библиотека подпрограмм проекта "match 2.0"
+' Библиотека подпрограмм проекта "match 2.1"
 '
 ' П.Л.Храпкин, А.Пасс 24.8.13
 '
@@ -41,7 +41,8 @@ Attribute VB_Name = "MatchLib"
 ' - SheetDedup2(SheetN, ColSort,ColAcc) - сортировка и слияние листа SheetN
 '                                 по колонкам ColSort, ColAcc
 ' - DateCol(SheetN, Col)        - преобразование колонки Col из текста в Дату
-' - DateSort(SheetN, Col)       - преобразование колонки Col из текстового формата в Date
+' - DateSort(Col)               - преобразование колонки Col листа ActiveSheet
+'                                 из текстового формата в Date
 '                                 и сортировка по этой колонке от старых к новым датам
 ' - HideLns(FrR, ToR, Col, Criteria) - скрывает строки от FrR до ToR,
 '                                 если Col соотв.Criteria (для WP)
@@ -1012,18 +1013,19 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 Nxt:    Next i
     End With
 End Sub
-Sub DateSort(ByVal SheetN As String, ByVal Col As Integer)
+Sub DateSort(ByVal Col As Integer)
 '
 ' S DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
 '                           и сортировка по этой колонке от старых к новым датам
 '   31.7.12
 '   31.8.12 - оформлен как Step со StepIn
 '   21.8.13 - для MoveToMatch
+'   24.8.13 - SheetN из ActiveSheet.Name
 
     If Not IsNumeric(SheetN) Then StepIn
 '''    Sheets(SheetN).Activate
-    DateCol SheetN, Col
-    SheetSort SheetN, Col
+    DateCol ActiveSheet.Name, Col
+    SheetSort ActiveSheet.Name, Col
 End Sub
 Sub HideLns(FrR, ToR, Col, _
     Optional Criteria As String, Optional HideFlag As Boolean = True)
