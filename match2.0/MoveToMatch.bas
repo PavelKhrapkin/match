@@ -107,7 +107,7 @@ RepNameHandle:
         ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
             .Activate
             .Rows("1:" & Lines).AutoFilter
-            DateSort InSheetN, NewToDate_Col
+            DateSort NewToDate_Col
             Created = GetDate(Right$(.Name, 8))
             Dim DateCell As String
             Do
@@ -175,8 +175,10 @@ DelRep: If SheetExists(RepName) Then
         .Cells(i, TOC_MADE_COL) = REP_LOADED
         RepLoader = .Cells(i, TOC_REPLOADER_COL)
         .Cells(i, TOC_CREATED_COL) = Created
-        .Cells(i, TOC_NEW_FRDATE_COL) = NewFrDate
-        .Cells(i, TOC_NEW_TODATE_COL) = NewToDate
+        If NewFrDate_Col > 0 Then
+            .Cells(i, TOC_NEW_FRDATE_COL) = NewFrDate
+            .Cells(i, TOC_NEW_TODATE_COL) = NewToDate
+        End If
         .Cells(1, 1) = Now
         .Cells(1, TOC_F_DIR_COL) = DirDBs
 '----------- окрашиваем даты в TOCmatch на сегодня -------------
