@@ -11,7 +11,7 @@ Attribute VB_Name = "Paint"
 ' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 24.8.13 - ревизия для match2.1
+' 25.8.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint()
@@ -197,7 +197,7 @@ Sub SF_Paint()
 '
 ' S SF_Paint() - окраска колонки А отчета SF по Платежам
 '
-'   24.8.13
+'   25.8.13
 
     StepIn
     
@@ -205,9 +205,9 @@ Sub SF_Paint()
     R = GetRep(ActiveSheet.Name)
     R.EOL = EOL(R.SheetN) - R.ResLines
     
-    With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
-        For i = 2 To RepTo.EOL
-            Progress i / RepTo.EOL
+    With Workbooks(R.RepFile).Sheets(R.SheetN)
+        For i = 2 To R.EOL
+            Progress i / R.EOL
             If .Cells(i, 1) = "" Then
                 If InStr(.Cells(i, SF_SAIL_COL), "Лидер") Then
                     .Cells(i, 1).Interior.Color = vbBlue
@@ -216,6 +216,7 @@ Sub SF_Paint()
                 End If
             End If
         Next i
+    End With
 End Sub
 
 Function IsP_AbyN(Nstr) As Boolean

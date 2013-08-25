@@ -10,9 +10,9 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 24.8.13 П.Л.Храпкин, А.Пасс
+' 25.8.13 П.Л.Храпкин, А.Пасс
 '
-' - ProcStart(Proc)     - запуск Процесса Proc по таблице Process в match.xlsm
+' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
 ' - Exec(Step, iProc)   - вызов Шага Step по строке iProc таблицы Процессов
 ' - ToStep(Proc,[Step]) - возвращает номер строки таблицы Процессов
@@ -417,7 +417,7 @@ Sub MergeReps()
         ToRow = RoldEOL + 1
 InsRow: If FrRow = 0 Then FrRow = ToRow
 '-- копируем Update и пятку в прежний документ (_OLD)
-   .Rows(RoldEOL + 1 & ":" & RoldEOL + 1111).Delete    ' стираем старую пятку
+       .Rows(RoldEOL + 1 & ":" & RoldEOL + 1111).Delete    ' стираем старую пятку
         Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
             Destination:=.Rows(FrRow & ":" & ToRow)
         RoldEOL = EOL(OldRepName)

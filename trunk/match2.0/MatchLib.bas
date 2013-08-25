@@ -2,14 +2,8 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 24.8.13
+' П.Л.Храпкин, А.Пасс 25.8.13
 '
-' - GetRep(RepName)             - находит и проверяет штамп отчета RepName
-' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
-' - FatalRep(SubName, RepName)  - сообщение о фатальной ошибке при запросе RepName
-' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
-' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
-' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
 ' - MS(Msg)                     - вывод сообщения на экран и в LogWr
@@ -73,315 +67,6 @@ Option Explicit
     Dim patObject
     Dim patObjectSet As Boolean
         
-Function GetRep(RepName) As TOCmatch
-'
-' - GetRep(RepName) - находит и проверяет штамп отчета RepName
-'   26.7.12
-'    2.8.12 - NOP по пустому RepName
-'   12.8.12 - StampR допускает альтернативное положение Штампа, например, "4, 1"
-'   17.8.12 - FatalRep в отдельной подпрограмме; Activate RepName
-'    9.9.12 - запись в Log только в match.xlsm; отладка записи Pass DBs; EOL для sfdc.xlsm
-'   21.9.12 - отладка логики работы с match_environment при перемещении DirDBs
-'   27.10.12 - работа с "голубыми" листами в TOCmatch
-'   13.8.13 - добавлено поле iTOC в структуру TOCmatch - номер строки в TOC
-'   18.8.13 - с подпрограммой GetReslines - изменение размера пятки при загрузке и далее
-
-    Dim i As Long, EOL_TOC As Long
-    Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
-    
-    If RepName = "" Then Exit Function
-    
-    If DB_MATCH Is Nothing Then
-        Set DB_MATCH = FileOpen(F_MATCH)
-        EOL_TOC = EOL(TOC, DB_MATCH)
-        DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL) = EOL_TOC
-    Else
-        EOL_TOC = DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL)
-    End If
-            
-    DirDBs = DB_MATCH.Path & "\"
-    If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
-        Dim Respond As Integer
-        Respond = MsgBox("Файл <match.xlsx> загружен из необычного места:" _
-            & vbCrLf & vbCrLf & "'" & DirDBs & "'" _
-            & vbCrLf & vbCrLf & "Это теперь каталог файлов DBs? ", vbYesNo)
-        If Respond <> vbYes Then End
-        
-'** новый DirDBs запишем в TOCmatch и во вспомогательный файл
-        DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) = DirDBs
-        Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
-            ' при этом все отчеты из TOCmatch должны быть доступны!
-        Dim rf As String
-        For i = 8 To EOL_TOC
-            rf = DB_MATCH.Sheets(TOC).Cells(i, TOC_REPFILE_COL)
-            If rf <> "" Then FileOpen rf
-        Next i
-        
-        Set F_match_env = Workbooks.Open(F_match_environment)
-        With F_match_env.Sheets(1)
-            .Cells(1, 1) = Now
-            .Cells(1, 2) = DirDBs
-        End With
-        F_match_env.Close
-'''''        Exit Function
-    End If
-    
-    With DB_MATCH.Sheets(TOC)
-        For i = TOClineN To EOL_TOC
-            If .Cells(i, TOC_REPNAME_COL) = RepName Then GoTo FoundRep
-        Next i
-        FatalRep "GetRep ", RepName
-
-FoundRep:
-        RepTOC.iTOC = i             ' номер строки в TOC - Read Only!
-        RepTOC.Dat = .Cells(i, TOC_DATE_COL)
-        RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
-        RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
-        Dim LoadMode As Boolean
-        LoadMode = False
-        If RepTOC.Made = REP_LOADED Then LoadMode = True
-        RepTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
-        RepTOC.Made = .Cells(i, TOC_MADE_COL)
-        RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
-        RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
-        RepTOC.EOL = .Cells(i, TOC_EOL_COL)
-        RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
-        RepTOC.FormName = .Cells(i, TOC_FORMNAME)
-    End With
-    
-'---- проверка штампа ----------
-    Dim Str As Long, StC As Long
-    Dim TestedStamp As String
-    With RepTOC
-        Select Case .RepFile
-        Case F_MATCH:
-            RepMatch = RepTOC
-        Case F_1C:
-            Set DB_1C = FileOpen(.RepFile)
-            Rep1C = RepTOC
-        Case F_SFDC:
-            Set DB_SFDC = FileOpen(.RepFile)
-            RepSF = RepTOC
-        Case F_ADSK:
-            Set DB_ADSK = FileOpen(.RepFile)
-            RepADSK = RepTOC
-        Case F_STOCK:
-            Set DB_STOCK = FileOpen(.RepFile)
-            RepStock = RepTOC
-        Case F_TMP:
-            Set DB_TMP = FileOpen(.RepFile)
-        Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
-        End Select
-            
-        If CheckStamp(i) Then
-            GetRep = RepTOC
-        Else
-            FatalRep "GetRep", RepName
-        End If
-    End With
-End Function
-Function GetReslines(Optional ByVal Doc As String, _
-    Optional ByVal LoadMode As Boolean = False, Optional Resl As String = "") As Long
-'
-' - GetReslines([Doc],[LoadMode],[ResL]) - извлечение размера пятки Doc с учетом
-'            контекста LoadMode; строка ResL со значениями размера пятки
-'            может быть явно указана в обращении, чтобы ее не искать повторно
-'
-' ! таким образом первый Шаг после загрузки документа должен добавлять пятку в ResLines
-'
-' 18.8.13
-' 18.3.13 - по умолчанию LoadMode проверяем статус документа в RepTOC.Made
-
-        Dim ss() As String, R As TOCmatch
-        
-        GetReslines = 0
-        If Resl = "" Then
-            If Doc = "" Or Doc = TOC Or Doc = Process Then Exit Function
-            If IsMissing(Doc) Then FatalRep "GetResLines", Doc
-            R = GetRep(Doc)
-            Resl = DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_RESLINES_COL)
-        End If
-        If Resl = "" Then Exit Function
-        
-        If InStr(Resl, "/") <> 0 Then
-            ss = Split(Resl, "/")
-            If IsMissing(LoadMode) Then
-                LoadMode = False
-                If R.Made = REP_LOADED Then LoadMode = True
-            End If
-            If LoadMode Then
-                GetReslines = ss(0)
-            Else
-                GetReslines = ss(UBound(ss))
-            End If
-        ElseIf IsNumeric(Resl) Then
-            GetReslines = Resl
-        End If
-End Function
-Sub FatalRep(SubName, RepName)
-'
-' - FatalRep(SubName, RepName) - сообщение о фатальной ошибке при запросе RepName
-' 17.8.12
-' 9.8.12 -- более ясная диагностика по не найденному Штампу
-
-    ErrMsg FATAL_ERR, SubName & "> Не найден Штамп в Документе '" & RepName & "'" _
-        & vbCrLf & vbCrLf & "Этот Документ надо загрузить в match заново или " _
-        & vbCrLf & "исправить параметры в TOCmatch."
-    Stop
-'    End
-End Sub
-Function CheckStamp(iTOC As Long, _
-    Optional NewRep As String = "", Optional NewRepEOL, Optional IsSF, _
-    Optional InSheetN As Integer = 1) As Boolean
-'
-' - CheckStamp(iTOC) - проверка штампа в строке iTOC списка Документов в TOCmatch
-' 15.8.2012
-' 18.8.12 - CheckStamp оформлена как Bolean Function для использования в MoveToMatch
-'           Optional параметры используются только для MoveToMatch
-' 25.8.12 - входной Документ может находиться в листе InSheetN нового загружаемого файла
-' 27.10.12 - помимо типов Штампа "=" и "I", введено "N" - Штамп не проверять
-'  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
-' 14.7.13 - дополнительная диагностика и действия, если Штамп не найден
-
-    Dim SR() As String, SC() As String
-    Dim Str As Long, StC As Long
-    
-    Dim RepName As String
-    Dim txt As String, TestedStamp As String
-    Dim Typ As String
-    Dim Continued As String
-    Dim i As Long, j As Long
-    
-    On Error GoTo NoStamp
-    CheckStamp = True
-    
-    With DB_MATCH.Sheets(TOC)
-        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
-        txt = .Cells(iTOC, TOC_STAMP_COL)
-        Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-        If Typ = "N" Then GoTo ex
-        RepName = .Cells(iTOC, TOC_REPNAME_COL)
-        Continued = .Cells(iTOC, TOC_PARCHECK_COL)
-    End With
-    
-    With RepTOC
-        For i = LBound(SR) To UBound(SR)
-            For j = LBound(SC) To UBound(SC)
-                Str = SR(i)
-                StC = SC(j)
-                If NewRep = "" Then
-                    If .RepFile = F_SFDC Then Str = Str + .EOL
-                    TestedStamp = Workbooks(.RepFile).Sheets(.SheetN).Cells(Str, StC)
-                ElseIf IsMissing(IsSF) Then
-                    Str = Str + NewRepEOL - SFresLines
-                    TestedStamp = Workbooks(NewRep).Sheets(InSheetN).Cells(Str, StC)
-                Else
-                    If IsSF Then Str = Str + NewRepEOL - SFresLines
-                    TestedStamp = Workbooks(NewRep).Sheets(InSheetN).Cells(Str, StC)
-                End If
-                If Typ = "=" Then
-                    If txt <> TestedStamp Then GoTo NxtChk
-                ElseIf Typ = "I" Then
-                    If InStr(LCase$(TestedStamp), LCase$(txt)) = 0 Then GoTo NxtChk
-                Else
-                    ErrMsg FATAL_ERR, "Сбой в структоре TOCmatch: тип штампа =" & Typ
-                End If
-            
-                If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-ex:             Exit Function
-NxtChk:
-            Next j
-        Next i
-        If NewRep = "" Then
-            Dim ToChangeEOLinTOC As String, RightEOL As Long
-            RightEOL = EOL(.SheetN) - .ResLines
-            ToChangeEOLinTOC = MsgBox("CheckStamp: не нашли Штамп '" & txt & "' в строке " & Str _
-                & vbCrLf & "полагая,  что EOL = " & .EOL & ";" _
-                & vbCrLf & "на самом деле EOL = " & RightEOL _
-                & vbCrLf & vbCrLf & "Исправить EOL в TOCmatch? ", vbYesNo)
-            If ToChangeEOLinTOC = vbYes Then
-                .EOL = RightEOL
-                WrTOC
-                CheckStamp (iTOC)
-                Exit Function
-            Else
-                FatalRep "GetRep.CheckStamp", RepName
-            End If
-        End If
-NoStamp: CheckStamp = False
-    End With
-End Function
-Function FileOpen(RepFile) As Workbook
-'
-' - FileOpen(RepFile)   - проверяет, открыт ли RepFile, если нет - открывает
-'   26.7.12
-    
-    Dim W As Workbook
-    For Each W In Application.Workbooks
-        If W.Name = RepFile Then
-            Set FileOpen = W
-            Exit Function
-        End If
-    Next W
-    
-    If DirDBs = "" Then
-        Dim F_match_env As Workbook ' вспомогательный файл c DirDBs
-        Set F_match_env = Workbooks.Open(F_match_environment)
-        DirDBs = F_match_env.Sheets(1).Cells(2, 1)
-        F_match_env.Close
-    End If
-    
-    Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
-End Function
-Sub WrTOC(Optional ByVal Name As String = "")
-'
-' - WrTOC([Name]) - записывает данные по документу Name в оглавление
-'                   По умолчанию Name последнего открытого GetRep документа
-'
-'     * записываются не все данные из WrTOC. Некоторые элементы структуры, например,
-'       данные Штампа, являются Read Only
-'
-'   5.8.2012
-'  12.8.12 - "серые" колонки описывающие Штамп не записываем
-'  17.8.12 - еще ряд полей не записывыем в match.xlsm и использование FatalRep
-'   2.9.12 - дополнительные ограничения записи в TOCmatch
-' 28.10.12 - записывает в TOCmatch дату создания CreateDat
-' 14.07.13 - Save Changes в DBs
-' 15.08.13 - Optional Name - имя документа, по которому сохраняем строку TOCmatch
-
-    Dim i As Long
-    Const BEGIN = 8 ' начало списка обрабатываемых Документов
-    
-    If Name = "" Then Name = RepTOC.Name    ' по умолчанию Name по последнему GetRep
-    
-    If RepTOC.Name = "" Then FatalRep "WrTOC", "<пусто>"
-    For i = BEGIN To BIG
-        If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = Name Then GoTo FoundRep
-    Next i
-    FatalRep "WrTOC", Name
-
-FoundRep:
-    With DB_MATCH.Sheets(TOC)
-        .Cells(i, TOC_DATE_COL) = RepTOC.Dat
-'''        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
-        .Cells(i, TOC_EOL_COL) = RepTOC.EOL
-'''        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
-'''        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
-        .Cells(i, TOC_MADE_COL) = RepTOC.Made
-'''        .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
-'''        .Cells(i, TOC_SHEETN_COL) = RepTOC.SheetN
-'''        .Cells(i, TOC_STAMP_COL) = RepTOC.Stamp
-'''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
-'''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
-'''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
-        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
-'''        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
-'''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
-        .Cells(1, 1) = Now
-    End With
-    DB_MATCH.Save
-End Sub
 Sub InsMyCol()
 '
 ' S InsMyCol() - вставляем колонки MyCol в лист слева и пятку по шаблонам в ТОС
@@ -422,6 +107,7 @@ Sub InsMyCol()
     End With
     
     With Workbooks(R.RepFile).Sheets(R.SheetN)
+        .Activate
 '---- А может мы уже эту колонку вставляли?
         If .Cells(1, 1) = FF.Cells(1, 1) Then Exit Sub
 
@@ -570,29 +256,20 @@ Function AutoFilterReset(SheetN) As Integer
 ' 15.12.12 - исправлено при переходе на MS Office 2013:
 '       - EOL в соответствии с идеологией match2.0 берется из TOCmatch
 '       - AutoFilter устанавливается до EOL, чтобы пропустить пятку
+'  25.8.13 - восстановил FreezePanes и Scroll до пятки
 
     Dim R As TOCmatch
     
     R = GetRep(SheetN)
     
     With Workbooks(R.RepFile).Sheets(R.SheetN)
-''        If .AutoFilterMode Then
-''            .AutoFilter
-''        End If
+'''        .Activate
         .AutoFilterMode = False
         .Rows("1:" & R.EOL).AutoFilter
+        .Rows("1:1").Select
+        ActiveWindow.FreezePanes = True
+        Application.Goto .Cells(R.EOL - 3, 1), True
     End With
-''
-''    ActiveSheet.AutoFilterMode = False  ' собственно сброс фильтра
-''    ActiveWindow.FreezePanes = False    ' Top Row Freeze
-''    Rows("1:1").AutoFilter              ' включаем/выключаем AutoFilter
-''    With ActiveWindow
-''        .SplitColumn = 0
-''        .SplitRow = 1
-''    End With
-''    ActiveWindow.FreezePanes = True
-''    AutoFilterReset = Sheets(SheetN).UsedRange.Rows.Count
-''    Range("A" & AutoFilterReset).Activate ' выбираем ячейку внизу листа
 End Function
 Sub tst()
     AutoFilterReset PAY_SHEET
@@ -1015,15 +692,14 @@ Nxt:    Next i
 End Sub
 Sub DateSort(ByVal Col As Integer)
 '
-' S DateSort(SheetN, Col) - преобразование колонки Col из текстового формата в Date
-'                           и сортировка по этой колонке от старых к новым датам
+' S DateSort(Col) - преобразование колонки Col из текстового формата в Date
+'                   и сортировка по этой колонке от старых к новым датам
 '   31.7.12
 '   31.8.12 - оформлен как Step со StepIn
-'   21.8.13 - для MoveToMatch
-'   24.8.13 - SheetN из ActiveSheet.Name
+'   25.8.13 - для MoveToMatch вызов DateCol и Sheetsort внутри модуля.
+'             SheetN получаем из ActiveSheet.Name
 
-    If Not IsNumeric(SheetN) Then StepIn
-'''    Sheets(SheetN).Activate
+    StepIn
     DateCol ActiveSheet.Name, Col
     SheetSort ActiveSheet.Name, Col
 End Sub
