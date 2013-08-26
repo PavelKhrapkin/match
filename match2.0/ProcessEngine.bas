@@ -236,10 +236,15 @@ Sub StepOut(Step As String, iProc)
 '  28.10.12 - более аккуратная работа с TOCmatch по документам, обрабатываемым в Шаге
 '   9.11.12 - имя Документа пустое?
 '  11.08.13 - Записываем EOL обрабатываемого документа в TOCmatch
+'  26.08.13 - Если Шаг менял RepTOC.EOL, нужно переписать TOC до проверки Штампа
 
-    Dim Proc As String, R As TOCmatch
+    Dim Proc As String, Doc As String, i As Long
     
     ScreenUpdate True
+    If Step = "ProcStart" Then Exit Sub
+    RepTOC.Made = Step: RepTOC.Dat = Now
+    Doc = DB_MATCH.Sheets(Process).Cells(iProc, PROC_REP1_COL)
+    WrTOC Doc     ' перепишем EOL в TOC и проверим, что не сбились Штампы
     
     With DB_MATCH.Sheets(Process)
         Application.StatusBar = False
@@ -249,15 +254,10 @@ Sub StepOut(Step As String, iProc)
         .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
         .Cells(1, STEP_NAME_COL) = ""
         .Cells(1, 1) = Now
-        If .Cells(iProc, PROC_REP1_COL) = "" Then Exit Sub  'имя Документа пустое?
-        Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
-        If Proc = "" Then Exit Sub
-        R = GetRep(.Cells(ToStep(Proc, Step), PROC_REP1_COL)) 'обрабатываемый Документ
-        R.Made = Step
-        R.Dat = Now
-        R.EOL = EOL(R.SheetN, Workbooks(R.RepFile)) - GetReslines(R.Name, False)
-        RepTOC = R
-        WrTOC
+''''''        Proc = .Cells(1, PROCESS_NAME_COL)                  'имя Процесса пустое?
+''''''        If Proc = "" Then Exit Sub
+''''''        Doc = .Cells(ToStep(Proc, Step), PROC_REP1_COL)     'обрабатываемый Документ
+''''''        If Doc = "" Then Exit Sub                           'имя Документа пустое?
     End With
 End Sub
 Function ToStep(Proc, Optional Step As String = "") As Integer
