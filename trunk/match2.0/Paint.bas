@@ -11,7 +11,7 @@ Attribute VB_Name = "Paint"
 ' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 25.8.13 - ревизия для match2.1
+' 26.8.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint()
@@ -81,18 +81,18 @@ Sub PaymentPaint()
             i = i + 1
         Loop
         
-'-- переписываем пятку, если она есть
-        RepTOC.EOL = EOL(RepTOC.Name)
+'-- переписываем пятку, если она есть - вслед за EOL должна быть пустая строка
+        RepTOC.EOL = EOL(RepTOC.Name, Workbooks(RepTOC.RepFile))
         With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
             For i = 1 To PAYGOODTYPE_COL
-                If Trim(.Cells(RepTOC.EOL, i)) <> "" Then GoTo AddSummary
+                If Trim(.Cells(RepTOC.EOL - 1, i)) <> "" Then GoTo AddSummary
             Next i
             .Rows(RepTOC.EOL + 1 & ":" & RepTOC.EOL + 2).Delete 'пятка есть- стереть
             RepTOC.EOL = RepTOC.EOL - 2
             
 AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(RepTOC.iTOC, TOC_FORMSUMMARY)
             DB_MATCH.Sheets(Header).Range(Fsummary).Copy _
-                Destination:=.Cells(RepTOC.EOL + 1, 1)
+                Destination:=.Cells(RepTOC.EOL + 2, 1)
         End With
     End With
 End Sub
@@ -152,17 +152,28 @@ Sub Paint(iStr As Long, Col As Long, Criteria As String, Color, Optional Mode As
 End Sub
 Sub Acc1C_Bottom()
 '
-' - Acc1C_Bottom() - перенос первыx трех строк Acc1С в пятку
+' - Acc1C_Bottom() - перенос первыx трех строк Acc1С в пятку и в Шаблон пятки
 '   14.8.12
+'   26.8.13 - добавлен AutoFilterReset и обновляю Шаблон пятки из отчета Acc1C
 
     Dim R As TOCmatch
-    Dim b As Range
+    Dim b As Range, FF As Range
+    Dim Fsummary As String
     
     R = GetRep(Acc1C)
     DB_1C.Sheets(Acc1C).Activate
-    Set b = ActiveSheet.Rows("1:3")
-    b.Copy Destination:=Cells(R.EOL + 2, 1)
-    b.Delete
+    With DB_MATCH
+        Fsummary = .Sheets(TOC).Cells(R.iTOC, TOC_FORMSUMMARY)
+        Set FF = .Sheets(Header).Range(Fsummary)
+    End With
+    With ActiveSheet
+        Set b = .Range(.Cells(1, 1), .Cells(2, 1))
+        b.Copy Destination:=FF.Cells(1, 3)
+        Set b = .Rows("1:3")
+        b.Copy Destination:=.Cells(R.EOL + 2, 1)
+        b.Delete
+    End With
+    AutoFilterReset R.Name
 End Sub
 Sub AccPaint()
 '

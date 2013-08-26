@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content ƒокументов в match.xlsx
 '
-' 25.08.2013
+' 26.08.2013
 '=========================== ќписани€ ================================
 '       * TOC хранитьс€ в листе TOC. ƒанные о ƒокументе хран€тс€ в виде строки этого листа
 '       * при работе отдельных Ўагов, параметры и константы передаютс€ в структуре TOCmatch,
@@ -300,28 +300,34 @@ Sub WrTOC(Optional ByVal Name As String = "")
 ' 28.10.12 - записывает в TOCmatch дату создани€ CreateDat
 ' 14.07.13 - Save Changes в DBs
 ' 15.08.13 - Optional Name - им€ документа, по которому сохран€ем строку TOCmatch
-' 25.08.13 - переписываем EOL в TOC
+' 26.08.13 - переписываем EOL в TOC
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых ƒокументов
     
     If Name = "" Then Name = RepTOC.Name    ' по умолчанию Name по последнему GetRep
-    
     If RepTOC.Name = "" Then FatalRep "WrTOC", "<пусто>"
+    If Name = TOC Then Exit Sub
+    
     For i = BEGIN To BIG
         If DB_MATCH.Sheets(1).Cells(i, TOC_REPNAME_COL) = Name Then GoTo FoundRep
     Next i
     FatalRep "WrTOC", Name
 
 FoundRep:
+    Dim NewEOL As Long, W As String, S As String
+    W = DB_MATCH.Sheets(TOC).Cells(i, TOC_REPFILE_COL)
+    S = DB_MATCH.Sheets(TOC).Cells(i, TOC_SHEETN_COL)
+    Call FileOpen(W)
+    Workbooks(W).Sheets(S).Activate
+    NewEOL = EOL(Name) - GetReslines(Name)
+    If NewEOL <= 0 Then GoTo Err
     With DB_MATCH.Sheets(TOC)
+'        .Cells(i, TOC_EOL_COL) = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
+        .Cells(i, TOC_EOL_COL) = NewEOL
+        If Not CheckStamp(i) Then GoTo Err
         .Cells(i, TOC_DATE_COL) = RepTOC.Dat
-'''        .Cells(i, TOC_REPNAME_COL) = RepTOC.Name
         .Cells(i, TOC_MADE_COL) = RepTOC.Made
-''        Dim NewEOL As Long
-''        NewEOL = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
-''        If NewEOL <> RepTOC.EOL Then GoTo Err
-        .Cells(i, TOC_EOL_COL) = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
 '''        .Cells(i, TOC_MYCOL_COL) = RepTOC.MyCol
 '''        .Cells(i, TOC_RESLINES_COL) = RepTOC.ResLines
 '''        .Cells(i, TOC_REPFILE_COL) = RepTOC.RepFile
