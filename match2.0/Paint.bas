@@ -11,7 +11,7 @@ Attribute VB_Name = "Paint"
 ' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr ѕлатежа св€зана с ADSK
 '
 ' 8.11.2012 ѕ.Ћ.’рапкин match 2.0
-' 26.8.13 - ревизи€ дл€ match2.1
+' 27.8.13 - ревизи€ дл€ match2.1
 
 Option Explicit
 Sub PaymentPaint()
@@ -24,21 +24,25 @@ Sub PaymentPaint()
 '  7.2.13 - параметр BottomHDR; окраска всей строки, занесенной в SF
 ' 18.8.13 - стираем строки нал
 ' 24.8.13 - восстанавливаем п€тку, если она есть
+' 27.8.13 - минимизируем использование глобальной структуры RepTOC
 
     StepIn
 
-    Dim i As Integer
+    Dim LocalTOC As TOCmatch
+    Dim i As Long
     Dim Rub, Doc            'пол€ "»того руб" и "ѕлат.док"
     Dim Fsummary As String  'им€ п€тки ѕлатежей в TOC
     
-    RepTOC.EOL = EOL(RepTOC.Name)
-    Range("A1:AC" & RepTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
-    Rows("2:" & RepTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
+    LocalTOC = RepTOC
+    
+    LocalTOC.EOL = EOL(LocalTOC.Name)
+    Range("A1:AC" & LocalTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
+    Rows("2:" & LocalTOC.EOL).RowHeight = 15    ' высота строк до конца = 15
     
     With DB_1C.Sheets(PAY_SHEET)
         i = 2
-        Do While i <= RepTOC.EOL
-            Progress i / RepTOC.EOL
+        Do While i <= LocalTOC.EOL
+            Progress i / LocalTOC.EOL
             If .Cells(i, PAYINSF_COL) = 1 Then          ' зеленые ѕлатежи в SF
                 Range(Cells(i, 2), Cells(i, .Columns.Count)).Interior.Color = rgbLightGreen
             Else
@@ -76,23 +80,23 @@ Sub PaymentPaint()
             If Doc = "" Or InStr(Doc, "авт нал") <> 0 Then
                 .Rows(i).Delete
                 i = i - 1
-                RepTOC.EOL = RepTOC.EOL - 1
+                LocalTOC.EOL = LocalTOC.EOL - 1
             End If
             i = i + 1
         Loop
         
 '-- переписываем п€тку, если она есть - вслед за EOL должна быть пуста€ строка
-        RepTOC.EOL = EOL(RepTOC.Name, Workbooks(RepTOC.RepFile))
-        With Workbooks(RepTOC.RepFile).Sheets(RepTOC.SheetN)
+        LocalTOC.EOL = EOL(LocalTOC.Name, Workbooks(LocalTOC.RepFile))
+        With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
             For i = 1 To PAYGOODTYPE_COL
-                If Trim(.Cells(RepTOC.EOL - 1, i)) <> "" Then GoTo AddSummary
+                If Trim(.Cells(LocalTOC.EOL - 1, i)) <> "" Then GoTo AddSummary
             Next i
-            .Rows(RepTOC.EOL + 1 & ":" & RepTOC.EOL + 2).Delete 'п€тка есть- стереть
-            RepTOC.EOL = RepTOC.EOL - 2
+            .Rows(LocalTOC.EOL + 1 & ":" & LocalTOC.EOL + 2).Delete 'п€тка есть- стереть
+            LocalTOC.EOL = LocalTOC.EOL - 2
             
-AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(RepTOC.iTOC, TOC_FORMSUMMARY)
+AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(LocalTOC.iTOC, TOC_FORMSUMMARY)
             DB_MATCH.Sheets(Header).Range(Fsummary).Copy _
-                Destination:=.Cells(RepTOC.EOL + 2, 1)
+                Destination:=.Cells(LocalTOC.EOL + 2, 1)
         End With
     End With
 End Sub

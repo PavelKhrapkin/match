@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content Документов в match.xlsx
 '
-' 26.08.2013
+' 27.08.2013
 '=========================== Описания ================================
 '       * TOC храниться в листе TOC. Данные о Документе хранятся в виде строки этого листа
 '       * при работе отдельных Шагов, параметры и константы передаются в структуре TOCmatch,
@@ -20,7 +20,7 @@ Attribute VB_Name = "TOCengine"
 ' - CheckStamp(iTOC, [FromMoveToMatch]) - проверка Штампа по стоке в TOCmatch
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
-' - WrTOC()                     - записывает Publoc RepTOC в TOCmatch
+' - WrTOC([Name])               - записывает Public RepTOC в TOCmatch для Документа Name
 
 Function GetRep(RepName) As TOCmatch
 '
@@ -34,9 +34,10 @@ Function GetRep(RepName) As TOCmatch
 '   27.10.12 - работа с "голубыми" листами в TOCmatch
 '   13.8.13 - добавлено поле iTOC в структуру TOCmatch - номер строки в TOC
 '   18.8.13 - с подпрограммой GetReslines - изменение размера пятки при загрузке и далее
+'   27.8.13 - не используем глобальную структуру RepTOC
 
-    Dim i As Long, EOL_TOC As Long
     Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
+    Dim i As Long, EOL_TOC As Long, RepFile As String
     
     If RepName = "" Then Exit Function
     
@@ -83,53 +84,71 @@ Function GetRep(RepName) As TOCmatch
         FatalRep "GetRep ", RepName
 
 FoundRep:
-        RepTOC.iTOC = i             ' номер строки в TOC - Read Only!
-        RepTOC.Dat = .Cells(i, TOC_DATE_COL)
-        RepTOC.Name = .Cells(i, TOC_REPNAME_COL)
-        RepTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
-        Dim LoadMode As Boolean
-        LoadMode = False
-        If RepTOC.Made = REP_LOADED Then LoadMode = True
-        RepTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
-        RepTOC.Made = .Cells(i, TOC_MADE_COL)
-        RepTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
-        RepTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
-        RepTOC.EOL = .Cells(i, TOC_EOL_COL)
-        RepTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
-        RepTOC.FormName = .Cells(i, TOC_FORMNAME)
+        RepFile = .Cells(i, TOC_REPFILE_COL)
     End With
     
 '---- проверка штампа ----------
     Dim Str As Long, StC As Long
     Dim TestedStamp As String
-    With RepTOC
-        Select Case .RepFile
-        Case F_MATCH:
-            RepMatch = RepTOC
-        Case F_1C:
-            Set DB_1C = FileOpen(.RepFile)
-            Rep1C = RepTOC
-        Case F_SFDC:
-            Set DB_SFDC = FileOpen(.RepFile)
-            RepSF = RepTOC
-        Case F_ADSK:
-            Set DB_ADSK = FileOpen(.RepFile)
-            RepADSK = RepTOC
-        Case F_STOCK:
-            Set DB_STOCK = FileOpen(.RepFile)
-            RepStock = RepTOC
-        Case F_TMP:
-            Set DB_TMP = FileOpen(.RepFile)
-        Case Else: FatalRep "GetRep: файл штампа=" & .RepFile, RepName
-        End Select
+    
+    Select Case RepFile
+'''''''        Case F_MATCH:
+''''''' '''!!!           RepMatch = RepTOC
+'''''''        Case F_1C:
+'''''''            Set DB_1C = FileOpen(.RepFile)
+'''''''  '''!!!           Rep1C = RepTOC
+'''''''        Case F_SFDC:
+'''''''            Set DB_SFDC = FileOpen(.RepFile)
+''''''' '''!!!            RepSF = RepTOC
+'''''''        Case F_ADSK:
+'''''''            Set DB_ADSK = FileOpen(.RepFile)
+''''''' '''!!!            RepADSK = RepTOC
+'''''''        Case F_STOCK:
+'''''''            Set DB_STOCK = FileOpen(.RepFile)
+''''''' '''!!!            RepStock = RepTOC
+'''''''        Case F_TMP:
+    Case F_MATCH:
+    Case F_1C:      Set DB_1C = FileOpen(RepFile)
+    Case F_SFDC:    Set DB_SFDC = FileOpen(RepFile)
+    Case F_ADSK:    Set DB_ADSK = FileOpen(RepFile)
+    Case F_STOCK:   Set DB_STOCK = FileOpen(RepFile)
+    Case F_TMP:     Set DB_TMP = FileOpen(RepFile)
+    Case Else: FatalRep "GetRep: файл штампа=" & RepFile, RepName
+    End Select
             
-        If CheckStamp(i) Then
-            GetRep = RepTOC
-        Else
-            FatalRep "GetRep", RepName
-        End If
-    End With
+    If CheckStamp(i) Then
+        GetRep = GetTOC(i)
+    Else
+        FatalRep "GetRep", RepName
+    End If
 End Function
+Function GetTOC(ByVal iTOC As Long) As TOCmatch
+'
+'  - GetTOC(iTOC)   - возвращает заполненную структуру TOCmatch по строке iTOC в TOC
+'
+' 27.8.13
+
+    Dim LocalTOC As TOCmatch
+    Dim LoadMode As Boolean
+    LoadMode = False
+    
+    With DB_MATCH.Sheets(TOC)
+        LocalTOC.iTOC = iTOC                ' номер строки в TOC - Read Only!
+        LocalTOC.Dat = .Cells(iTOC, TOC_DATE_COL)
+        LocalTOC.Name = .Cells(iTOC, TOC_REPNAME_COL)
+        LocalTOC.MyCol = .Cells(iTOC, TOC_MYCOL_COL)
+        If LocalTOC.Made = REP_LOADED Then LoadMode = True
+        LocalTOC.ResLines = GetReslines(, LoadMode, .Cells(iTOC, TOC_RESLINES_COL))
+        LocalTOC.Made = .Cells(iTOC, TOC_MADE_COL)
+        LocalTOC.RepFile = .Cells(iTOC, TOC_REPFILE_COL)
+        LocalTOC.SheetN = .Cells(iTOC, TOC_SHEETN_COL)
+        LocalTOC.EOL = .Cells(iTOC, TOC_EOL_COL)
+        LocalTOC.CreateDat = .Cells(iTOC, TOC_CREATED_COL)
+        LocalTOC.FormName = .Cells(iTOC, TOC_FORMNAME)
+    End With
+    GetTOC = LocalTOC
+End Function
+
 Sub FatalRep(SubName, RepName)
 '
 ' - FatalRep(SubName, RepName) - сообщение о фатальной ошибке при запросе RepName
@@ -154,6 +173,7 @@ Function CheckStamp(iTOC As Long, _
 ' 27.10.12 - помимо типов Штампа "=" и "I", введено "N" - Штамп не проверять
 '  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
 ' 14.7.13 - дополнительная диагностика и действия, если Штамп не найден
+' 27.8.13 - минимизируем использование глобальной структуры RepTOC за счет GetTOC(iTOC)
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -163,6 +183,25 @@ Function CheckStamp(iTOC As Long, _
     Dim Typ As String
     Dim Continued As String
     Dim i As Long, j As Long
+    Dim LocalTOC As TOCmatch
+    
+'''    LocalTOC.iTOC = iTOC                ' номер строки в TOC - Read Only!
+'''    LocalTOC.Dat = .Cells(i, TOC_DATE_COL)
+'''    LocalTOC.Name = .Cells(i, TOC_REPNAME_COL)
+'''    LocalTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
+'''    Dim LoadMode As Boolean
+'''    LoadMode = False
+'''    If LocalTOC.Made = REP_LOADED Then LoadMode = True
+'''    LocalTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
+'''    LocalTOC.Made = .Cells(i, TOC_MADE_COL)
+'''    LocalTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
+'''    LocalTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
+'''    LocalTOC.EOL = .Cells(i, TOC_EOL_COL)
+'''    LocalTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
+'''    LocalTOC.FormName = .Cells(i, TOC_FORMNAME)
+''''''    LocalTOC = RepTOC
+
+    LocalTOC = GetTOC(iTOC)
     
     On Error GoTo NoStamp
     CheckStamp = True
@@ -177,7 +216,9 @@ Function CheckStamp(iTOC As Long, _
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
     
-    With RepTOC
+'''    With RepTOC
+    
+    With LocalTOC
         For i = LBound(SR) To UBound(SR)
             For j = LBound(SC) To UBound(SC)
                 Str = SR(i)
@@ -213,7 +254,7 @@ NxtChk:
                 & vbCrLf & "на самом деле EOL = " & RightEOL _
                 & vbCrLf & vbCrLf & "Исправить EOL в TOCmatch? ", vbYesNo)
             If ToChangeEOLinTOC = vbYes Then
-                .EOL = RightEOL
+                RepTOC.EOL = RightEOL
                 WrTOC
                 CheckStamp (iTOC)
                 Exit Function
@@ -247,7 +288,7 @@ Function FileOpen(RepFile) As Workbook
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
 End Function
 Function GetReslines(Optional ByVal Doc As String, _
-    Optional ByVal LoadMode As Boolean = False, Optional Resl As String = "") As Long
+    Optional ByVal LoadMode As Boolean = False, Optional Resl As String = "?") As Long
 '
 ' - GetReslines([Doc],[LoadMode],[ResL]) - извлечение размера пятки Doc с учетом
 '            контекста LoadMode; строка ResL со значениями размера пятки
@@ -261,13 +302,14 @@ Function GetReslines(Optional ByVal Doc As String, _
         Dim ss() As String, R As TOCmatch
         
         GetReslines = 0
-        If Resl = "" Then
+        If Resl = "" Then Exit Function
+        If Resl = "?" Then
             If Doc = "" Or Doc = TOC Or Doc = Process Then Exit Function
             If IsMissing(Doc) Then FatalRep "GetResLines", Doc
             R = GetRep(Doc)
             Resl = DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_RESLINES_COL)
         End If
-        If Resl = "" Then Exit Function
+'''        If Resl = "" Then Exit Function
         
         If InStr(Resl, "/") <> 0 Then
             ss = Split(Resl, "/")

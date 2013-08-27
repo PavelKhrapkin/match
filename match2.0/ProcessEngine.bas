@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 25.8.13 П.Л.Храпкин, А.Пасс
+' 27.8.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -70,6 +70,7 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
+        .Activate
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
@@ -89,24 +90,26 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
 '                        а если не выполнен - запуск исполняющей его Процедуры
 '   7.8.12
 '  16.8.12 - bug fix про PrevStep без запятой давал ошибку
+'  27.8.13 - не используем глобальную структуру RepTOC
 
     Dim i As Integer
     Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
     Dim x() As String   '=каждая часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
+    Dim Report As TOCmatch
     
     Proc = Trim(Proc): Step = Trim(Step)
     
     If Step = REP_LOADED Then
         i = ToStep(Proc)
         Rep = DB_MATCH.Sheets(Process).Cells(i, PROC_REP1_COL)
-        GetRep Rep
-        If RepTOC.Made <> REP_LOADED Then
+        Report = GetRep(Rep)
+        If Report.Made <> REP_LOADED Then
             Dim Msg As String
             ErrMsg FATAL_ERR, "IsDone: Не 'Loaded' файл для Процесса " _
                 & Proc & " на Шаге " & Step & vbCrLf & vbCrLf _
-                & "Отчет " & RepTOC.Name & " надо загрузить заново!"
+                & "Отчет " & Report.Name & " надо загрузить заново!"
             Stop
             End
         Else
@@ -265,6 +268,7 @@ Function ToStep(Proc, Optional Step As String = "") As Integer
 ' - ToStep(Proc, [Step]) - возвращает номер строки таблицы Процессов
 '   7.8.12
 '  11.8.13 - более подробное сообщение об ошибке
+'  27.8.13 - не используем глобальную структуру RepTOC
     
     Dim P As TOCmatch           'строка таблицы Процессов в виде TOCmatch
     Dim StepName As String      '=Имя текущего Шага
@@ -274,7 +278,7 @@ Function ToStep(Proc, Optional Step As String = "") As Integer
     P = GetRep(Process)
     
     With DB_MATCH.Sheets(Process)
-        For i = 6 To RepTOC.EOL
+        For i = 6 To P.EOL
             ProcName = .Cells(i, PROC_NAME_COL)
             StepName = .Cells(i, PROC_STEP_COL)
             If StepName = PROC_START And ProcName = Proc Then GoTo MyProc
