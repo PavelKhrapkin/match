@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 24.8.2013
+' П.Л.Храпкин 27.8.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -29,6 +29,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 18.8.13 - ResLines теперь имеет вид 2 / 7
 ' 23.8.13 - SheetSort загружаемого документа, если это часть полного
 ' 24.8.13 - упразднил InSheetN в TOC. Теперь Документ всегда должен быть в листе 1
+' 27.8.13 - минимизируем использование глобальной структуры RepTOC
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -38,18 +39,19 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     Dim NewFrDate_Row As Long, NewFrDate_Col As Long
     Dim NewToDate_Row As Long, NewToDate_Col As Long
     Dim InSheetN As Integer 'поле в TOCmatch- номер листа входного Документа для MoveToMatch
+    Dim LocalTOC As TOCmatch
     
     IsPartialUpdate = False
     NewRep = ActiveWorkbook.Name
     RepName = ActiveSheet.Name
     Lines = EOL(RepName, Workbooks(NewRep))
     
-    GetRep TOC
+    LocalTOC = GetRep(TOC)
     
     IsSF = CheckStamp(6, NewRep, Lines)
 
     With DB_MATCH.Sheets(TOC)
-        For i = TOCrepLines To RepTOC.EOL
+        For i = TOCrepLines To LocalTOC.EOL
             If .Cells(i, TOC_REPNAME_COL) = "" Then GoTo NxDoc
             InSheetN = 1
 ''            If .Cells(i, TOC_INSHEETN) <> "" Then
@@ -107,7 +109,8 @@ RepNameHandle:
         ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
             .Activate
             .Rows("1:" & Lines).AutoFilter
-            DateSort NewToDate_Col
+            DateCol InSheetN, NewToDate_Col
+            SheetSort InSheetN, NewToDate_Col
             Created = GetDate(Right$(.Name, 8))
             Dim DateCell As String
             Do
