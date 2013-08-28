@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content ƒокументов в match.xlsx
 '
-' 27.08.2013
+' 28.08.2013
 '=========================== ќписани€ ================================
 '       * TOC хранитьс€ в листе TOC. ƒанные о ƒокументе хран€тс€ в виде строки этого листа
 '       * при работе отдельных Ўагов, параметры и константы передаютс€ в структуре TOCmatch,
@@ -92,21 +92,6 @@ FoundRep:
     Dim TestedStamp As String
     
     Select Case RepFile
-'''''''        Case F_MATCH:
-''''''' '''!!!           RepMatch = RepTOC
-'''''''        Case F_1C:
-'''''''            Set DB_1C = FileOpen(.RepFile)
-'''''''  '''!!!           Rep1C = RepTOC
-'''''''        Case F_SFDC:
-'''''''            Set DB_SFDC = FileOpen(.RepFile)
-''''''' '''!!!            RepSF = RepTOC
-'''''''        Case F_ADSK:
-'''''''            Set DB_ADSK = FileOpen(.RepFile)
-''''''' '''!!!            RepADSK = RepTOC
-'''''''        Case F_STOCK:
-'''''''            Set DB_STOCK = FileOpen(.RepFile)
-''''''' '''!!!            RepStock = RepTOC
-'''''''        Case F_TMP:
     Case F_MATCH:
     Case F_1C:      Set DB_1C = FileOpen(RepFile)
     Case F_SFDC:    Set DB_SFDC = FileOpen(RepFile)
@@ -185,22 +170,6 @@ Function CheckStamp(iTOC As Long, _
     Dim i As Long, j As Long
     Dim LocalTOC As TOCmatch
     
-'''    LocalTOC.iTOC = iTOC                ' номер строки в TOC - Read Only!
-'''    LocalTOC.Dat = .Cells(i, TOC_DATE_COL)
-'''    LocalTOC.Name = .Cells(i, TOC_REPNAME_COL)
-'''    LocalTOC.MyCol = .Cells(i, TOC_MYCOL_COL)
-'''    Dim LoadMode As Boolean
-'''    LoadMode = False
-'''    If LocalTOC.Made = REP_LOADED Then LoadMode = True
-'''    LocalTOC.ResLines = GetReslines(, LoadMode, .Cells(i, TOC_RESLINES_COL))
-'''    LocalTOC.Made = .Cells(i, TOC_MADE_COL)
-'''    LocalTOC.RepFile = .Cells(i, TOC_REPFILE_COL)
-'''    LocalTOC.SheetN = .Cells(i, TOC_SHEETN_COL)
-'''    LocalTOC.EOL = .Cells(i, TOC_EOL_COL)
-'''    LocalTOC.CreateDat = .Cells(i, TOC_CREATED_COL)
-'''    LocalTOC.FormName = .Cells(i, TOC_FORMNAME)
-''''''    LocalTOC = RepTOC
-
     LocalTOC = GetTOC(iTOC)
     
     On Error GoTo NoStamp
@@ -215,8 +184,6 @@ Function CheckStamp(iTOC As Long, _
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
-    
-'''    With RepTOC
     
     With LocalTOC
         For i = LBound(SR) To UBound(SR)
@@ -254,7 +221,8 @@ NxtChk:
                 & vbCrLf & "на самом деле EOL = " & RightEOL _
                 & vbCrLf & vbCrLf & "»справить EOL в TOCmatch? ", vbYesNo)
             If ToChangeEOLinTOC = vbYes Then
-                RepTOC.EOL = RightEOL
+                LocalTOC.EOL = RightEOL
+                RepTOC = LocalTOC
                 WrTOC
                 CheckStamp (iTOC)
                 Exit Function
@@ -269,6 +237,7 @@ Function FileOpen(RepFile) As Workbook
 '
 ' - FileOpen(RepFile)   - провер€ет, открыт ли RepFile, если нет - открывает
 '   26.7.12
+'   28.8.13 - DisplayAlerts False чтобы не сообщать о пере-открытии файла
     
     Dim W As Workbook
     For Each W In Application.Workbooks
@@ -285,7 +254,9 @@ Function FileOpen(RepFile) As Workbook
         F_match_env.Close
     End If
     
+    Application.DisplayAlerts = False
     Set FileOpen = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
+    Application.DisplayAlerts = True
 End Function
 Function GetReslines(Optional ByVal Doc As String, _
     Optional ByVal LoadMode As Boolean = False, Optional Resl As String = "?") As Long
@@ -343,12 +314,13 @@ Sub WrTOC(Optional ByVal Name As String = "")
 ' 14.07.13 - Save Changes в DBs
 ' 15.08.13 - Optional Name - им€ документа, по которому сохран€ем строку TOCmatch
 ' 26.08.13 - переписываем EOL в TOC
+' 28.08.13 - Name из RepTOC.Name
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых ƒокументов
     
     If Name = "" Then Name = RepTOC.Name    ' по умолчанию Name по последнему GetRep
-    If RepTOC.Name = "" Then FatalRep "WrTOC", "<пусто>"
+    If Name = "" Then FatalRep "WrTOC", "<пусто>"
     If Name = TOC Then Exit Sub
     
     For i = BEGIN To BIG
@@ -362,7 +334,9 @@ FoundRep:
     S = DB_MATCH.Sheets(TOC).Cells(i, TOC_SHEETN_COL)
     Call FileOpen(W)
     Workbooks(W).Sheets(S).Activate
-    NewEOL = EOL(Name) - GetReslines(Name)
+    Dim Resl As String
+    Resl = DB_MATCH.Sheets(1).Cells(i, TOC_RESLINES_COL)
+    NewEOL = EOL(Name) - GetReslines(Name, , Resl)
     If NewEOL <= 0 Then GoTo Err
     With DB_MATCH.Sheets(TOC)
 '        .Cells(i, TOC_EOL_COL) = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
