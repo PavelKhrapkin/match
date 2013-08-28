@@ -5,8 +5,9 @@ Attribute VB_Name = "SFanalitics"
 '       Проектов    = Opportunity   = Opp   Отчет SFopp или SF
 '       Платежей -- для занесенных в SF --  Отчет SF
 '       Договоров   = Contract      = Contr Отчет SFD
-'   29.12.2012
+'   29.8.2013
 '
+' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
 ' - AccId(Account)              - Id SF Организации по имени 1С
 ' - OwnerId(Owner, Buddy)       - Id SF владельца с переадресацией по таблице We
 ' - OppByPay(PayKod)            - получает Имя Проекта SF по Платежу 1С
@@ -25,6 +26,38 @@ Attribute VB_Name = "SFanalitics"
 
 Option Explicit
 
+Sub SFaccSplit(ByVal Col As Long)
+'
+' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
+' 25.8.13
+' 29.8.13 - bug fix
+
+    Const SFACC_DELIMETR = "<ИЛИ>"
+    Dim SFDEL_LNG
+    SFDEL_LNG = Len(SFACC_DELIMETR) + 1
+    
+    Dim R As TOCmatch, i As Long, S() As String
+    
+    StepIn
+    
+    R = GetRep(ActiveSheet.Name)
+    
+    With Workbooks(R.RepFile).Sheets(R.SheetN)
+        i = 2
+        Do While i <= R.EOL
+            Progress i / R.EOL
+            If InStr(.Cells(i, Col), SFACC_DELIMETR) <> 0 Then
+                .Rows(i).Insert shift:=xlDown
+                .Rows(i + 1).Copy Destination:=.Rows(i)
+                S = Split(.Cells(i, Col), SFACC_DELIMETR)
+                .Cells(i, Col) = S(0)
+                .Cells(i + 1, Col) = Mid(.Cells(i + 1, Col), Len(S(0)) + SFDEL_LNG)
+                R.EOL = R.EOL + 1
+            End If
+            i = i + 1
+        Loop
+    End With
+End Sub
 Function Adr1C(Acc) As String
 '
 '   возвращает адрес Организации Acc в Списке клиентов 1С или ошибку, если ее нет
