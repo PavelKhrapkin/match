@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 27.8.13 П.Л.Храпкин, А.Пасс
+' 30.8.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -35,6 +35,7 @@ Sub ProcStart(Proc As String)
 '   7.8.12
 '  26.8.12 - окраска выполненного Процесса
 '  24.8.13 - по завершению Процесса записываем <*>ProcEnd в ТОС Документа
+'  30.8.13 - выход по PROC_END без Документа
 
     Dim Step As String, PrevStep As String
     Dim i As Integer, Doc As String, К As TOCmatch
@@ -74,12 +75,14 @@ Sub ProcStart(Proc As String)
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
-        GetRep .Cells(i, PROC_REP1_COL)
+        Doc = .Cells(i, PROC_REP1_COL)
+        If Doc = "" Then GoTo ex
+        RepTOC = GetRep(Doc)
         RepTOC.Made = PROC_END
         WrTOC
 ''        MS "<*> Процесс " & Proc & " завершен!"
     End With
-    Exit Sub
+ex: Exit Sub
 Err:
     ErrMsg FATAL_ERR, "Нарушена последовательность шагов процедуры " & Proc
     End
@@ -95,7 +98,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
     Dim i As Integer
     Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
-    Dim x() As String   '=каждая часть может быть вида <Proc>/<Step>
+    Dim X() As String   '=каждая часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
     Dim Report As TOCmatch
     
@@ -118,12 +121,12 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        S = Split(Trim(Step), ",")
+        S = split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                x = Split(S(i), "/")
-                If Proc = x(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
-                If Not IsDone(x(0), x(1)) Then ProcStart x(0)
+                X = split(S(i), "/")
+                If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
+                If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
                 iStep = ToStep(Proc, S(i))
                 If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
@@ -244,7 +247,7 @@ Sub StepOut(Step As String, iProc)
     Dim Proc As String, Doc As String, i As Long
     
     ScreenUpdate True
-    If Step = "ProcStart" Then Exit Sub
+'    If Step = "ProcStart" Then Exit Sub
     RepTOC.Made = Step: RepTOC.Dat = Now
     Doc = DB_MATCH.Sheets(Process).Cells(iProc, PROC_REP1_COL)
     WrTOC Doc     ' перепишем EOL в TOC и проверим, что не сбились Штампы
@@ -446,5 +449,46 @@ InsRow: If FrRow = 0 Then FrRow = ToRow
         .Cells(R.iTOC, TOC_FRDATE_COL) = FrDate
         .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
     End With
+End Sub
+
+Sub CheckRepDate(ByVal Rep1 As String, _
+    Optional Rep2 As String = "", Optional Rep3 As String = "", _
+    Optional Rep4 As String = "", Optional Rep5 As String = "")
+'
+' S CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат Документов
+'           взаимодействующих с загружаемым как самый левый в списке Шага
+'
+' 30.8.13
+
+    Dim ActTOC As TOCmatch
+    
+    StepIn
+    
+    ActTOC = GetRep(ActiveSheet.Name)
+    
+    With ActTOC
+        RepDateSub Rep1, .Name, .CreateDat
+        RepDateSub Rep2, .Name, .CreateDat
+        RepDateSub Rep3, .Name, .CreateDat
+        RepDateSub Rep4, .Name, .CreateDat
+        RepDateSub Rep5, .Name, .CreateDat
+    End With
+End Sub
+Sub RepDateSub(Rep As String, Name As String, Dat As Date)
+'
+' - RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален
+'                       иначе выводит сообщение о необходимости перезагрузки
+' 30.8.13
+
+    Dim LocalTOC As TOCmatch
+    
+    If Rep = "" Then GoTo ex
+    
+    LocalTOC = GetRep(Rep)
+    If LocalTOC.Dat > Dat Then GoTo Er
+    
+ex: Exit Sub
+Er: ErrMsg FATAL_ERR, "Необходимо загрузить заново '" & Rep & "' за " _
+        & LocalTOC.Dat & vbCrLf & "Он устарел относительно '" & Name & "' за " & Dat
 End Sub
 

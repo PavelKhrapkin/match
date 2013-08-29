@@ -50,8 +50,8 @@ Sub SFaccSplit(ByVal Col As Long)
                 .Rows(i).Insert shift:=xlDown
                 .Rows(i + 1).Copy Destination:=.Rows(i)
                 S = Split(.Cells(i, Col), SFACC_DELIMETR)
-                .Cells(i, Col) = S(0)
-                .Cells(i + 1, Col) = Mid(.Cells(i + 1, Col), Len(S(0)) + SFDEL_LNG)
+                .Cells(i, Col) = Trim(S(0))
+                .Cells(i + 1, Col) = Trim(Mid(.Cells(i + 1, Col), Len(S(0)) + SFDEL_LNG))
                 R.EOL = R.EOL + 1
             End If
             i = i + 1
