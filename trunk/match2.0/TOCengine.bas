@@ -176,8 +176,8 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
         If Typ = "N" Then GoTo ex
@@ -283,7 +283,7 @@ Function GetReslines(Optional ByVal Doc As String, _
 '''        If Resl = "" Then Exit Function
         
         If InStr(Resl, "/") <> 0 Then
-            ss = Split(Resl, "/")
+            ss = split(Resl, "/")
             If IsMissing(LoadMode) Then
                 LoadMode = False
                 If R.Made = REP_LOADED Then LoadMode = True
@@ -352,7 +352,7 @@ FoundRep:
 '''        .Cells(i, TOC_STAMP_TYPE_COL) = RepTOC.StampType
 '''        .Cells(i, TOC_STAMP_R_COL) = RepTOC.StampR
 '''        .Cells(i, TOC_STAMP_C_COL) = RepTOC.StampC
-        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
+'''        .Cells(i, TOC_CREATED_COL) = RepTOC.CreateDat
 '''        .Cells(i, TOC_PARCHECK_COL) = RepTOC.ParChech
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
