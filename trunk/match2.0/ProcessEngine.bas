@@ -489,6 +489,6 @@ Sub RepDateSub(Rep As String, Name As String, Dat As Date)
     
 ex: Exit Sub
 Er: ErrMsg FATAL_ERR, "Необходимо загрузить заново '" & Rep & "' за " _
-        & LocalTOC.Dat & vbCrLf & "Он устарел относительно '" & Name & "' за " & Dat
+        & LocalTOC.CreateDat & vbCrLf & "Он устарел относительно '" & Name & "' за " & Dat
 End Sub
 
