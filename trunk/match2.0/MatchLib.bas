@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 25.8.13
+' П.Л.Храпкин, А.Пасс 1.9.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -263,12 +263,12 @@ Function AutoFilterReset(SheetN) As Integer
     R = GetRep(SheetN)
     
     With Workbooks(R.RepFile).Sheets(R.SheetN)
-'''        .Activate
+        .Activate
         .AutoFilterMode = False
         .Rows("1:" & R.EOL).AutoFilter
         .Rows("1:1").Select
         ActiveWindow.FreezePanes = True
-        Application.Goto .Cells(R.EOL - 3, 1), True
+        Application.GoTo .Cells(R.EOL - 3, 1), True
     End With
 End Function
 Sub tst()
@@ -560,25 +560,30 @@ Sub ClearSheet(SheetN, HDR_Range As Range)
         Stop
     End Select
 End Sub
-Sub SheetSort(SheetN, Col)
+Sub SheetSort(SheetN, Col, Optional AscOrder As String = "Ascending")
 '
-' Сортируем лист SheetN по колонке Col
+' -/S SheetSort(SheetN, Col,[AscOrder]) - Сортируем лист SheetN по колонке Col
+'                                    в порядке AscOrder (по умолчанию Ascending)
 '   22.1.2012
 '   21.2.2012 - Option Explicit
 '   19.4.12 - AutoFilterReset
 '   21.8.13 - если фильтруем новый входной документ- не включаем AutoFilterReset
+'   1.9.13 - порядок сортировки - Optional AscOrder
 
-    Dim Name As String
+    Dim Name As String, Ord
 
 '    Sheets(SheetN).Select
     If Not IsNumeric(SheetN) Then Call AutoFilterReset(SheetN)
 
     Name = ActiveSheet.Name
     
+    Ord = xlAscending
+    If UCase$(Left$(AscOrder, 3)) = "DES" Then Ord = xlDescending
+        
     With ActiveWorkbook.Worksheets(Name).AutoFilter.Sort
         .SortFields.Clear
-        .SortFields.Add key:=Cells(1, Col), SortOn:=xlSortOnValues, Order:= _
-        xlAscending, DataOption:=xlSortNormal
+        .SortFields.Add key:=Cells(1, Col), SortOn:=xlSortOnValues, _
+            Order:=Ord, DataOption:=xlSortNormal
         .Header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -592,20 +597,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, x, EOL_SheetN As Integer
+    Dim i, prev, X, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        x = Sheets(SheetN).Cells(i, Col)
-        If x = prev Then
+        X = Sheets(SheetN).Cells(i, Col)
+        If X = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = x
+            prev = X
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -617,7 +622,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, x As String
+    Dim prev As String, X As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -627,8 +632,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            x = .Cells(i, ColSort)
-            If x = prev Then
+            X = .Cells(i, ColSort)
+            If X = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -649,7 +654,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = x
+                prev = X
             End If
         Loop While i < EOL_SheetN
     End With
@@ -854,15 +859,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim x() As String
+    Dim X() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    x = Split(DicList, ",")
+    X = Split(DicList, ",")
     
-    For i = LBound(x) To UBound(x)
-        If InStr(lW, LCase$(x(i))) <> 0 Then
+    For i = LBound(X) To UBound(X)
+        If InStr(lW, LCase$(X(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If
