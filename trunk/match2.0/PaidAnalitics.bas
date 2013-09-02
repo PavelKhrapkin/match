@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   1.9.2013
+'   2.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -18,25 +18,67 @@ Sub Paid1C()
 '
 ' S Paid1C ()    - обработка Платежей 1С, занесение в SF с WP
 '
-' 1.9.13
+' 2.9.13
 
     StepIn
     
+    Const NEW_PAYMENT = "NewPayment"
+    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/0"
+    Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+    Const BALKY_TYPE = "Расходники"
     Dim LocalTOC As TOCmatch, i As Long
-    
+    Dim IsErr As Boolean, FromN As Long
+    Dim ContrK As String, OppId As String, ThisOppId As String
+       
     LocalTOC = GetRep(PAY_SHEET)
-    
+    NewSheet NEW_PAYMENT
+
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For i = 2 To LocalTOC.EOL
             Progress i / LocalTOC.EOL
+            IsErr = False
             If .Cells(i, PAYISACC_COL) = "" Then
-                xAdapt "HDR_WPacc", i
+'!!!'                xAdapt "HDR_WPacc", i
+                GoTo NextRow
+            ElseIf .Cells(i, PAYINSF_COL) = 1 Then GoTo NextRow
+            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор
+                ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
+                OppId = FetchDoc(FETCH_SFD, ContrK, IsErr)
+                If OppId = "" Then IsErr = True
+                GoTo ToSF
+''''                If OppId = "" Then
+'''''---- NEWOPP              лист для CSV    файл      строка -- НЕ НАПИСАНО ЕЩЕ!!!
+'''''                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
+''''                End If
+''''                If Not IsErr Then WrNewSheet NewPayment, PAY_SHEET, i, OppId
+            ElseIf .Cells(i, PAYGOODTYPE_COL) = BALKY_TYPE Then
+                Dim BalkyExists As Boolean: BalkyExists = False
+                FromN = 2
+                Do While FromN <> 0
+                    ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), IsErr, FromN)
+                    If ThisOppId = "" Then GoTo NextOpp
+                    With DB_SFDC.Sheets(SFopp)
+                        If .Cells(FromN, SFOPP_LINE_COL) <> BALKY_TYPE Then GoTo NextOpp
+                        If .Cells(FromN, SFOPP_CLOSEDATE_COL) - Now < 365 Then GoTo NextOpp
+                    End With
+                    If BalkyExists Then
+                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYACC_COL) & "' несколько проектов по Расходникам"
+                        GoTo NextRow
+                    End If
+                    OppId = ThisOppId
+NextOpp:            FromN = FromN + 1
+                Loop
+                GoTo ToSF
             Else
-                xAdapt "HDR_WP", i
+'!!!'                xAdapt "HDR_WP", i
+                GoTo NextRow
             End If
+ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
+NextRow:
         Next i
     End With
 End Sub
+
 '''Sub NewPaidOpp()
 ''''
 '''' S NewPaidDog()    - новые Платежи по существующим Проектам

@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 1.09.13 П.Л.Храпкин, А.Пасс
+' 3.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
@@ -730,18 +730,18 @@ Function AdapterWP(AdapterName, X, Par) As String
     With DB_TMP.Sheets(WP)
     
         Select Case AdapterName
-        Case "CopyToVal":
-            Set DB_TMP = FileOpen(F_TMP)
-            With DB_TMP.Sheets(WP)
-                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
-               .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
-            End With
-        Case "CopyFrVal":
-            Set DB_TMP = FileOpen(F_TMP)
-            With DB_TMP.Sheets(WP)
-                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
-                .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
-            End With
+'''        Case "CopyToVal":
+'''            Set DB_TMP = FileOpen(F_TMP)
+'''            With DB_TMP.Sheets(WP)
+'''                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
+'''               .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
+'''            End With
+'''        Case "CopyFrVal":
+'''            Set DB_TMP = FileOpen(F_TMP)
+'''            With DB_TMP.Sheets(WP)
+'''                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
+'''                .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
+'''            End With
         Case "OppType":             ' инициализация типа Проекта
         ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
             If X = "Оборудование" Then X = "Железо"
@@ -910,7 +910,7 @@ GetFromActiveSheet:
     If iX > 0 Then X_Parse = ActiveSheet.Cells(WP_Row, iX)
 ex: Exit Function
 End Function
-Function FetchDoc(F_rqst, X, IsErr) As String
+Function FetchDoc(F_rqst, X, IsErr, Optional ByRef FromN As Long = 1) As String
 '
 ' - FetchDoc(F_rqst, X, IsErr) - извлечение данных из стороннего Документа
 '                   по запросу F_rqst для значения поля X. IsErr=True - ошибка
@@ -931,6 +931,7 @@ Function FetchDoc(F_rqst, X, IsErr) As String
 ' 5.9.12
 ' 14.9.12 - работает /D для второй группы - "по умолчанию"
 ' 4.11.12 - Fetch возвращает номер строки в случае <Doc>/C1:№
+' 3.09.13 - Optional FromN позволяет вести поиск не с начала Документа
 
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
@@ -963,7 +964,8 @@ Function FetchDoc(F_rqst, X, IsErr) As String
 '--- ситуация С1:C2 - в группе 2 параметра - извлекаем значение по Lookup или №
         If IsNumeric(Cols(1)) Then C2 = Cols(1)
         S = ""
-        N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+        N = CSmatchSht(X, C1, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN), FromN)
+        FromN = N
         If N <> 0 Then
             If Cols(1) = "№" Then
                 S = N
