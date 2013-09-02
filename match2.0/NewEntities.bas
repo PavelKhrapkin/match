@@ -5,11 +5,11 @@ Attribute VB_Name = "NewEntities"
 ' S NewSheet(SheetName,[TabColor]) - создает новый лист SheetName цвета TabColor
 ' S NewOrder(NewOrder)  - просмотр «аказов дл€ занесени€ в SF новых через DL
 '
-'   23.8.2013
+'   3.9.2013
 
 Option Explicit
 
-Sub NewSheet(SheetName As String, Optional TabColor As Long = 0)
+Sub NewSheet(ByVal SheetName As String, Optional ByVal TabColor As Long = 0)
 '
 ' S NewSheet(SheetName, TabColor) - создает новый лист SheetName
 '       * Ќазвание шапки нового листа беретс€ из названи€ SheetName,
@@ -26,6 +26,7 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = 0)
 ' 16.01.13 - использование setColWidth, парсинг ширины колонки
 ' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 ' 23.8.13 - по умолчанию цвет Tab нового листа как в у пол€ в TOC
+'  3.9.13 - ByVal параметры
 
     StepIn
     
@@ -71,7 +72,7 @@ Sub NewSheet(SheetName As String, Optional TabColor As Long = 0)
     If R.EOL <> 1 Then GoTo ErrHdr
     R.CreateDat = Now        ' остальные пол€ в TOCmatch запишет StepOut
     RepTOC = R
-    WrTOC
+    WrTOC SheetName
     Exit Sub
 NoHdr:
     ErrMsg FATAL_ERR, "NewSheet> Ќет Ўаблона (шапки) '" & R.FormName _
