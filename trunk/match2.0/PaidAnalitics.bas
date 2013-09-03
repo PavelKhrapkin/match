@@ -18,13 +18,19 @@ Sub Paid1C()
 '
 ' S Paid1C ()    - обработка Платежей 1С, занесение в SF с WP
 '
-' 2.9.13
+' 3.9.13
 
     StepIn
     
-    Const NEW_PAYMENT = "NewPayment"
-    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/0"
+    Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
+    Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
+    Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
+    Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
+    
+    Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/W"
+    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+    
     Const BALKY_TYPE = "Расходники"
     Dim LocalTOC As TOCmatch, i As Long
     Dim IsErr As Boolean, FromN As Long
@@ -32,28 +38,35 @@ Sub Paid1C()
        
     LocalTOC = GetRep(PAY_SHEET)
     NewSheet NEW_PAYMENT
+    NewSheet NEW_ACC
+    NewSheet NEW_OPP
+    NewSheet NEW_CONTRACT
 
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For i = 2 To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             IsErr = False
-            If .Cells(i, PAYISACC_COL) = "" Then
-'!!!'                xAdapt "HDR_WPacc", i
+            If .Cells(i, PAYINSF_COL) = 1 Then GoTo NextRow
+            ElseIf .Cells(i, PAYISACC_COL) = "" Then
+                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
+                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
+                If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
                 GoTo NextRow
-            ElseIf .Cells(i, PAYINSF_COL) = 1 Then GoTo NextRow
-            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор
+            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
                 OppId = FetchDoc(FETCH_SFD, ContrK, IsErr)
-                If OppId = "" Then IsErr = True
-                GoTo ToSF
-''''                If OppId = "" Then
-'''''---- NEWOPP              лист для CSV    файл      строка -- НЕ НАПИСАНО ЕЩЕ!!!
-'''''                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
-''''                End If
-''''                If Not IsErr Then WrNewSheet NewPayment, PAY_SHEET, i, OppId
+                If IsErr Then
+                    WP_Adapt HDR_WPcontract, i  '--- если Договор не заведен в SF
+                    GoTo NextRow
+                End If
+                If OppId = "" Then
+                    WP_Adapt HDR_WPopp, i   '--- если в SF нет Проекта по Договору
+                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
+                    GoTo NextRow
+                End If
             ElseIf .Cells(i, PAYGOODTYPE_COL) = BALKY_TYPE Then
                 Dim BalkyExists As Boolean: BalkyExists = False
-                FromN = 2
+                FromN = 2                   '--- подбираем подходящий Проект Balky
                 Do While FromN <> 0
                     ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), IsErr, FromN)
                     If ThisOppId = "" Then GoTo NextOpp
@@ -70,7 +83,7 @@ NextOpp:            FromN = FromN + 1
                 Loop
                 GoTo ToSF
             Else
-'!!!'                xAdapt "HDR_WP", i
+                WP_Adapt "HDR_WP", i
                 GoTo NextRow
             End If
 ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
