@@ -6,7 +6,7 @@ Attribute VB_Name = "AdaptEngine"
 '           1.(кол.1) Основной обрабатываемый Документ - он становится ActiveSheet
 '           2.(кол.2) тип Шаблона (используется в Шаблонах WP)
 '               2.1 Кнопки (New, ->, Stop)
-'               2.2 iLine - ссылка на строку номер iLine, получаемую как параметр xAdapt
+'               2.2 iLine - ссылка на строку номер iLine, получаемую как параметр WP_Adapt
 '               2.3 Шаблон - наиболее распостраненный тип Шаблона общего назначения
 '               2.4 Select - содержит Адаптер OppSelect, выводящий НЕСКОЛЬКО строк-записей
 '       * Первая строка Шаблона содержит "шапку" - заголовки колонок
@@ -32,7 +32,7 @@ Attribute VB_Name = "AdaptEngine"
 ' 3.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
-'  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
+'  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
 '  8.12.12 - введен прoизвольный формат в строке width
 ' 14.12.12 - добавлена обработка формата в строке PTRN_WIDTH (WrNewSheet)
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
@@ -46,9 +46,9 @@ Attribute VB_Name = "AdaptEngine"
 ' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
 '                               в лист SheetNew из строки DB_Line листа SheetDB
 '...........................
-' - xAdapt(F, iLine)    - выводит на экран WP по Платежу в iLine, подготавливая диалог,
-'                         где F - прототип выводимой формы документа (WP_Prototype)
-' * xAdapt_Continue(Button) - продолжение работы xAdapt после нажатия кнопки Button
+' - WP_Adapt(F, iLine)    - выводит на экран WP по Платежу в iLine, подготавливая диалог,
+'                           где F - прототип выводимой формы документа (WP_Prototype)
+' * WP_Adapt_Continue(Button) - продолжение работы WP_Adapt после нажатия кнопки Button
 '...........................
 ' S Adapt(F) - запускает Адаптеры из Шаблона F
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
@@ -165,14 +165,14 @@ ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
         WrTOC SheetNew
     End If
 End Sub
-Sub testXAdapt()
-    xAdapt "", 0
+Sub testWP_Adapt()
+    WP_Adapt "", 0
     Stop
 End Sub
-Sub xAdapt(ByVal F As String, ByVal iLine As Long)
+Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 '
-' - xAdapt(F, iLine)    - выводит на экран WP по Платежу в iLine, подготавливая диалог,
-'                         где F - прототип выводимой формы документа (WP_Prototype)
+' - WP_Adapt(F, iLine)    - выводит на экран WP по Платежу в iLine, подготавливая диалог,
+'                           где F - прототип выводимой формы документа (WP_Prototype)
 '
 '   21.10.12
 '   23.10.12 - X_Parse вынесен в отдельную подпрограмму
@@ -181,6 +181,7 @@ Sub xAdapt(ByVal F As String, ByVal iLine As Long)
 '   11.11.12 - введен глобальный флаг для отладки TraceWidth
 '    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width"
 '   19.01.13 - вызвана setColWidth
+'   03.09.13 - смена имени с xAdapt на WP_Adapt
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -218,7 +219,7 @@ Sub xAdapt(ByVal F As String, ByVal iLine As Long)
         Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
         Dim width() As String
         FF.Copy .Cells(1, 1)
-        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!xAdapt_Continue"
+        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!WP_Adapt_Continue"
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
 '            If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
@@ -274,16 +275,16 @@ OppEOL:     .Rows(iRow - 1 + PTRN_COLS).Hidden = True
     DB_TMP.Sheets(WP).Activate
     
     If iSelect = 2 And Y = "-1" Then
-       xAdapt_Continue "NewOpp", 1
+       WP_Adapt_Continue "NewOpp", 1
     End If
 
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
 End Sub
-Sub xAdapt_Continue(Button As String, iRow As Long)
+Sub WP_Adapt_Continue(Button As String, iRow As Long)
 '
-' * xAdapt_Continue(Button) - продолжение работы xAdapt после нажатия кнопки Button
+' * WP_Adapt_Continue(Button) - продолжение работы WP_Adapt после нажатия кнопки Button
 '                             Сюда передается управления из WP_Select_Button.
 ' 8/10/12
 ' 20.10.12 - обработка кнопок "Занести"
@@ -694,9 +695,6 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
                 DaysToClos = OppCloseDate - Now
                 If .Cells(N, SFOPP_LINE_COL) = OPP_BALKY And DaysToClos > 365 Then
                     If BalkyExists Then
-                        IsErr = True
-                        ErrMsg WARNING, "В Организации '" & InitX & "' несколько проектов по Расходникам"
-                        Exit Function
                     End If
                     BalkyExists = True
                     Adapter = .Cells(N, SFOPP_OPPN_COL)
@@ -890,7 +888,7 @@ Function X_Parse(iRow, iCol, _
                 WP_Row = .Cells(putToRow, 5)
                 GoTo GetFromActiveSheet
              Case Else:
-                ErrMsg FATAL_ERR, "xAdapt> Странный тип Шаблона " & PtrnType
+                ErrMsg FATAL_ERR, "WP_Adapt> Странный тип Шаблона " & PtrnType
             End Select
         End If
 
@@ -1039,7 +1037,7 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 '
 '   * распознаются форматы Txt, Dbl, Date и любые другие, понимаемые Excel
 '
-'  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub xAdapt
+'  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
 '  8.12.12 - введен прoизвольный формат в строке width
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
