@@ -22,6 +22,7 @@ Sub Paid1C()
 
     StepIn
     
+'           --- Выходные листы ---           ---Шаблоны---
     Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
     Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
     Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
@@ -32,7 +33,7 @@ Sub Paid1C()
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
     
     Const BALKY_TYPE = "Расходники"
-    Dim LocalTOC As TOCmatch, i As Long
+    Dim LocalTOC As TOCmatch, i As Long, iLine As Long
     Dim IsErr As Boolean, FromN As Long
     Dim ContrK As String, OppId As String, ThisOppId As String
        
@@ -46,7 +47,8 @@ Sub Paid1C()
         For i = 2 To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             IsErr = False
-            If .Cells(i, PAYINSF_COL) = 1 Then GoTo NextRow
+            If .Cells(i, PAYINSF_COL) = 1 Then
+                GoTo NextRow
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
                 WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
                 iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
@@ -83,7 +85,7 @@ NextOpp:            FromN = FromN + 1
                 Loop
                 GoTo ToSF
             Else
-                WP_Adapt "HDR_WP", i
+                WP_Adapt HDR_WP, i
                 GoTo NextRow
             End If
 ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId

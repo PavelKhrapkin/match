@@ -165,6 +165,38 @@ ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
         WrTOC SheetNew
     End If
 End Sub
+Function AdaptStrip(ByVal FF As Range, ByVal iRow As Long, _
+                ByVal putToRow As Long, ByVal putToCol As Long) As Boolean
+'
+'   - AdaptStrip(iRow,putToRow,putToCol)    - обрабатывает полосу Шаблона.
+'               * Вывод Адаптеров осуществляется в [putToRow,putToCol].
+'               * возвращает True, если при выполнении одного Адаптеров ошибка
+'
+'
+'
+                
+    Dim iCol As Long
+    
+    AdaptStrip = False
+    
+                For iCol = 5 To .UsedRange.Columns.Count
+                    X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
+                    
+                    Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+                    F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+                    
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    
+                    If InStr(Rqst, "OppFilter") <> 0 And Y = "-1" Then GoTo OppEOL
+                    X = .Cells(iRow + PTRN_COLS - 1, iCol)
+                    If X = "-1" Then Exit For
+                    If Not IsErr And X <> "" Then
+                        width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        fmtCell DB_TMP, WP, width, Y, putToRow, putToCol
+                    End If
+                Next iCol
+
+End Function
 Sub testWP_Adapt()
     WP_Adapt "", 0
     Stop
@@ -209,9 +241,9 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         DB_MATCH.Sheets(WP_PROTOTYPE).Copy Before:=.Sheets(1)
         .Sheets(1).Name = WP
     End With
-'===== Заполняем WP
+'===== Заполняем лист WP
     With DB_TMP.Sheets(WP)
-        .Tab.Color = rgbBlue
+        .Tab.Color = rgbCoral
         For i = 1 To EOL(WP, DB_TMP)
             .Rows(1).Delete
         Next i
@@ -721,6 +753,9 @@ Function AdapterWP(AdapterName, X, Par) As String
 '
 ' - AdapterWP() - обработка Адаптеров для Шаблонов WP
 ' 5.1.2013
+' 4.9.13 - дописываем
+
+    Dim i As Long, Z(10) As String
 
     ''??'' WP_PAYMENT_LINE =?= iRow
     
@@ -740,36 +775,36 @@ Function AdapterWP(AdapterName, X, Par) As String
 '''                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
 '''                .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
 '''            End With
-        Case "OppType":             ' инициализация типа Проекта
-        ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-            If X = "Оборудование" Then X = "Железо"
-            If X = "Autodesk" Then
-        ''  !          If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
-                If IsSubscription(Z(0), X) Then
-                    X = "Подписка"
-                Else
-                    X = "Лицензии"
-                End If              '!' не рассматриваются Работы!!
-            End If
-            Adapter = X
-        Case "TypOpp":  '!!' сменить название
-        ' -- распознавание типа Проекта по типу и спецификации Товара
-            Dim Good As String
-        '            Stop
-            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-            Adapter = TypOpp(X, Good)
+'''        Case "OppType":             ' инициализация типа Проекта
+'''        ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+'''            If X = "Оборудование" Then X = "Железо"
+'''            If X = "Autodesk" Then
+'''        ''  !          If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
+'''                If IsSubscription(Z(0), X) Then
+'''                    X = "Подписка"
+'''                Else
+'''                    X = "Лицензии"
+'''                End If              '!' не рассматриваются Работы!!
+'''            End If
+'''            AdapterWP = X
+'''        Case "TypOpp":  '!!' сменить название
+'''        ' -- распознавание типа Проекта по типу и спецификации Товара
+'''            Dim Good As String
+'''        '            Stop
+'''            Good = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+'''            AdapterWP = TypOpp(X, Good)
         Case "OppFilter":
             Const SEL_REF = 20
         ' проверить есть ли Проект связанный с Договором
             Dim IdSFopp As String
-        !IdSFopp = .Cells(SEL_REF, 3)
+            IdSFopp = .Cells(SEL_REF, 3)
             If IdSFopp = "" Then
                 Dim b As Long, a(0 To 6) As Long
-        !b = .Cells(SEL_REF + 2, 4)
+                b = .Cells(SEL_REF + 2, 4)
                 For i = 0 To UBound(a)
                     a(i) = CLng(Par(i))
                 Next i
-                Adapter = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
+                AdapterWP = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
 '''        !            For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
 '''        !                If OppFilter(i, .Cells(b, A(0)), .Cells(b, A(1)), _
 '''        !                        .Cells(b, A(2)), .Cells(b, A(3)), .Cells(b, A(4)), _
@@ -777,13 +812,13 @@ Function AdapterWP(AdapterName, X, Par) As String
 '''                        Adapter = i
 '''                        Exit For
 '''                    End If
-                Next i
+'''                Next i
             Else
         ' вывести один единственный Проект, когда Платеж с Договором, и он связан с Проектом
                 Dim Rdoc As TOCmatch, Doc As String
-        !Doc = .Cells(iRow, 1)
+''        !Doc = .Cells(iRow, 1)
                 Rdoc = GetRep(Doc)
-                Adapter = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
+                AdapterWP = CSmatchSht(X, SFOPP_OPPID_COL, Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN))
 '''        !            .Cells(iRow + PTRN_LNS, 11) = "Занести"
 '''        !            .Cells(iRow + PTRN_LNS, 11).Interior.Color = rgbBlue
 '''        !            If Adapter = .Cells(iRow + 1, 4) Then Adapter = "-1"
@@ -792,17 +827,17 @@ Function AdapterWP(AdapterName, X, Par) As String
 '''        !WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1          ' копирование кнопки "Связать"
 '''        !        .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
 '''            If X = "" Then Adapter = "Занести"  ' Если в Платеже нет Договора - кнопка "Занести"
-        Case "NewOppNameFromWP":
-        ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
-            Dim Typ As String, Dogovor As String, Dat As String
-        ''!Typ = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
-        ''!Dogovor = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
-        ''!MainDog = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
-        ''        Dogovor = ContrCod(Dogovor, MainDog)
-        ''!Dat = .Cells(WP_PAYMENT_LINE, CLng(Par(3)))
-            Typ = Z(0): Dogovor = Z(1): MainDog = Z(2): Dat = Z(3)
-            Dogovor = ContrCod(Dogovor, MainDog)
-            Adapter = X & "-" & Typ & " " & Dogovor & " " & Dat
+''''''        Case "NewOppNameFromWP":
+''''''        ' -- формируем имя Проекта в виде Организация-ТипТовара Договор Дата
+''''''            Dim Typ As String, Dogovor As String, Dat As String
+''''''        ''!Typ = .Cells(WP_PAYMENT_LINE, CLng(Par(0)))
+''''''        ''!Dogovor = .Cells(WP_PAYMENT_LINE, CLng(Par(1)))
+''''''        ''!MainDog = .Cells(WP_PAYMENT_LINE, CLng(Par(2)))
+''''''        ''        Dogovor = ContrCod(Dogovor, MainDog)
+''''''        ''!Dat = .Cells(WP_PAYMENT_LINE, CLng(Par(3)))
+''''''            Typ = Z(0): Dogovor = Z(1): MainDog = Z(2): Dat = Z(3)
+''''''            Dogovor = ContrCod(Dogovor, MainDog)
+''''''            AdapterWP = X & "-" & Typ & " " & Dogovor & " " & Dat
         End Select
     End With
 End Function
