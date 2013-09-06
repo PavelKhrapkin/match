@@ -36,7 +36,7 @@ Sub CheckFofmOutput()
         E = S.Cells(1, WE_ERR_COL)  ' число несоответствий для данного Продавца
         If E > 0 Then
             CheckingForm.SalesList.AddItem S.Cells(1, 1).Value
-            CheckingForm.SalesList.List(N - 1, 1) = E
+            CheckingForm.SalesList.list(N - 1, 1) = E
             N = N + 1
         End If
     Next S
@@ -140,7 +140,7 @@ Function CheckSaleErr(Sale1C) As Integer
         End If
     Next S
 End Function
-Function IsSameTeam(S1, s2, Optional OppN = "") As Boolean
+Function IsSameTeam(S1, S2, Optional OppN = "") As Boolean
 '
 ' - IsSameTeam(S1, S2, Optional OppN = "")  - возвращает TRUE, если Продавцы S1 и S2
 '                                             работали вместе или это один и тот же.
@@ -151,20 +151,20 @@ Function IsSameTeam(S1, s2, Optional OppN = "") As Boolean
 '   18.6.12 - Optional OppN для использования в Заказах
 '   5.10.12 - адресация DB_MATCH.Sheets(We)
 
-    Dim S, T, Sales() As String  ' массив Продавцов
+    Dim S, t, Sales() As String  ' массив Продавцов
     Dim X1, X2 As Range
     Dim i
 
     IsSameTeam = False
 ' проверка по входным параметрам
-    If InStr(s2, S1) <> 0 Then GoTo Found
+    If InStr(S2, S1) <> 0 Then GoTo Found
 ' проверка по We: это тот же самый (кол.3) или в той же команде (кол.5)
     For Each X1 In DB_MATCH.Sheets(We).Range("Продавцы").Rows
         If InStr(S1, X1.Cells(1, 1)) <> 0 Then GoTo 1   ' поиск фамилии Продавца S1
     Next X1
     GoTo ErrorWe1
 1:  For Each X2 In DB_MATCH.Sheets(We).Range("Продавцы").Rows
-        If InStr(s2, X2.Cells(1, 1)) <> 0 Then GoTo 2   ' поиск фамилии Продавца S2
+        If InStr(S2, X2.Cells(1, 1)) <> 0 Then GoTo 2   ' поиск фамилии Продавца S2
     Next X2
     GoTo ErrorWe2
 2:  If X1.Cells(1, 1) = X2.Cells(1, 1) Then GoTo Found  ' это один и тот же Продавец
@@ -184,7 +184,7 @@ Function IsSameTeam(S1, s2, Optional OppN = "") As Boolean
 Found:
     IsSameTeam = True
     Exit Function
-ErrorWe2:   S1 = s2
+ErrorWe2:   S1 = S2
 ErrorWe1:
     LogWr "ERROR: Ошибка в структуре We: не найден Продавец " & S1 & _
         " в OppN = '" & OppN & "'"
@@ -200,16 +200,16 @@ Function IsRightSale(Sale, GoodType) As Boolean
 
     Dim S, Goods() As String  ' массив Продавцов и товаров
     Dim i
-    Dim X As Range
+    Dim x As Range
 
     IsRightSale = False
     
-    For Each X In DB_MATCH.Sheets(We).Range("Продавцы").Rows
-        If InStr(Sale, X.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
-    Next X
+    For Each x In DB_MATCH.Sheets(We).Range("Продавцы").Rows
+        If InStr(Sale, x.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
+    Next x
 
     On Error Resume Next
-    S = WorksheetFunction.VLookup(X.Cells(1, 1), _
+    S = WorksheetFunction.VLookup(x.Cells(1, 1), _
             DB_MATCH.Sheets(We).Range("Продавцы"), WE_GOOD_COL, False)
     On Error GoTo 0
     If S = "" Then
@@ -219,7 +219,7 @@ Function IsRightSale(Sale, GoodType) As Boolean
         Exit Function
     End If
 '==== разбор в Goods список товаров (Goods) из таблицы We, с которыми работает Продавец
-    Goods = split(S, ",")
+    Goods = Split(S, ",")
     For i = 0 To UBound(Goods)
         If Trim(Goods(i)) = GoodType Then
             IsRightSale = True
@@ -244,25 +244,25 @@ Sub CheckGoodType()
 ' Проход по Платежам и проверка, все ли типы товаров распознаются
 '   12.3.12
 
-    Dim i, X As Integer
-    Dim T As String
+    Dim i, x As Integer
+    Dim t As String
     
 '    profileGlobal = 0
         
     Lines = ModStart(1, "CheckGoodType", True)
     
-    X = 0
+    x = 0
     For i = 2 To Lines - 3
        Call Progress(i / Lines)
 '       profileGlobal = getPoint()
 '       totalTime = getPoint() - profileGlobal      ' end (may be invoked repeatedly)
        If Sheets(1).Cells(i, 1) = 1 And _
           Trim(Sheets(1).Cells(i, 6)) <> "" Then
-            T = GoodType(Sheets(1).Cells(i, 19))
-            If T = "" Then X = X + 1
+            t = GoodType(Sheets(1).Cells(i, 19))
+            If t = "" Then x = x + 1
         End If
     Next i
-    MsgBox "Не распознаны Товары в " & X & " Платежах"
+    MsgBox "Не распознаны Товары в " & x & " Платежах"
     ModEnd 1
 End Sub
 Sub ContractCheck()
@@ -270,7 +270,7 @@ Sub ContractCheck()
 ' [*] ContractCheck()   - Проверка состояния Договоров
 '   29.4.12
 
-    Dim Msg, DogSFstat, ContrK, ContrId As String
+    Dim msg, DogSFstat, ContrK, ContrId As String
     Dim i, DogPaid
 
     Lines = ModStart(DOG_SHEET, "ContractCheck: Проход по Договорам", True) - DOGRES
@@ -290,11 +290,11 @@ Sub ContractCheck()
             ContrId = ContractId(ContrK)
 
             If DogPaid = "1" And DogSFstat <> DOG_STAT_CLOSED Then
-                Msg = "ЗАКРЫТЬ! Договор " & ContrK & " (" & ContrId & ") оплачен, "
+                msg = "ЗАКРЫТЬ! Договор " & ContrK & " (" & ContrId & ") оплачен, "
                 Select Case DogSFstat
                 Case DOG_STAT_OPEN:
-                    Msg = Msg & " в SF Открыт, "
-                    LoWr Msg
+                    msg = msg & " в SF Открыт, "
+                    LoWr msg
                 Case Else
                     MsgBox "Странный статус Договора " & ContrK & " '" & DogStat & "'"
                     Stop

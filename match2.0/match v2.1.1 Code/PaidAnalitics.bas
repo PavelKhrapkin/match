@@ -30,13 +30,15 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
     Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
     Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
     
-    Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/W"
+    Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
 '''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
-    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/W"
+    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+    Const FETCH_DOGOVOR = DOG_SHEET & "/" & DOGCOD_COL & ":№/0"
     
     Const BALKY_TYPE = "Расходники"
     Dim LocalTOC As TOCmatch, i As Long, iLine As Long
+    Dim sLine As String
     Dim IsErr As Boolean, FromN As Long
     Dim ContrK As String, OppId As String, ThisOppId As String
        
@@ -53,27 +55,30 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
             If .Cells(i, PAYINSF_COL) = 1 Then
                 GoTo NextRow
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
-                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
-                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
+'!!'                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
+'!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
  ''''               If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
                 GoTo NextRow
             ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
-                iLine = FetchDoc(FETCH_SFD, ContrK, IsErr)
-                If iLine = 0 Then
-                    WP_Adapt HDR_WP, i      '--- если Договор не заведен в SF
+                sLine = FetchDoc(FETCH_SFD, ContrK, IsErr)
+                If sLine = "" Or Not IsNumeric(sLine) Then
+                                            '--- если Договор не заведен в SF
+                    sLine = FetchDoc(FETCH_DOGOVOR, ContrK, IsErr)
+                    If sLine = "" Or Not IsNumeric(sLine) Then
+                        ErrMsg WARNING, "В строке " & i & "Платежей 1С ссылка на Договор " _
+                            & ContrK & ", которого нет в листе Договоров 1С"
+                        GoTo NextRow
+                    End If
+                    WrNewSheet NEW_CONTRACT, DOG_SHEET, CLng(sLine)
                     GoTo NextRow
                 End If
-                OppId = FetchDoc(FETCH_SFD, ContrK, IsErr)
+                OppId = DB_SFDC.Sheets(SFD).Cells(CLng(sLine), SFD_OPPID_COL)
                 If OppId = "" Then
                     WP_Adapt HDR_WP, i   '--- если в SF нет Проекта по Договору
 '''                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
                     GoTo NextRow
                 End If
-''''                If IsErr Then
-''''                    WP_Adapt HDR_WPcontract, i  '--- если Договор не заведен в SF
-''''                    GoTo NextRow
-''''                End If
             ElseIf .Cells(i, PAYGOODTYPE_COL) = BALKY_TYPE Then
                 Dim BalkyExists As Boolean: BalkyExists = False
                 FromN = 2                   '--- подбираем подходящий Проект Balky
@@ -93,14 +98,132 @@ NextOpp:            FromN = FromN + 1
                 Loop
                 GoTo ToSF
             Else
-                WP_Adapt HDR_WP, i
+'!!'                WP_Adapt HDR_WP, i
                 GoTo NextRow
             End If
 ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
 NextRow:
         Next i
     End With
+    SheetDedup NEW_CONTRACT, 1
 End Sub
+Sub TestOppSelect()
+'
+' T отладка OppSelect
+'       6.9.13
+
+    Dim N As Long
+    N = OppSelect(2)
+    N = OppSelect(3)
+End Sub
+
+Function OppSelect(ByVal iPaid As Long) As Long
+'
+' - OppSelect(Account, Sale)    - выводит группу строк Проектов из SFopp на экран WP
+'                                 по значению  iPaid - номеру строки Платежа.
+'                                 Возвращает количество найденных проектов.
+' 6.9.13
+
+    Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
+    Dim LocalTOC As TOCmatch, iOpp As Long, IsErr As Boolean
+    Dim sN As String
+    Dim Account As String, Salesman As String, PaidDate As Date
+    Dim ContrK As String, Rub As Long, GoodT As String
+
+    GetRep PAY_SHEET
+    With DB_1C.Sheets(PAY_SHEET)
+        Account = .Cells(iPaid, PAYACC_COL)
+        Salesman = .Cells(iPaid, PAYSALE_COL)
+        ContrK = ContrCod(.Cells(iPaid, PAYDOGOVOR_COL), .Cells(iPaid, PAYOSNDOGOVOR_COL))
+        PaidDate = .Cells(iPaid, PAYDATE_COL)
+        Rub = .Cells(iPaid, PAYRUB_COL)
+        GoodT = .Cells(iPaid, PAYGOODTYPE_COL)
+    End With
+    
+    LocalTOC = GetRep(SFopp)
+    With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
+        OppSelect = 0
+        iOpp = 1
+        Do
+            sN = FetchDoc(FETCH_SFOPP, Account, IsErr, iOpp + 1)
+            If IsErr Or Not IsNumeric(sN) Then Exit Do
+            iOpp = sN
+            If IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), iOpp) Then GoTo NxtOpp
+            
+            OppSelect = OppSelect + 1
+            MsgBox "В платеже Sale=" & Salesman & " IsSameTeam=" & IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), iOpp)
+''            If OppFilter(i) Then
+''                вывод строки по Шаблону WP
+''            End If
+
+''            End If
+NxtOpp: Loop
+    End With
+    Exit Function
+End Function
+Function OppFilter(iOpp, Sale, Account, t, Rub, Dat, Dogovor, MainDog) As Boolean
+'
+' - OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) - Адаптер Select
+'                   iOpp - номер строки в SFopp, остальные параметры из платежа
+'                   Возвращает False если строки iSFopp не соответствует параметрам
+' 21.10.12
+' 31.10.12 - добавлен фильтр по SalesTeam
+
+    Dim ContrK As String, IdSFopp As String, iSFD As Long, OppN As Long
+    OppFilter = False
+
+    With DB_SFDC
+        With .Sheets(SFopp)
+            If .Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
+            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
+            If Not IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) Then Exit Function
+        End With
+
+        If DB_TMP.Sheets(WP).Cells(20, 3) = "" Then GoTo Found
+        ContrK = ContrCod(Dogovor, MainDog)
+        If ContrK = "" Then GoTo Found
+        IdSFopp = .Sheets(SFopp).Cells(iOpp, SFOPP_OPPID_COL)
+        iSFD = CSmatchSht(IdSFopp, SFD_CONTRID_COL, SFD)
+        If iSFD > 0 Then
+            If .Sheets(SFD).Cells(iSFD, SFD_COD_COL) = ContrK Then GoTo Found
+        End If
+    End With
+    Exit Function
+
+
+'''            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
+'''            OppT = .Cells(iOpp, SFOPP_TYP_COL)
+'''            OppCur = .Cells(iOpp, SFOPP_TO_PAY_CUR_COL)
+'''            OppToPayRub = .Cells(iOpp, SFOPP_TO_PAY_VAL_COL) * CurRate(OppCur)
+'''            OppCloseDate = .Cells(iOpp, SFOPP_CLOSEDATE_COL)
+'''            OppId = .Cells(iOpp, SFOPP_OPPID_COL)
+'''            If InStr(OppT, SeekOppType) <> 0 _
+'''                    And IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) _
+'''                    And OppToPayRub >= Rub _
+'''                    And Dat <= OppCloseDate Then
+'''                If .Cells(iOpp, SFOPP_PROBABILITY_COL) <> 0 Then
+'''                    GoTo Found
+'''                Else
+'''                    Msg = "В Организации '" & Account & "'" _
+'''                        & vbCrLf & vbCrLf & "есть Проект Closed/Lost" _
+'''                        & vbCrLf & vbCrLf & OppName _
+'''                        & vbCrLf & vbCrLf & "Используем его его?"
+'''                    Respond = MsgBox(Msg, vbYesNoCancel)
+'''                    If Respond = vbCancel Then ExRespond = False
+'''                    If Respond = vbYes Then
+'''                        ErrMsg WARNING, "!! Необходим пересмотр проекта " & OppN _
+'''                            & vbCrLf & vbCrLf & "В него занемен Платеж!"
+'''                        GoTo Found
+'''                    End If
+'''                End If
+'''            End If
+'''        End If
+
+Found:
+    OppFilter = True
+End Function
+
+
 
 '''Sub NewPaidOpp()
 ''''
@@ -409,67 +532,6 @@ End Sub
 '''        LogWr ErMsg & OppId & "(" & OppN & ") тип Платежа '" & T _
 '''            & "' не соответствует типу Проекта '" & OppT & "'"
 '''End Function
-Function OppFilter(iOpp, Sale, Account, t, Rub, Dat, Dogovor, MainDog) As Boolean
-'
-' - OppFilter(iOpp, Sale, Account, T, Rub, Dat, Dogovor, MainDog) - Адаптер Select
-'                   iOpp - номер строки в SFopp, остальные параметры из платежа
-'                   Возвращает False если строки iSFopp не соответствует параметрам
-' 21.10.12
-' 31.10.12 - добавлен фильтр по SalesTeam
-
-    Dim ContrK As String, IdSFopp As String, iSFD As Long, OppN As Long
-    OppFilter = False
-
-    With DB_SFDC
-        With .Sheets(SFopp)
-            If .Cells(iOpp, SFOPP_ACC1C_COL) <> Account Then Exit Function
-            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
-            If Not IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) Then Exit Function
-        End With
-
-        If DB_TMP.Sheets(WP).Cells(20, 3) = "" Then GoTo Found
-        ContrK = ContrCod(Dogovor, MainDog)
-        If ContrK = "" Then GoTo Found
-        IdSFopp = .Sheets(SFopp).Cells(iOpp, SFOPP_OPPID_COL)
-        iSFD = CSmatchSht(IdSFopp, SFD_CONTRID_COL, SFD)
-        If iSFD > 0 Then
-            If .Sheets(SFD).Cells(iSFD, SFD_COD_COL) = ContrK Then GoTo Found
-        End If
-    End With
-    Exit Function
-
-
-'''            OppN = .Cells(iOpp, SFOPP_OPPN_COL)
-'''            OppT = .Cells(iOpp, SFOPP_TYP_COL)
-'''            OppCur = .Cells(iOpp, SFOPP_TO_PAY_CUR_COL)
-'''            OppToPayRub = .Cells(iOpp, SFOPP_TO_PAY_VAL_COL) * CurRate(OppCur)
-'''            OppCloseDate = .Cells(iOpp, SFOPP_CLOSEDATE_COL)
-'''            OppId = .Cells(iOpp, SFOPP_OPPID_COL)
-'''            If InStr(OppT, SeekOppType) <> 0 _
-'''                    And IsSameTeam(Sale, .Cells(iOpp, SFOPP_SALE_COL), OppN) _
-'''                    And OppToPayRub >= Rub _
-'''                    And Dat <= OppCloseDate Then
-'''                If .Cells(iOpp, SFOPP_PROBABILITY_COL) <> 0 Then
-'''                    GoTo Found
-'''                Else
-'''                    Msg = "В Организации '" & Account & "'" _
-'''                        & vbCrLf & vbCrLf & "есть Проект Closed/Lost" _
-'''                        & vbCrLf & vbCrLf & OppName _
-'''                        & vbCrLf & vbCrLf & "Используем его его?"
-'''                    Respond = MsgBox(Msg, vbYesNoCancel)
-'''                    If Respond = vbCancel Then ExRespond = False
-'''                    If Respond = vbYes Then
-'''                        ErrMsg WARNING, "!! Необходим пересмотр проекта " & OppN _
-'''                            & vbCrLf & vbCrLf & "В него занемен Платеж!"
-'''                        GoTo Found
-'''                    End If
-'''                End If
-'''            End If
-'''        End If
-
-Found:
-    OppFilter = True
-End Function
 '''Sub ContrOppLink(iPay, ContrK, ContrId, OppId)
 ''''
 '''' создание связи Договор - Проект по Платежу в строке iPay
