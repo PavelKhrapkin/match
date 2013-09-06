@@ -9,16 +9,18 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   2.9.2013
+'   4.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
 
-Sub Paid1C()
+Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 '
 ' S Paid1C ()    - обработка Платежей 1С, занесение в SF с WP
+'       * если при проходе по Платежам вызывается WP, для продолжения работы
+'         WP_Adapt_Continue запускает Run Paid1C(i)
 '
-' 3.9.13
+' 4.9.13
 
     StepIn
     
@@ -29,7 +31,8 @@ Sub Paid1C()
     Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
     
     Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/W"
-    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
+'''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
+    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/W"
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
     
     Const BALKY_TYPE = "Расходники"
@@ -44,7 +47,7 @@ Sub Paid1C()
     NewSheet NEW_CONTRACT
 
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
-        For i = 2 To LocalTOC.EOL
+        For i = iPayLine To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             IsErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then
@@ -52,20 +55,25 @@ Sub Paid1C()
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
                 WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
                 iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
-                If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
+ ''''               If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
                 GoTo NextRow
             ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
+                iLine = FetchDoc(FETCH_SFD, ContrK, IsErr)
+                If iLine = 0 Then
+                    WP_Adapt HDR_WP, i      '--- если Договор не заведен в SF
+                    GoTo NextRow
+                End If
                 OppId = FetchDoc(FETCH_SFD, ContrK, IsErr)
-                If IsErr Then
-                    WP_Adapt HDR_WPcontract, i  '--- если Договор не заведен в SF
-                    GoTo NextRow
-                End If
                 If OppId = "" Then
-                    WP_Adapt HDR_WPopp, i   '--- если в SF нет Проекта по Договору
-                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
+                    WP_Adapt HDR_WP, i   '--- если в SF нет Проекта по Договору
+'''                    WrNewSheet NEW_OPP, PAY_SHEET, i, "HDR_NewOppBy"
                     GoTo NextRow
                 End If
+''''                If IsErr Then
+''''                    WP_Adapt HDR_WPcontract, i  '--- если Договор не заведен в SF
+''''                    GoTo NextRow
+''''                End If
             ElseIf .Cells(i, PAYGOODTYPE_COL) = BALKY_TYPE Then
                 Dim BalkyExists As Boolean: BalkyExists = False
                 FromN = 2                   '--- подбираем подходящий Проект Balky
