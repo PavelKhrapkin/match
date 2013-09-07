@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 1.9.13
+' П.Л.Храпкин, А.Пасс 8.9.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -10,7 +10,7 @@ Attribute VB_Name = "MatchLib"
 ' - ErrMsg(ErrMode, MSG)        - вывод сообщения об ощибке в Log и на экран
 ' - LogWr(msg)                  - запись сообщения msg в Log list
 '(*)LogReset()                  - сброс и очистка Log листа
-' - ActiveFilterReset(SheetN)   - сброс и активизация автофильтра листа SheetN
+' - AutoFilterReset(SheetN)     - сброс и активизация автофильтра листа SheetN
 ' - SheetsCtrlH(SheetN, FromStr, ToStr) - замена текста FromStr на ToStr
 '                                 в листе SheetN
 ' - PerCent(Row, Col)           - форматирование ячейки (Row,Col) с процентами
@@ -151,7 +151,7 @@ a:
     GoTo a
 
 End Sub
-Sub setColWidth(ByVal file As String, ByVal sheet As String, _
+Sub setColWidth(ByVal file As String, ByVal SHEET As String, _
                 ByVal Col As Long, ByVal width As String)
 '
 ' - setColWidth(file, sheet, col, range, width) -
@@ -170,18 +170,18 @@ Sub setColWidth(ByVal file As String, ByVal sheet As String, _
         ElseIf Application.DecimalSeparator = "," Then
             width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
         End If
-        Workbooks(file).Sheets(sheet).Columns(Col).ColumnWidth = CSng(width)
+        Workbooks(file).Sheets(SHEET).Columns(Col).ColumnWidth = CSng(width)
     End If
 
 End Sub
-Sub MS(Msg)
+Sub MS(msg)
 '
 '   - MS(Msg)- вывод сообщения на экран и в LogWr
 '   11.6.12
-    ErrMsg TYPE_ERR, Msg
+    ErrMsg TYPE_ERR, msg
 End Sub
 
-Sub ErrMsg(ErrMode, Msg)
+Sub ErrMsg(ErrMode, msg)
 '
 ' - ErrMsg(ErrMode, MSG) - вывод сообщения об ощибке в Log и на экран
 '                          Коды ErrMode определены в Declaration
@@ -191,12 +191,12 @@ Sub ErrMsg(ErrMode, Msg)
 
     Select Case ErrMode
     Case WARNING:
-        LogWr "< WARNING > " & Msg
+        LogWr "< WARNING > " & msg
         Exit Sub
         
     Case TYPE_ERR:
-        LogWr "ВНИМАНИЕ:" & Msg
-        Respond = MsgBox(Msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
+        LogWr "ВНИМАНИЕ:" & msg
+        Respond = MsgBox(msg & vbCrLf & vbCrLf & "Продолжить?", vbYesNo)
         If Respond = vbNo Then
             ExRespond = False
             Stop
@@ -205,8 +205,8 @@ Sub ErrMsg(ErrMode, Msg)
         
     Case FATAL_ERR:
 Fatal:  ErrType = "<! ERROR !> "
-        LogWr ErrType & Msg
-        MsgBox Msg, , ErrType
+        LogWr ErrType & msg
+        MsgBox msg, , ErrType
         Stop
         Exit Sub
     Case Else:
@@ -214,7 +214,7 @@ Fatal:  ErrType = "<! ERROR !> "
         GoTo Fatal
     End Select
 End Sub
-Sub LogWr(Msg)
+Sub LogWr(msg)
 '
 ' запись сообщения msg в Log-лист
 '   15.2.2012
@@ -229,7 +229,7 @@ Sub LogWr(Msg)
         N = N + 1
         .Cells(N, 1) = Date
         .Cells(N, 2) = Time
-        .Cells(N, 3) = Msg
+        .Cells(N, 3) = msg
         .Cells(1, 4) = N
     End With
 End Sub
@@ -267,12 +267,16 @@ Function AutoFilterReset(SheetN) As Integer
         .AutoFilterMode = False
         .Rows("1:" & R.EOL).AutoFilter
         .Rows("1:1").Select
+        On Error Resume Next
         ActiveWindow.FreezePanes = True
         Application.GoTo .Cells(R.EOL - 3, 1), True
+        On Error GoTo 0
     End With
 End Function
 Sub tst()
-    AutoFilterReset PAY_SHEET
+'    AutoFilterReset PAY_SHEET
+    Const SHEET_N = 1
+    AutoFilterReset SHEET_N
 End Sub
 
 Sub SheetsCtrlH(SheetN, FromStr, ToStr)
@@ -564,15 +568,18 @@ Sub SheetSort(SheetN, Col, Optional AscOrder As String = "Ascending")
 '
 ' -/S SheetSort(SheetN, Col,[AscOrder]) - Сортируем лист SheetN по колонке Col
 '                                    в порядке AscOrder (по умолчанию Ascending)
+'       * Проверяем, включен ли AutoFilter в сортируемом листе.
+'         Если включен, то сортируем по Range AutoFilter, иначе - по всему листу.
+'
 '   22.1.2012
 '   21.2.2012 - Option Explicit
 '   19.4.12 - AutoFilterReset
 '   21.8.13 - если фильтруем новый входной документ- не включаем AutoFilterReset
 '   1.9.13 - порядок сортировки - Optional AscOrder
+'   8.9.13 - попытались делать сортировку без AutoFilterResert
 
     Dim Name As String, Ord
-
-'    Sheets(SheetN).Select
+    
     If Not IsNumeric(SheetN) Then Call AutoFilterReset(SheetN)
 
     Name = ActiveSheet.Name
@@ -580,10 +587,15 @@ Sub SheetSort(SheetN, Col, Optional AscOrder As String = "Ascending")
     Ord = xlAscending
     If UCase$(Left$(AscOrder, 3)) = "DES" Then Ord = xlDescending
         
-    With ActiveWorkbook.Worksheets(Name).AutoFilter.Sort
+    With ActiveWorkbook.Worksheets(Name).Sort
         .SortFields.Clear
-        .SortFields.Add key:=Cells(1, Col), SortOn:=xlSortOnValues, _
+        .SortFields.Add Key:=Cells(1, Col), SortOn:=xlSortOnValues, _
             Order:=Ord, DataOption:=xlSortNormal
+        If ActiveSheet.AutoFilter Is Nothing Then
+            .SetRange Range("A1:ZZ99999")    '!! До лучших времен
+        Else
+            .SetRange ActiveSheet.AutoFilter.Range
+        End If
         .Header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -597,20 +609,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, X, EOL_SheetN As Integer
+    Dim i, prev, x, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        X = Sheets(SheetN).Cells(i, Col)
-        If X = prev Then
+        x = Sheets(SheetN).Cells(i, Col)
+        If x = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = X
+            prev = x
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -622,7 +634,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, X As String
+    Dim prev As String, x As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -632,8 +644,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            X = .Cells(i, ColSort)
-            If X = prev Then
+            x = .Cells(i, ColSort)
+            If x = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -654,7 +666,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = X
+                prev = x
             End If
         Loop While i < EOL_SheetN
     End With
@@ -859,15 +871,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim X() As String
+    Dim x() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    X = Split(DicList, ",")
+    x = Split(DicList, ",")
     
-    For i = LBound(X) To UBound(X)
-        If InStr(lW, LCase$(X(i))) <> 0 Then
+    For i = LBound(x) To UBound(x)
+        If InStr(lW, LCase$(x(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If
@@ -948,14 +960,14 @@ Function patTest(longTxt As String, pat As String) As Boolean
          
         If Left(pat, 1) = "$" Then
             pat = Trim(Mid(pat, 2))             ' убираем спец. символ
-            If pat = "" Then GoTo ex
+            If pat = "" Then GoTo Ex
             
             Dim comps() As String, pats() As String, i As Long
                 ' В случае 2-го знака '$' - компоненты описания товара, разделенные запятыми,
                 '       рассматриваются независимо
                 '       и в паттерне должно быть ровно 2 части
             pats = Split(pat, ";")
-            If UBound(pats) <> 1 Then GoTo ex  ' в паттерне должно быть ровно 2 части
+            If UBound(pats) <> 1 Then GoTo Ex  ' в паттерне должно быть ровно 2 части
             
             comps = Split(longTxt, ";")
             For i = 0 To UBound(comps)
@@ -965,7 +977,7 @@ Function patTest(longTxt As String, pat As String) As Boolean
                 If Not patTest(comps(i), pats(0)) Then   ' 1-я часть - false
                     If patTest(comps(i), pats(1)) Then   ' 2-я часть д.б. true
                         patTest = True
-                        GoTo ex              ' найден образец
+                        GoTo Ex              ' найден образец
                     End If
                     GoTo nextComp
                 End If
@@ -974,7 +986,7 @@ nextComp:
         Else
             pat = Replace(pat, "~", ",")
             .Pattern = pat
-            patTest = .test(longTxt)
+            patTest = .Test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
     '        Else
@@ -982,5 +994,5 @@ nextComp:
     '        End If
         End If
     End With
-ex:
+Ex:
 End Function
