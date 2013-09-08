@@ -295,14 +295,14 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
     Dim Proc As String, Step As String, iStep As Long
     Dim iPayment As Long, OppId As String, IsErr As Boolean
     Dim AccId As String, DefName As String
-    Dim Respond As String
-    
-        
+    Dim Respond As String, PaymentGoodType As String, PaymentContract As String
 '---- извлекаем контектст из листа WP, то есть строки Платежа, Проекта -----
     With ActiveSheet
         iPayment = .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL)
         OppId = .Cells(iRow, 6)
-        AccId = .Cells(8, 5)
+        AccId = .Cells(WP_CONTEXT_LINE, 5)
+        PaymentGoodType = .Cells(WP_CONTEXT_LINE, 11)
+        PaymentContract = ContrCod(.Cells(WP_CONTEXT_LINE, 21), .Cells(WP_CONTEXT_LINE, 22))
     End With
     
     If DB_TMP Is Nothing Then Set DB_TMP = FileOpen(F_TMP)
@@ -325,10 +325,13 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
     Case "->":
     Case "NewOpp":
         Const FETCH_SFACC = "SFacc/" & SFACC_IDACC_COL & ":" & SFACC_ACCNAME_COL
-        DefName = FetchDoc(FETCH_SFACC, AccId, IsErr) & "-"
-        
+        DefName = FetchDoc(FETCH_SFACC, AccId, IsErr) & "-" & PaymentGoodType _
+            & " Договор " & PaymentContract
         Respond = MsgBox(DefName, vbYesNo, "Имя нового Проекта")
-        WrNewSheet NEW_OPP, WP, WP_PAYMENT_LINE
+        If Respond = vbYes Then
+            WrNewSheet NEW_OPP, PAY_SHEET, iPayment
+        End If
+        Paid1C iPayment + 1
     Case "NewAcc":
     ' пока не написано
 '-------- Обработка кликов на кнопках строк Select
