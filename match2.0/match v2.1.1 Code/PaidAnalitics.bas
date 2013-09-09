@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   4.9.2013
+'   9.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -20,7 +20,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 '       * если при проходе по Платежам вызывается WP, для продолжения работы
 '         WP_Adapt_Continue запускает Run Paid1C(i)
 '
-' 4.9.13
+' 9.9.13
 
     StepIn
     
@@ -43,10 +43,12 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
     Dim ContrK As String, OppId As String, ThisOppId As String
        
     LocalTOC = GetRep(PAY_SHEET)
-    NewSheet NEW_PAYMENT
-    NewSheet NEW_ACC
-    NewSheet NEW_OPP
-    NewSheet NEW_CONTRACT
+    If IsMissing(iPayLine) Then
+        NewSheet NEW_PAYMENT
+        NewSheet NEW_ACC
+        NewSheet NEW_OPP
+        NewSheet NEW_CONTRACT
+    End If
 
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For i = iPayLine To LocalTOC.EOL
@@ -702,6 +704,7 @@ End Function
     Next i
 End Sub
 Function GoodJob(Good As String, GoodType As String, JobType As Long) As Boolean
+
 '
 ' - GoodJob(Good,GoodType,JobType)  - возвращает True если товар Good типа GoodType
 '                                     соответствует типу номер JobType
@@ -790,7 +793,7 @@ Function IsSubscription(Good, GT) As Boolean
 End Function
 Function IsWork(ByVal Good As String) As Boolean
 '
-' - IsWork(Good)    - возвращает True, если
+' - IsWork(Good)    - возвращает True, если товар - Работа
 ' 29.10.12
 
     Dim Wrd() As String, Wokabulary As String, i As Long
@@ -809,25 +812,27 @@ Function IsWork(ByVal Good As String) As Boolean
     Next i
     IsWork = False
 End Function
-Function TypOpp(GoodType, Good) As String
+Function TypOpp(Good) As String
 '
-' - TypeOpp(GoodType, Good) - классификация типа Проекта по типу и спецификации товара
+' - TypOpp(Good) - классификация типа Проекта по спецификации товара
 '
 ' 29.10.12
+'  9.9.13 - изменен интерфейс - GoodType вызывается из подпрограммы
     
-    Dim WeRange As Range, i As Long, iG As Range
+    Dim WeRange As Range, i As Long, iG As Range, GoodTp As String
     Set WeRange = DB_MATCH.Sheets(We).Range("GoodSbs")
-    
+
     TypOpp = ""
+    GoodTp = GoodType(Good)
     For Each iG In WeRange.Rows
-        If iG.Cells(1, 1) = GoodType Then
+        If iG.Cells(1, 1) = GoodTp Then
             TypOpp = iG.Cells(1, 11)
             If TypOpp <> "" Then Exit Function
             If IsWork(Good) Then
                 TypOpp = "Работа"
                 Exit Function
             End If
-            If IsSubscription(Good, GoodType) Then
+            If IsSubscription(Good, GoodTp) Then
                 TypOpp = "Подписка"
             Else
                 TypOpp = "Лицензии"
