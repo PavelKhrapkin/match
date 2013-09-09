@@ -111,6 +111,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Dim NewEOL As Long      '=EOL(SheetNew)
     Dim Width() As String
     
+    GetRep (SheetNew)
 ''    Rnew = GetRep(SheetNew)
 ''    Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
 ''    Rnew.Made = "WrNewSheet"
@@ -251,7 +252,6 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                 Workbooks(R.RepFile).Sheets(R.SheetN).Activate
             End If
             For iCol = 5 To .UsedRange.Columns.Count
-'''''                X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
                 X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
                 Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                 F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
