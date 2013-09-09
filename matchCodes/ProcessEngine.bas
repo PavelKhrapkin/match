@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 30.8.13 П.Л.Храпкин, А.Пасс
+' 7.9.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -76,13 +76,13 @@ Sub ProcStart(Proc As String)
         .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
         Doc = .Cells(i, PROC_REP1_COL)
-        If Doc = "" Then GoTo ex
+        If Doc = "" Then GoTo Ex
         RepTOC = GetRep(Doc)
         RepTOC.Made = PROC_END
         WrTOC
 ''        MS "<*> Процесс " & Proc & " завершен!"
     End With
-ex: Exit Sub
+Ex: Exit Sub
 Err:
     ErrMsg FATAL_ERR, "Нарушена последовательность шагов процедуры " & Proc
     End
@@ -98,7 +98,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
     Dim i As Integer
     Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
-    Dim X() As String   '=каждая часть может быть вида <Proc>/<Step>
+    Dim x() As String   '=каждая часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
     Dim Report As TOCmatch
     
@@ -109,7 +109,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         Rep = DB_MATCH.Sheets(Process).Cells(i, PROC_REP1_COL)
         Report = GetRep(Rep)
         If Report.Made <> REP_LOADED Then
-            Dim Msg As String
+            Dim msg As String
             ErrMsg FATAL_ERR, "IsDone: Не 'Loaded' файл для Процесса " _
                 & Proc & " на Шаге " & Step & vbCrLf & vbCrLf _
                 & "Отчет " & Report.Name & " надо загрузить заново!"
@@ -121,12 +121,12 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
             Exit Function
         End If
     Else
-        S = split(Trim(Step), ",")
+        S = Split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                X = split(S(i), "/")
-                If Proc = X(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
-                If Not IsDone(X(0), X(1)) Then ProcStart X(0)
+                x = Split(S(i), "/")
+                If Proc = x(0) Then ErrMsg FATAL_ERR, "Бесконечная рекурсия в PrevStep!!"
+                If Not IsDone(x(0), x(1)) Then ProcStart x(0)
             Else
                 iStep = ToStep(Proc, S(i))
                 If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
@@ -384,6 +384,7 @@ Sub MergeReps()
 '   * Отлажено для Платежей и Договоров 1С
 '
 ' 24.8.13
+'  7.9.13 - bug fix - всегда заменяем низ остарого отчета до конца
 
     Dim RefSummary As String
     Dim R As TOCmatch
@@ -401,7 +402,7 @@ Sub MergeReps()
     R.EOL = EOL(RepName) - GetReslines(RepName)
     RoldEOL = EOL(OldRepName) - GetReslines(RepName)
     
-'-- куда вставлять - чтение TOC
+'-- куда вставлять - чтение TOC по НОВОМУ отчету
     With DB_MATCH.Sheets(TOC)
         FrDateRow = .Cells(R.iTOC, TOC_FRDATEROW_COL)
         ToDateRow = .Cells(R.iTOC, TOC_TODATEROW_COL)
@@ -413,6 +414,12 @@ Sub MergeReps()
     
     With Workbooks(R.RepFile).Sheets(OldRepName)
         .Activate
+'-- сортируем документ_OLD
+        For i = 1 To BIG
+            If ActiveWorkbook.Sheets(i).Name = OldRepName Then Exit For
+        Next i
+        SheetSort i, Col
+        
         FrRow = 0: ToRow = 0
         For i = 2 To RoldEOL
             If .Cells(i, Col) >= FrDate And FrRow = 0 Then FrRow = i
@@ -423,10 +430,10 @@ Sub MergeReps()
         Next i
         ToRow = RoldEOL + 1
 InsRow: If FrRow = 0 Then FrRow = ToRow
-'-- копируем Update и пятку в прежний документ (_OLD)
-       .Rows(RoldEOL + 1 & ":" & RoldEOL + 1111).Delete    ' стираем старую пятку
+'-- копируем Update и пятку в прежний документ (_OLD) от строки FrRow
+       .Rows(FrRow & ":" & RoldEOL + 1111).Delete    ' стираем старую пятку
         Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
-            Destination:=.Rows(FrRow & ":" & ToRow)
+            Destination:=.Cells(FrRow, 1)
         RoldEOL = EOL(OldRepName)
         DB_MATCH.Sheets(Header).Range(RefSummary).Copy _
             Destination:=.Cells(RoldEOL + 2, 1)
@@ -482,12 +489,12 @@ Sub RepDateSub(Rep As String, Name As String, Dat As Date)
 
     Dim LocalTOC As TOCmatch
     
-    If Rep = "" Then GoTo ex
+    If Rep = "" Then GoTo Ex
     
     LocalTOC = GetRep(Rep)
-    If LocalTOC.Dat > Dat Then GoTo Er
+    If LocalTOC.Dat < Dat Then GoTo Er
     
-ex: Exit Sub
+Ex: Exit Sub
 Er: ErrMsg FATAL_ERR, "Необходимо загрузить заново '" & Rep & "' за " _
         & LocalTOC.CreateDat & vbCrLf & "Он устарел относительно '" & Name & "' за " & Dat
 End Sub

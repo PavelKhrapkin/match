@@ -5,7 +5,7 @@ Attribute VB_Name = "NewEntities"
 ' S NewSheet(SheetName,[TabColor]) - создает новый лист SheetName цвета TabColor
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
 '
-'   3.9.2013
+'   7.9.2013
 
 Option Explicit
 
@@ -27,6 +27,7 @@ Sub NewSheet(ByVal SheetName As String, Optional ByVal TabColor As Long = 0)
 ' 28.01.13 - width в setColWidth теперь массив: ширина/формат
 ' 23.8.13 - по умолчанию цвет Tab нового листа как в у поля в TOC
 '  3.9.13 - ByVal параметры
+'  7.9.13 - копируем Шаблон целиком, что значительно ускоряет работу
 
     StepIn
     
@@ -57,8 +58,9 @@ Sub NewSheet(ByVal SheetName As String, Optional ByVal TabColor As Long = 0)
         .Sheets(.Sheets.Count).Name = SheetName
         With .Sheets(SheetName)
             .Tab.Color = TabColor
+            Frm.Copy Destination:=.Cells(1, 1)
             For i = 1 To Cols
-                Frm.Columns(i).Copy Destination:=.Cells(1, i)
+'                Frm.Columns(i).Copy Destination:=.Cells(1, i)
 '                If IsNumeric(W) Then .Cells.Columns(i).ColumnWidth = CDbl(W)
                 setColWidth DB_TMP.Name, SheetName, i, .Cells(3, i)
             Next i

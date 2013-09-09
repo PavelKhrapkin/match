@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  31.8.13
+'  6.9.13
 
 Option Explicit
 
@@ -307,8 +307,8 @@ Public Const ADSK_C_ACCN_COL = 11   ' колонка "End Customer CSN"
 '-------------- Платежи - отчет из 1С ---------------------------------
 Public Const PAY_SHEET = "Платежи"  ' лист Платежей
 
-Public Const PAY_RESLINES = 3       ' кол-во строк пятки отчета по Платежам
-Public Const PAY_MYCOLS = 5         ' количество моих колонок слева
+''' Public Const PAY_RESLINES = 3       ' кол-во строк пятки отчета по Платежам
+''' Public Const PAY_MYCOLS = 5         ' количество моих колонок слева
 
 Public Const PAYISACC_COL = 1       ' колонка =1, если Организация есть в SF
 Public Const PAYINSF_COL = 2        ' колонка =1, если Платеж есть в SF
@@ -553,7 +553,7 @@ Type PostAddr               'Атрибуты почтового адреса
 End Type
 
 Type SNatr                  'Атрибуты SN Autodesk
-    SN      As String           ' Серийный номер
+    sN      As String           ' Серийный номер
     Contr   As String           ' Контракт Autodesk / Agreement
     AccN    As String           ' Customer Account Number, CSN на PartnerCenter
     AccName As String           ' Имя клиента на PartnerCenter

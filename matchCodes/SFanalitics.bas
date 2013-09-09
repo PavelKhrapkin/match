@@ -47,7 +47,7 @@ Sub SFaccSplit(ByVal Col As Long)
         Do While i <= R.EOL
             Progress i / R.EOL
             If InStr(.Cells(i, Col), SFACC_DELIMETR) <> 0 Then
-                .Rows(i).Insert shift:=xlDown
+                .Rows(i).Insert Shift:=xlDown
                 .Rows(i + 1).Copy Destination:=.Rows(i)
                 S = Split(.Cells(i, Col), SFACC_DELIMETR)
                 .Cells(i, Col) = Trim(S(0))
