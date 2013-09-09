@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export.dtd">
-<en-export export-date="20120908T221222Z" application="Evernote/Windows" version="4.x">
-<note><title>Match 8.9.12 В связи с потерей ноутбука</title><content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
-
-<en-note style="word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-break: after-white-space;">
-Выполнили некоторые работы по восстановлению рабочей обстановки в XP:&nbsp;
-<div><en-todo checked="true"/>Восстановили связь по Skype и TeamViewer, перейдя при этом к TeamViewer 7</div><div><en-todo checked="true"/>Поставили Notepad++</div><div><en-todo checked="true"/>В Excel восстановил PERSONAL.XLSB и и меню Development</div><div><en-todo checked="true"/>Довольно легко восстановился TartioseSVN с восстановлением из <u style="font-weight: bold; font-style: italic;">code.google/p/match20</u> с import&apos;ом последней версии из Сети</div><div><en-todo checked="true"/>Удалось создать SVNrepository на листе D: и привязать к нему локальные базы DBs, но со структурой trunk/braches/trunk&nbsp;</div><div><en-todo checked="true"/>Я добавил каталог <i><u><b>Desсriptions</b></u></i> и положил туда <i><u><b>Match_Modules.xlsx</b></u></i></div><div><en-todo checked="false"/></div></en-note>]]></content><created>20120908T142346Z</created><updated>20120908T190226Z</updated></note></en-export>
