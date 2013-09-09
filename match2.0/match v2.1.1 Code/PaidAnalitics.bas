@@ -43,7 +43,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
     Dim ContrK As String, OppId As String, ThisOppId As String
        
     LocalTOC = GetRep(PAY_SHEET)
-    If IsMissing(iPayLine) Then
+    If iPayLine = 2 Then
         NewSheet NEW_PAYMENT
         NewSheet NEW_ACC
         NewSheet NEW_OPP
@@ -125,6 +125,7 @@ Function OppSelect(ByVal iPaid As Long) As Long
 '                                 по значению  iPaid - номеру строки Платежа.
 '                                 Возвращает количество найденных проектов.
 ' 6.9.13
+' 10.9.13 - bug fix -- #6 в code.google
 
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
     Dim LocalTOC As TOCmatch, iOpp As Long, IsErr As Boolean
