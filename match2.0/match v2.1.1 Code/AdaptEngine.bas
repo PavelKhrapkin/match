@@ -205,7 +205,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
     Dim iSelect As Long     '''', WP_Row As Long
     Dim i As Long
     Dim LocalTOC As TOCmatch, WP_Prototype_Lines As Long
-    Dim nOpp As Long    ' количество выбранных Проектов
+    Dim nOpp() As Long, QtyOpp As Long          ' массив номеров строк выбранных Проектов
             
 '---- Создаем заново лист WP
     
@@ -242,35 +242,42 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
-            PtrnType = .Cells(iRow, 2)
-            If PtrnType = PTRN_SELECT Then
-                nOpp = OppSelect(.Cells(8, 4))    '<!!!>
-                GoTo StripEnd
-            End If
-            If .Cells(iRow, 1) <> "" Then
-                R = GetRep(.Cells(iRow, 1))
-                Workbooks(R.RepFile).Sheets(R.SheetN).Activate
-            End If
-            For iCol = 5 To .UsedRange.Columns.Count
-                X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
-                Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
-                F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
-                
-                Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
-                
-                X = .Cells(iRow + PTRN_COLS - 1, iCol)
-                If X = "-1" Then Exit For
-                If Not IsErr And X <> "" Then
-                    Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-                    fmtCell DB_TMP, WP, Width, Y, PutToRow, putToCol
+            iSelect = 0: QtyOpp = 0
+            Do
+                PtrnType = .Cells(iRow, 2)
+                If PtrnType = PTRN_SELECT Then
+                    nOpp = OppSelect(.Cells(8, 4))
+                    On Error GoTo StripEnd
+                        QtyOpp = UBound(nOpp) + 1
+                    On Error GoTo 0
+                    iLine = nOpp(iSelect)   ' вывод Проектов по массиву индексов
                 End If
-            Next iCol
+                If .Cells(iRow, 1) <> "" Then
+                    R = GetRep(.Cells(iRow, 1))
+                    Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+                End If
+                For iCol = 5 To .UsedRange.Columns.Count
+                    X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
+                    Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+                    F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+                    
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    
+                    X = .Cells(iRow + PTRN_COLS - 1, iCol)
+                    If X = "-1" Then Exit For
+                    If Not IsErr And X <> "" Then
+                        Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        fmtCell DB_TMP, WP, Width, Y, PutToRow + iSelect, putToCol
+                    End If
+                Next iCol
+                iSelect = iSelect + 1
+            Loop While iSlelect < QtyOpp
                 
 StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
-            If PtrnType = PTRN_SELECT And nOpp = 0 Then
+            If PtrnType = PTRN_SELECT And QtyOpp = 0 Then
                 .Rows(iRow + 1).Hidden = True
                 .Cells(iRow + 1 + PTRN_LNS, 11) = "В Salesforce нет подходящих Проектов. " _
                     & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
