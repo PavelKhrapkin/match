@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   9.9.2013
+'   10.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -114,20 +114,27 @@ Sub TestOppSelect()
 ' T отладка OppSelect
 '       6.9.13
 
-    Dim N As Long
-    N = OppSelect(2)
-    N = OppSelect(3)
+    Dim N() As Long, TT As Long
+    TT = 0
+    TT = UBound(N)
+    On Error Resume Next
+    TT = UBound(N) - LBound(N)
+    On Error GoTo 0
+''    N = OppSelect(2)
+    N = OppSelect(1707)
 End Sub
 
-Function OppSelect(ByVal iPaid As Long) As Long
+Function OppSelect(ByVal iPaid As Long) As Long()
 '
 ' - OppSelect(Account, Sale)    - выводит группу строк Проектов из SFopp на экран WP
 '                                 по значению  iPaid - номеру строки Платежа.
-'                                 Возвращает количество найденных проектов.
+'                                 Возвращает массив номеров строк SFopp найденных проектов.
 ' 6.9.13
 ' 10.9.13 - bug fix -- #6 в code.google
 
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
+    
+    Dim Opps() As Long, nOpp As Long, maxNopp As Long
     Dim LocalTOC As TOCmatch, iOpp As Long, IsErr As Boolean
     Dim sN As String
     Dim Account As String, Salesman As String, PaidDate As Date
@@ -140,21 +147,33 @@ Function OppSelect(ByVal iPaid As Long) As Long
         ContrK = ContrCod(.Cells(iPaid, PAYDOGOVOR_COL), .Cells(iPaid, PAYOSNDOGOVOR_COL))
         PaidDate = .Cells(iPaid, PAYDATE_COL)
         Rub = .Cells(iPaid, PAYRUB_COL)
-        GoodT = .Cells(iPaid, PAYGOODTYPE_COL)
+'''        GoodT = .Cells(iPaid, PAYGOODTYPE_COL)
+        GoodT = GoodType(.Cells(iPaid, PAYGOOD_COL))
     End With
     
     LocalTOC = GetRep(SFopp)
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
-        OppSelect = 0
-        iOpp = 1
+'''        OppSelect = 0
+        iOpp = 1: maxNopp = 0
         Do
             sN = FetchDoc(FETCH_SFOPP, Account, IsErr, iOpp + 1)
             If IsErr Or Not IsNumeric(sN) Then Exit Do
             iOpp = sN
-            If IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), iOpp) Then GoTo NxtOpp
-            
-            OppSelect = OppSelect + 1
-            MsgBox "В платеже Sale=" & Salesman & " IsSameTeam=" & IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), iOpp)
+            sN = .Cells(iOpp, SFOPP_OPPN_COL): nOpp = sN
+            If Not IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), nOpp) Then GoTo NxtOpp
+'---            по продавцу в SFopp проверяем что тип товара Платежа подходит для Проекта
+'''            OppGoodType = .Cells(iOpp, SFOPP_TYP_COL)
+'''            On Error Resume Next
+'''            OppGoodType = WorksheetFunction.VLookup(PayKod, _
+'''                Sheets(SF).Range("B:S"), 18, False)
+'''            On Error GoTo 0
+'''
+            If InStr(.Cells(iOpp, SFOPP_TYP_COL), GoodT) = 0 Then GoTo NxtOpp
+            ReDim Preserve Opps(maxNopp)
+            Opps(maxNopp) = iOpp
+            maxNopp = maxNopp + 1
+''            OppSelect = OppSelect + 1
+''            MsgBox "В платеже Sale=" & Salesman & " IsSameTeam=" & IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), iOpp)
 ''            If OppFilter(i) Then
 ''                вывод строки по Шаблону WP
 ''            End If
@@ -162,6 +181,7 @@ Function OppSelect(ByVal iPaid As Long) As Long
 ''            End If
 NxtOpp: Loop
     End With
+    OppSelect = Opps
     Exit Function
 End Function
 Function OppFilter(iOpp, Sale, Account, t, Rub, Dat, Dogovor, MainDog) As Boolean
