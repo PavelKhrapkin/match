@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 9.09.13 П.Л.Храпкин, А.Пасс
+' 12.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -190,6 +190,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 '    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width"
 '   19.01.13 - вызвана setColWidth
 '   03.09.13 - смена имени с xAdapt на WP_Adapt
+'   12.09.13 - OppSelect interface changed
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -247,9 +248,8 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                 PtrnType = .Cells(iRow, 2)
                 If PtrnType = PTRN_SELECT Then
                     nOpp = OppSelect(.Cells(8, 4))
-                    On Error GoTo StripEnd
-                        QtyOpp = UBound(nOpp) + 1
-                    On Error GoTo 0
+                    QtyOpp = nOpp(0)
+                    If QtyOpp = 0 Then GoTo StripEnd
                     iLine = nOpp(iSelect)   ' вывод Проектов по массиву индексов
                 End If
                 If .Cells(iRow, 1) <> "" Then
