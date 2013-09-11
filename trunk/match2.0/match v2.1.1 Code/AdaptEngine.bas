@@ -271,7 +271,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                     End If
                 Next iCol
                 iSelect = iSelect + 1
-            Loop While iSlelect < QtyOpp
+            Loop While iSelect < QtyOpp
                 
 StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
@@ -1188,13 +1188,14 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
 ' 17.12.12 - добавлен тест целого формата
+' 12.9.13 - увеличено количество триад для Dbl
 
     If UBound(fmt) > 0 Then
         If fmt(1) = "Dbl" Then
 '                                Dim YY As Double
 '                                YY = Y
 '                                .Cells(PutToRow, PutToCol) = YY
-            db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "# ##0.00"
+            db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "# ### ##0.00"
         ElseIf fmt(1) = "Date" Then
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
         ElseIf fmt(1) = "Txt" Then
