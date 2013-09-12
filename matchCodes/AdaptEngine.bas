@@ -99,77 +99,41 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
 ' 28.08.13 - WrTOC SheetNew
 '  6.09.13 - диагностическое сообщение при IsErr=True
 '  8.09.13 - использование X_Pars
+' 12.09.13 - очистка текста
 
-''    Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
-''    Dim sX As String        'поле в строке PTRN_COLS Шаблона
-''    Dim sXarr() As String   'номер элемента в массиве ExtPar, напр., ExtPar/2
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     Dim NewEOL As Long      '=EOL(SheetNew)
     Dim Width() As String
     
     GetRep (SheetNew)
-''    Rnew = GetRep(SheetNew)
-''    Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
-''    Rnew.Made = "WrNewSheet"
-''    Rdoc = GetRep(SheetDB)
       
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         NewEOL = EOL(SheetNew, DB_TMP) + 1
         For i = 1 To P.Columns.Count
             Width = Split(P.Cells(PTRN_WIDTH, i), "/")
-            '------------------------
             X = X_Parse(SheetDB, SheetNew, P.Cells(PTRN_COLS, i), DB_Line, NewEOL, ExtPar)
-            '--------------------------
-'            sX = P.Cells(PTRN_COLS, i)
-'            If sX <> "" Then
-'                If InStr(sX, EXT_PAR) > 0 Then
-'                    sXarr = Split(sX, "/")
-'                    If UBound(sXarr) = 0 Then
-'                        X = ExtPar
-'                    Else
-'                        If Not IsNumeric(sXarr(1)) Then
-'ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
-'                            End
-'                        End If
-'                        If UBound(ExtPar) < CLng(sXarr(1)) Then GoTo ErrExtPar
-'                        X = ExtPar(sXarr(1))
-'                    End If
-'                ElseIf Left(sX, 1) = "#" Then
-'                    sX = Mid(sX, 2)
-'                    X = Workbooks(Rnew.RepFile).Sheets(Rnew.SheetN).Cells(Rnew.EOL, CLng(sX))
-'                Else
-'                    X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
-'                End If
-                
-                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr, , DB_Line)
-                
-                If IsErr Then
-                    MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
-                        & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
-                        & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
-                        & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
-                        & " Fetch =" & P.Cells(PTRN_FETCH, i)
-                    .Rows(NewEOL).Delete
-                    Exit For
-                Else
-'                    .Cells(Rnew.EOL, i) = y
-                    '-- записываем в SheetNew значение Y с установкой формата вывода
-                    fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
-                End If
-'!            Else
-'                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
-                '-- iX пустой - записываем в SheetNew значение из Шаблона в указанном формате
-'!                fmtCell DB_TMP, SheetNew, Width, P.Cells(2, i), Rnew.EOL, i
-'!            End If
+            Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr, , DB_Line)
+            
+            If IsErr Then
+                MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
+                    & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
+                    & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
+                    & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
+                    & " Fetch =" & P.Cells(PTRN_FETCH, i)
+                .Rows(NewEOL).Delete
+                Exit For
+            Else
+                '-- записываем в SheetNew значение Y с установкой формата вывода
+                fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
+            End If
         Next i
     End With
     If Not IsErr Then
-'!        RepTOC = Rnew
         WrTOC SheetNew
     End If
 End Sub
@@ -809,7 +773,7 @@ Function AdapterWP(AdapterName, X, Par) As String
                 Dim b As Long, a(0 To 6) As Long
                 b = .Cells(SEL_REF + 2, 4)
                 For i = 0 To UBound(a)
-                    a(i) = CLng(Par(i))
+'                    a(i) = CLng(Par(i))
                 Next i
                 AdapterWP = "-1"  ' -1 - признак, что достигнут EOL, и Проект не найден
 '''        !            For i = .Cells(SEL_REF, 4) + 1 To EOL_Doc
