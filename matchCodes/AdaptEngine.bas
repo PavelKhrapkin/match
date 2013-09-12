@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 9.09.13 П.Л.Храпкин, А.Пасс
+' 12.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -111,6 +111,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Dim NewEOL As Long      '=EOL(SheetNew)
     Dim Width() As String
     
+    GetRep (SheetNew)
 ''    Rnew = GetRep(SheetNew)
 ''    Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
 ''    Rnew.Made = "WrNewSheet"
@@ -189,6 +190,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 '    7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width"
 '   19.01.13 - вызвана setColWidth
 '   03.09.13 - смена имени с xAdapt на WP_Adapt
+'   12.09.13 - OppSelect interface changed
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -204,7 +206,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
     Dim iSelect As Long     '''', WP_Row As Long
     Dim i As Long
     Dim LocalTOC As TOCmatch, WP_Prototype_Lines As Long
-    Dim nOpp As Long    ' количество выбранных Проектов
+    Dim nOpp() As Long, QtyOpp As Long          ' массив номеров строк выбранных Проектов
             
 '---- Создаем заново лист WP
     
@@ -241,36 +243,41 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
-            PtrnType = .Cells(iRow, 2)
-            If PtrnType = PTRN_SELECT Then
-                nOpp = OppSelect(.Cells(8, 4))    '<!!!>
-                GoTo StripEnd
-            End If
-            If .Cells(iRow, 1) <> "" Then
-                R = GetRep(.Cells(iRow, 1))
-                Workbooks(R.RepFile).Sheets(R.SheetN).Activate
-            End If
-            For iCol = 5 To .UsedRange.Columns.Count
-'''''                X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
-                X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
-                Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
-                F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
-                
-                Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
-                
-                X = .Cells(iRow + PTRN_COLS - 1, iCol)
-                If X = "-1" Then Exit For
-                If Not IsErr And X <> "" Then
-                    Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-                    fmtCell DB_TMP, WP, Width, Y, PutToRow, putToCol
+            iSelect = 0: QtyOpp = 0
+            Do
+                PtrnType = .Cells(iRow, 2)
+                If PtrnType = PTRN_SELECT Then
+                    nOpp = OppSelect(.Cells(8, 4))
+                    QtyOpp = nOpp(0)
+                    If QtyOpp = 0 Then GoTo StripEnd
+                    iLine = nOpp(iSelect)   ' вывод Проектов по массиву индексов
                 End If
-            Next iCol
+                If .Cells(iRow, 1) <> "" Then
+                    R = GetRep(.Cells(iRow, 1))
+                    Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+                End If
+                For iCol = 5 To .UsedRange.Columns.Count
+                    X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
+                    Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+                    F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+                    
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    
+                    X = .Cells(iRow + PTRN_COLS - 1, iCol)
+                    If X = "-1" Then Exit For
+                    If Not IsErr And X <> "" Then
+                        Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                        fmtCell DB_TMP, WP, Width, Y, PutToRow + iSelect, putToCol
+                    End If
+                Next iCol
+                iSelect = iSelect + 1
+            Loop While iSelect < QtyOpp
                 
 StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
-            If PtrnType = PTRN_SELECT And nOpp = 0 Then
+            If PtrnType = PTRN_SELECT And QtyOpp = 0 Then
                 .Rows(iRow + 1).Hidden = True
                 .Cells(iRow + 1 + PTRN_LNS, 11) = "В Salesforce нет подходящих Проектов. " _
                     & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
@@ -1181,13 +1188,14 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 ' 17.12.12 - добавлен тест целого формата в testfmtCell()
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
 ' 17.12.12 - добавлен тест целого формата
+' 12.9.13 - увеличено количество триад для Dbl
 
     If UBound(fmt) > 0 Then
         If fmt(1) = "Dbl" Then
 '                                Dim YY As Double
 '                                YY = Y
 '                                .Cells(PutToRow, PutToCol) = YY
-            db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "# ##0.00"
+            db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "# ### ##0.00"
         ElseIf fmt(1) = "Date" Then
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
         ElseIf fmt(1) = "Txt" Then
