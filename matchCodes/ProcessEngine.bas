@@ -98,7 +98,7 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
     Dim i As Integer
     Dim iStep As Long
     Dim S() As String   '=части требований PrevStep, разделенные ","
-    Dim x() As String   '=кажда€ часть может быть вида <Proc>/<Step>
+    Dim X() As String   '=кажда€ часть может быть вида <Proc>/<Step>
     Dim Rep As String, Done As String
     Dim Report As TOCmatch
     
@@ -124,9 +124,9 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         S = Split(Trim(Step), ",")
         For i = LBound(S) To UBound(S)
             If InStr(S(i), "/") <> 0 Then
-                x = Split(S(i), "/")
-                If Proc = x(0) Then ErrMsg FATAL_ERR, "Ѕесконечна€ рекурси€ в PrevStep!!"
-                If Not IsDone(x(0), x(1)) Then ProcStart x(0)
+                X = Split(S(i), "/")
+                If Proc = X(0) Then ErrMsg FATAL_ERR, "Ѕесконечна€ рекурси€ в PrevStep!!"
+                If Not IsDone(X(0), X(1)) Then ProcStart X(0)
             Else
                 iStep = ToStep(Proc, S(i))
                 If DB_MATCH.Sheets(Process).Cells(iStep, PROC_STEPDONE_COL) <> "" Then
@@ -431,7 +431,7 @@ Sub MergeReps()
         ToRow = RoldEOL + 1
 InsRow: If FrRow = 0 Then FrRow = ToRow
 '-- копируем Update и п€тку в прежний документ (_OLD) от строки FrRow
-       .Rows(FrRow & ":" & RoldEOL + 1111).Delete    ' стираем старую п€тку
+       .Rows(FrRow & ":" & RoldEOL + 1111).Delete    ' стираем старый хвост
         Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
             Destination:=.Cells(FrRow, 1)
         RoldEOL = EOL(OldRepName)
@@ -457,45 +457,3 @@ InsRow: If FrRow = 0 Then FrRow = ToRow
         .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
     End With
 End Sub
-
-Sub CheckRepDate(ByVal Rep1 As String, _
-    Optional Rep2 As String = "", Optional Rep3 As String = "", _
-    Optional Rep4 As String = "", Optional Rep5 As String = "")
-'
-' S CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат ƒокументов
-'           взаимодействующих с загружаемым как самый левый в списке Ўага
-'
-' 30.8.13
-
-    Dim ActTOC As TOCmatch
-    
-    StepIn
-    
-    ActTOC = GetRep(ActiveSheet.Name)
-    
-    With ActTOC
-        RepDateSub Rep1, .Name, .CreateDat
-        RepDateSub Rep2, .Name, .CreateDat
-        RepDateSub Rep3, .Name, .CreateDat
-        RepDateSub Rep4, .Name, .CreateDat
-        RepDateSub Rep5, .Name, .CreateDat
-    End With
-End Sub
-Sub RepDateSub(Rep As String, Name As String, Dat As Date)
-'
-' - RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если ƒокумент Rep актуален
-'                       иначе выводит сообщение о необходимости перезагрузки
-' 30.8.13
-
-    Dim LocalTOC As TOCmatch
-    
-    If Rep = "" Then GoTo Ex
-    
-    LocalTOC = GetRep(Rep)
-    If LocalTOC.Dat < Dat Then GoTo Er
-    
-Ex: Exit Sub
-Er: ErrMsg FATAL_ERR, "Ќеобходимо загрузить заново '" & Rep & "' за " _
-        & LocalTOC.CreateDat & vbCrLf & "ќн устарел относительно '" & Name & "' за " & Dat
-End Sub
-
