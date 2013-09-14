@@ -10,11 +10,17 @@ Attribute VB_Name = "Checking"
 '                                  работает с Товаром типа GoodType.
 '[*] CheckGoodType()   - проход по Платежам и проверка все ли товары распознаются
 '[*] ContractCheck()   - Проверка состояния Договоров
+' S  CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат Документов
+' -  RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален
+'                         иначе выводит сообщение о необходимости перезагрузки
 '
+' 14.9.13
+' --- история модуля ----
 '   19.2.2012
 '   24.2.2012 - кол-во ошибок по Продавцу в We
 '   29.4.12 - проверка состояния Договоров
 '   18.6.12 - Optional OppN в InSameTeam для использования в Заказах
+'   14.9.13 - CheckRepDate - проверка дат Документов
 
 Option Explicit
 
@@ -200,16 +206,16 @@ Function IsRightSale(Sale, GoodType) As Boolean
 
     Dim S, Goods() As String  ' массив Продавцов и товаров
     Dim i
-    Dim x As Range
+    Dim X As Range
 
     IsRightSale = False
     
-    For Each x In DB_MATCH.Sheets(We).Range("Продавцы").Rows
-        If InStr(Sale, x.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
-    Next x
+    For Each X In DB_MATCH.Sheets(We).Range("Продавцы").Rows
+        If InStr(Sale, X.Cells(1, 1)) <> 0 Then Exit For   ' поиск фамилии Продавца S1
+    Next X
 
     On Error Resume Next
-    S = WorksheetFunction.VLookup(x.Cells(1, 1), _
+    S = WorksheetFunction.VLookup(X.Cells(1, 1), _
             DB_MATCH.Sheets(We).Range("Продавцы"), WE_GOOD_COL, False)
     On Error GoTo 0
     If S = "" Then
@@ -244,14 +250,14 @@ Sub CheckGoodType()
 ' Проход по Платежам и проверка, все ли типы товаров распознаются
 '   12.3.12
 
-    Dim i, x As Integer
+    Dim i, X As Integer
     Dim t As String
     
 '    profileGlobal = 0
         
     Lines = ModStart(1, "CheckGoodType", True)
     
-    x = 0
+    X = 0
     For i = 2 To Lines - 3
        Call Progress(i / Lines)
 '       profileGlobal = getPoint()
@@ -259,10 +265,10 @@ Sub CheckGoodType()
        If Sheets(1).Cells(i, 1) = 1 And _
           Trim(Sheets(1).Cells(i, 6)) <> "" Then
             t = GoodType(Sheets(1).Cells(i, 19))
-            If t = "" Then x = x + 1
+            If t = "" Then X = X + 1
         End If
     Next i
-    MsgBox "Не распознаны Товары в " & x & " Платежах"
+    MsgBox "Не распознаны Товары в " & X & " Платежах"
     ModEnd 1
 End Sub
 Sub ContractCheck()
@@ -308,3 +314,51 @@ Sub ContractCheck()
     
     ModEnd DOG_SHEET
 End Sub
+
+Sub CheckRepDate(ByVal Rep1 As String, _
+    Optional Rep2 As String = "", Optional Rep3 As String = "", _
+    Optional Rep4 As String = "", Optional Rep5 As String = "")
+'
+' S CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат Документов
+'           взаимодействующих с загружаемым как самый левый в списке Шага
+'
+' 30.8.13
+' 14.9.13 - изменен интерфейс RepDateSub, перенос в модуль Checking
+
+    Dim ActTOC As TOCmatch
+    
+    StepIn
+    
+    ActTOC = GetRep(ActiveSheet.Name)   'на случай, если AcualSheet изменится
+                                        '.. после StepIn
+    With ActTOC
+        RepDateSub Rep1, .Name
+        RepDateSub Rep2, .Name
+        RepDateSub Rep3, .Name
+        RepDateSub Rep4, .Name
+        RepDateSub Rep5, .Name
+    End With
+End Sub
+Sub RepDateSub(Rep As String, Name As String)
+'
+' - RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален,
+'                       то есть создан Документ Rep создан ПОЗЖЕ него.
+'                       иначе выводит сообщение о необходимости перезагрузки
+' 30.8.13
+' 14.9.13 - изменен интерфейс, перенос в модуль Checking
+
+    Dim LocalTOC As TOCmatch, ActTOC As TOCmatch
+    
+    If Rep = "" Then GoTo Ex
+    
+    LocalTOC = GetRep(Rep)
+    ActTOC = GetRep(Name)
+    
+    If LocalTOC.CreateDat < ActTOC.CreateDat Then GoTo Er
+      
+Ex: Exit Sub
+Er: ErrMsg FATAL_ERR, "Необходимо загрузить заново '" & Rep & "' за " _
+        & LocalTOC.CreateDat & vbCrLf & "Он устарел относительно '" _
+        & Name & "' за " & ActTOC.CreateDat
+End Sub
+
