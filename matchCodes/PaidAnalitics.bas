@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   12.9.2013
+'   15.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -22,6 +22,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 '
 ' 9.9.13
 ' 12.9.13 - пишем DOG_UPDATE
+' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
 
     StepIn
     
@@ -60,7 +61,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
                 GoTo NextRow
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
 '!!'                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
-'!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYACC_COL), IsErr)
+'!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYCANONAME_COL), IsErr)
  ''''               If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
                 GoTo NextRow
             ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
@@ -102,7 +103,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
                         If .Cells(FromN, SFOPP_CLOSEDATE_COL) - Now < 365 Then GoTo NextOpp
                     End With
                     If BalkyExists Then
-                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYACC_COL) & "' несколько проектов по Расходникам"
+                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYCANONAME_COL) & "' несколько проектов по Расходникам"
                         GoTo NextRow
                     End If
                     OppId = ThisOppId
@@ -142,6 +143,7 @@ Function OppSelect(ByVal iPaid As Long) As Long()
 ' 6.9.13
 ' 11.9.13 - возвращает массим индексов - номеров строк SFopp,
 '           причем в элементе (0) число найденных проектов
+' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
 
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
     
@@ -153,7 +155,7 @@ Function OppSelect(ByVal iPaid As Long) As Long()
 
     GetRep PAY_SHEET
     With DB_1C.Sheets(PAY_SHEET)
-        Account = .Cells(iPaid, PAYACC_COL)
+        Account = .Cells(iPaid, PAYCANONAME_COL)
         Salesman = .Cells(iPaid, PAYSALE_COL)
         ContrK = ContrCod(.Cells(iPaid, PAYDOGOVOR_COL), .Cells(iPaid, PAYOSNDOGOVOR_COL))
         PaidDate = .Cells(iPaid, PAYDATE_COL)
@@ -296,7 +298,7 @@ End Function
 '''            If .Cells(i, PAYINSF_COL) <> 1 _
 '''                    And Trim(.Cells(i, PAYISACC_COL)) <> "" _
 '''                    And Trim(.Cells(i, PAYDOC_COL)) <> "" Then
-'''                Acc = Compressor(.Cells(i, PAYACC_COL)) ' Организация
+'''                Acc = Compressor(.Cells(i, PAYCANONAME_COL)) ' Организация
 '''                Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
 '''                Sale = .Cells(i, PAYSALE_COL)   ' Продавец
 '''                good = .Cells(i, PAYGOOD_COL)   ' Товар
@@ -391,7 +393,7 @@ End Function
 '''        With DB_1C.Sheets(P.SheetN)
 ''''''''            .Activate
 '''        ' Account в SF есть, Платежа в SF нет, Док и Продавец не пустой
-'''            Acc = Compressor(.Cells(i, PAYACC_COL)) ' Организация
+'''            Acc = Compressor(.Cells(i, PAYCANONAME_COL)) ' Организация
 '''            If .Cells(i, PAYISACC_COL) <> "" And _
 '''                    Trim(.Cells(i, PAYDOC_COL)) <> "" And _
 '''                    Trim(.Cells(i, PAYSALE_COL)) <> "" Then

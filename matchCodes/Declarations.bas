@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  12.9.13
+'  14.9.13
 
 Option Explicit
 
@@ -105,7 +105,7 @@ Public Const DATE_BULKY = "1.1.20"  ' дата окончания для Bulky Проектов
 Public Const BIG = 77777            ' большое число для границ поиска
 
 '------------- match TOC - Оглавление отчетов в базе данных ----------
-Public Const TOC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
+Public Const ToC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
 Public Const TOC_F_DIR_COL = 10         ' в TOCmatch записан Path файлов DBs - DirDBs
 
 Public Const TOC_DATE_COL = 1           ' дата и время загрузки отчета
@@ -329,8 +329,8 @@ Public Const PAYDOGOVOR_COL = 25    ' колонка Договор
 Public Const PAYOSNDOGOVOR_COL = 26 ' колонка Осн.Договор
 Public Const PAYDOGVAL_COL = 27     ' колонка Сумма договора
 Public Const PAYDOGCUR_COL = 28     ' колонка Валюта договора
-Public Const PAYINV_COL = 30        ' колонка CX-XXX - Счет без даты
-Public Const PAYGOODTYPE_COL = 31   ' колонка Тип товара
+Public Const PAYINV_COL = 32        ' колонка CX-XXX - Счет без даты
+Public Const PAYGOODTYPE_COL = 33   ' колонка Тип товара
 
 '''Public Const Stamp1Cpay1 = "Плат. док.", Stamp1Cpay2 = "Дата прих. денег"
 '-------------- Договоры - отчет из 1С ---------------------------------
@@ -533,6 +533,11 @@ Public Const WE_GOODS_ISSBSCOL = 8      ' Товар - Есть подписка
 Public Const WE_GOODS_NOSBSCOL = 9      ' Товар - Нет подписки
 
 Public Const WE_GOODS_ADSK = "Autodesk" ' Товар - Autodesk
+
+Public Const DIC_ACC_SYNONIMS = "DicAccSynonims"    'словарь синонимов имен клиентов 1С
+'''Public Const DIC_ACC_CLIENT = 1
+'''Public Const DIC_ACC_CANONIC_CLIENT = 2
+
 
 '########################## лист лидов MS CSIT ###########################
 Public Const CSIT_MS = "CSIT_MS"            ' лист Лидов CSIT по Microsoft

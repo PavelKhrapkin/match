@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 12.09.13 П.Л.Храпкин, А.Пасс
+' 14.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -65,6 +65,7 @@ Const WP_PAYMENT_LINE = 8                       ' строка Платежа в WP
 
 Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
 
+Const PTRN_HDR = 1   ' смещение строки - значения шапки в Шаблоне
 Const PTRN_VALUE = 2 ' смещение строки - значения - Value в Шаблоне
 Const PTRN_WIDTH = 3 ' смещение строки - ширина колонок в Шаблоне
 Const PTRN_COLS = 4  ' смещение строки номеров колонок в Шаблоне
@@ -72,7 +73,7 @@ Const PTRN_ADAPT = 5 ' смещение строки вызова Адаптеров в Шаблоне
 Const PTRN_FETCH = 6 ' смещение строки вызова Fetch - извлечения из Док-в в Шаблоне
 Const PTRN_LNS = 6   ' кол-во строк в Шаблоне по каждой группе строк на экране
 
-Const FOR_PROCESS = "<ForProcess>"  'колонка в Шаблоне для проверки
+Const FOR_PROCESS = "ForProcess"    'колонка в Шаблоне для проверки
                                     '.. в Адаптере имени Процесса
 Const PTRN_SELECT = "Select"
 Const OPP_BALKY = "Расходные материалы и ЗИП"
@@ -99,41 +100,77 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
 ' 28.08.13 - WrTOC SheetNew
 '  6.09.13 - диагностическое сообщение при IsErr=True
 '  8.09.13 - использование X_Pars
-' 12.09.13 - очистка текста
 
+''    Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
     Dim i As Long
     Dim X As String         '= обрабатываемое значение в SheetDB
+''    Dim sX As String        'поле в строке PTRN_COLS Шаблона
+''    Dim sXarr() As String   'номер элемента в массиве ExtPar, напр., ExtPar/2
     Dim Y As String         '= результат работы Адаптера
     Dim IsErr As Boolean    '=True если Адаптер обнаружил ошибку
     Dim NewEOL As Long      '=EOL(SheetNew)
     Dim Width() As String
     
     GetRep (SheetNew)
+''    Rnew = GetRep(SheetNew)
+''    Rnew.EOL = EOL(Rnew.SheetN, DB_TMP) + 1
+''    Rnew.Made = "WrNewSheet"
+''    Rdoc = GetRep(SheetDB)
       
     With DB_TMP.Sheets(SheetNew)
         Set P = DB_MATCH.Sheets(Header).Range("HDR_" & SheetNew)
         NewEOL = EOL(SheetNew, DB_TMP) + 1
         For i = 1 To P.Columns.Count
             Width = Split(P.Cells(PTRN_WIDTH, i), "/")
+            '------------------------
             X = X_Parse(SheetDB, SheetNew, P.Cells(PTRN_COLS, i), DB_Line, NewEOL, ExtPar)
-            Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr, , DB_Line)
-            
-            If IsErr Then
-                MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
-                    & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
-                    & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
-                    & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
-                    & " Fetch =" & P.Cells(PTRN_FETCH, i)
-                .Rows(NewEOL).Delete
-                Exit For
-            Else
-                '-- записываем в SheetNew значение Y с установкой формата вывода
-                fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
-            End If
+            '--------------------------
+'            sX = P.Cells(PTRN_COLS, i)
+'            If sX <> "" Then
+'                If InStr(sX, EXT_PAR) > 0 Then
+'                    sXarr = Split(sX, "/")
+'                    If UBound(sXarr) = 0 Then
+'                        X = ExtPar
+'                    Else
+'                        If Not IsNumeric(sXarr(1)) Then
+'ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
+'                            End
+'                        End If
+'                        If UBound(ExtPar) < CLng(sXarr(1)) Then GoTo ErrExtPar
+'                        X = ExtPar(sXarr(1))
+'                    End If
+'                ElseIf Left(sX, 1) = "#" Then
+'                    sX = Mid(sX, 2)
+'                    X = Workbooks(Rnew.RepFile).Sheets(Rnew.SheetN).Cells(Rnew.EOL, CLng(sX))
+'                Else
+'                    X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
+'                End If
+                
+                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), IsErr, , DB_Line)
+                
+                If IsErr Then
+                    MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
+                        & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
+                        & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
+                        & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
+                        & " Fetch =" & P.Cells(PTRN_FETCH, i)
+                    .Rows(NewEOL).Delete
+                    Exit For
+                Else
+'                    .Cells(Rnew.EOL, i) = y
+                    '-- записываем в SheetNew значение Y с установкой формата вывода
+                    fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
+                End If
+'!            Else
+'                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
+                '-- iX пустой - записываем в SheetNew значение из Шаблона в указанном формате
+'!                fmtCell DB_TMP, SheetNew, Width, P.Cells(2, i), Rnew.EOL, i
+'!            End If
         Next i
     End With
     If Not IsErr Then
+'!        RepTOC = Rnew
         WrTOC SheetNew
     End If
 End Sub
@@ -412,7 +449,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
                     ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
                     End
                 End If
-            ElseIf FF(PTRN_VALUE, Col) = FOR_PROCESS Then
+            ElseIf FF(PTRN_HDR, Col) = FOR_PROCESS Then
               '-- проверка контекста Процесса - заполнение IsThisProc
                 If Proc = "" Then               'только первый раз
                     Proc = FF(PTRN_VALUE, Col)
@@ -494,6 +531,7 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
 '11.8.13 - Адаптеры "SN+" и "=Registered"
 ' 1.9.13 - все параметры ByVal, кроме возвращаемого ByRef IsErr
 ' 9.9.13 - добавлены Адаптеры TypOpp, LineOpp, KindOpp
+'14.9.13 - добавлен Адаптер AltFetch: Y=X или его альтернатива из Fetch, если есть
 
     Dim FF() As String, tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -538,6 +576,11 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
         iPay = DB_TMP.Sheets(WP).Cells(PAY_REF, 4)
         MainDog = DB_1C.Sheets(PAY_SHEET).Cells(iPay, CLng(Par(0)))
         X = ContrCod(X, MainDog)
+    Case "AltFetch":    ' Y=X или его альтернатива из Fetch, если есть
+        Dim Str As String
+        Str = FetchDoc(F_rqst, X, IsErr)
+        If Str <> "" Then X = Str
+        GoTo AdapterSelect
     End Select
     
 '--- FETCH разбор строки параметров из Документов вида <Doc1>/C1:C2,<Doc2>/C1:C2,...
@@ -555,6 +598,8 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
 '******* выполнение Адаптера с параметрами Par ******
 ''    Set DB_TMP = FileOpen(F_TMP)
 ''    With DB_TMP.Sheets(WP)
+AdapterSelect:
+
     Adapter = ""
 '''''    If SheetWP = WP Then
 '''''        Adapter = AdpterWP()
@@ -562,7 +607,7 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
 '''''    End If
     
     Select Case AdapterName
-    Case "", "MainContract", "<>""""", "=Registered": Adapter = X
+    Case "", "MainContract", "<>""""", "=Registered", "AltFetch": Adapter = X
     Case "Мы", "Продавцы", "Продавец_в_SF", "Vendor":
         On Error GoTo AdapterFailure
         Adapter = WorksheetFunction.VLookup(X, DB_MATCH.Sheets("We").Range(AdapterName), Par(0), False)

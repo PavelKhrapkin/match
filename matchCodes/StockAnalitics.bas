@@ -10,7 +10,7 @@ Attribute VB_Name = "StockAnalitics"
 ' (*) Sndedup() - дедупликация SN найденных по Складу - времянка!
 '  -  SN_ADSKbyStock(PayId, Acc, Dat) - возвращает SN продукта ADSK по Складу
 
-'   25.11.2012
+'   15.09.2013
 
 Option Explicit
 
@@ -30,7 +30,7 @@ Sub StockHandling()
     Dim SameClient As Boolean
     Dim Acc1C As String     ' имя Организации в справочнике 1С
     Dim Dat As Date         'поле "Дата" в складской книге
-    Dim good, t As String   ' Товар (спецификация) и Тип товара
+    Dim Good, t As String   ' Товар (спецификация) и Тип товара
     Dim StockSN As String   ' Складская запись об SN
     Dim SNinSF As String    ' SN уже занесенный в SF
     Dim NewSN As String     ' SN, которого еще нет в SF
@@ -59,8 +59,8 @@ End If
             If PayN > 0 And PayN <= EOL_PaySheet Then
                 .Cells(i, STOCK_INVOICE_COL) = _
                         Sheets(PAY_SHEET).Cells(PayN, PAYINVOICE_COL)
-                good = Sheets(PAY_SHEET).Cells(PayN, PAYGOOD_COL)
-                t = GoodType(good)              ' Тип товара по Счету
+                Good = Sheets(PAY_SHEET).Cells(PayN, PAYGOOD_COL)
+                t = GoodType(Good)              ' Тип товара по Счету
                 .Cells(i, STOCK_GOOD_COL) = t
                 If t = WE_GOODS_ADSK Then
                     StockSN = Sheets(STOCK_SHEET).Cells(i, STOCK_SN_COL)
@@ -95,6 +95,7 @@ Function FindPayN(Client, Acc1C, Dat) As Integer
 '  23.5.12 -на входе в Acc1C может быть несколько Организаций соединенных "+"
 '           FindPayN ищет Счет по всем и оставляет в Acc1C только найденую
 '  17.6.12 - выделен поиск Сч- в строке в отдельную подпрограмму
+'  15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
 
     Dim invoice As String
     Dim StockInv As String      '= Счет, выделенный из поля Клиент по Складу
@@ -109,7 +110,7 @@ Function FindPayN(Client, Acc1C, Dat) As Integer
     StockInv = SeekInv(Client)
     If StockInv = "" Then Exit Function
     If IsInv1C(StockInv, Dat, i1C) Then
-        AccInv = Compressor(Sheets(PAY_SHEET).Cells(i1C, PAYACC_COL))
+        AccInv = Compressor(Sheets(PAY_SHEET).Cells(i1C, PAYCANONAME_COL))
         invoice = Sheets(PAY_SHEET).Cells(i1C, PAYINVOICE_COL)
         If Acc1C <> AccInv Then
             If Acc1C = "" Then
@@ -128,7 +129,7 @@ Function FindPayN(Client, Acc1C, Dat) As Integer
 '----- поиск Счета в Платежах -------
 '
 '    For i = 2 To EOL_PaySheet
-'        Acc = Sheets(PAY_SHEET).Cells(i, PAYACC_COL)
+'        Acc = Sheets(PAY_SHEET).Cells(i, PAYCANONAME_COL)
 '        If InStr(Acc1C, Acc) <> 0 Then
 '            If InStr(Invoice, StockInv) <> 0 Then
 '                For j = 4 To 7 ' разбираем строку Счета вида "Сч-123 ..."
@@ -302,7 +303,7 @@ Function SeekPayN(ByVal Inv As String, ByVal Client As String, ByVal Dat As Date
 '''                    Or PayN <= 0 _
 '''                    Or Not IsDate(Pdat) Then Exit Function
 '''            If Not IgnoredFirm(.Cells(PayN, PAYFIRM_COL)) Then
-'''                Acc = LCase(.Cells(PayN, PAYACC_COL))
+'''                Acc = LCase(.Cells(PayN, PAYCANONAME_COL))
 '''                PaccW = split(RemIgnored(Acc), " ")
 '''                For i = LBound(accWords) To UBound(accWords)
 '''                    If accWords(i) <> "" Then
@@ -342,7 +343,7 @@ Function SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK) As String
 
     Dim i As Integer
     Dim j As Integer
-    Dim SN As String    ' SN в отчете ADSKfrSF
+    Dim sN As String    ' SN в отчете ADSKfrSF
     Dim S As String
     Dim CtrADSK As String
     Dim AccStock As String
@@ -352,16 +353,16 @@ Function SNhandl(Acc1C, PayN, StockSN, SNinSF, ContrADSK) As String
     If Len(S) < 12 Then Exit Function   ' нет SN
     
     For i = 2 To EOL_ADSKfrSF
-        SN = Sheets(ADSKfrSF).Cells(i, SFADSK_SN_COL)
-        If SN <> "" Then
-            If InStr(S, SN) <> 0 Then
+        sN = Sheets(ADSKfrSF).Cells(i, SFADSK_SN_COL)
+        If sN <> "" Then
+            If InStr(S, sN) <> 0 Then
                 AccStock = Sheets(ADSKfrSF).Cells(i, SFADSK_ACC1C_COL)
                 If AccStock <> Acc1C Then ContrADSK = "'" & AccStock & "':"
                 CtrADSK = Sheets(ADSKfrSF).Cells(i, SFADSK_CONTRACT_COL)
                 If InStr(S, CtrADSK) <> 0 Then S = Replace(S, CtrADSK, "")
                 If SNinSF <> "" Then SNinSF = SNinSF & "+"
-                SNinSF = SNinSF & SN
-                S = Replace(S, SN, "")  ' исключим найденный SN и Contract Autodesk
+                SNinSF = SNinSF & sN
+                S = Replace(S, sN, "")  ' исключим найденный SN и Contract Autodesk
                 If ContrADSK <> "" Then ContrADSK = ContrADSK & "+"
                 If InStr(ContrADSK, CtrADSK) = 0 Then ContrADSK = ContrADSK & CtrADSK
                 If IsNumeric(ContrADSK) Then ContrADSK = "'" & ContrADSK

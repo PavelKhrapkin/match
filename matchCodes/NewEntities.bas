@@ -5,7 +5,7 @@ Attribute VB_Name = "NewEntities"
 ' S NewSheet(SheetName,[TabColor]) - создает новый лист SheetName цвета TabColor
 ' S NewOrder(NewOrder)  - просмотр Заказов для занесения в SF новых через DL
 '
-'   7.9.2013
+'   15.9.2013
 
 Option Explicit
 
@@ -38,7 +38,7 @@ Sub NewSheet(ByVal SheetName As String, Optional ByVal TabColor As Long = 0)
     R = GetRep(SheetName)
     
     If TabColor = 0 Then
-        TabColor = DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_SHEETN_COL).Interior.Color
+        TabColor = DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_SHEETN_COL).Interior.Color
     End If
     On Error GoTo NoHdr
     Set Frm = DB_MATCH.Sheets(Header).Range(R.FormName)
@@ -239,6 +239,7 @@ Sub NewOrder(NewOrd As String)
 ' 26.4.2013
 '  2.5.13 поиск и передача Id Платежа и SN в WrNewSheet через массив ExtPar
 '  7.5.13 использование FetchDoc для извлечения поля "Компаньон"
+' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
 
     StepIn
     
@@ -280,7 +281,7 @@ Sub NewOrder(NewOrd As String)
                         If .Cells(j, PAYINSF_COL) <> 1 Then GoTo NextP
                         If TMPinv1C <> .Cells(j, PAYINV_COL) Then GoTo NextP
                         If Abs(.Cells(j, PAYDATE_COL) - CSDinvDate) > 50 Then GoTo NextP
-                        If InStr(LCase$(.Cells(j, PAYACC_COL)), TMPcustomer) = 0 Then GoTo NextP
+                        If InStr(LCase$(.Cells(j, PAYCANONAME_COL)), TMPcustomer) = 0 Then GoTo NextP
                         Select Case TMPgoodType
                         Case "ADSK": If .Cells(j, PAYGOODTYPE_COL) <> "Autodesk" Then GoTo NextP
                         Case "Расх и ЗИП": If .Cells(j, PAYGOODTYPE_COL) <> "Расходники" Then GoTo NextP

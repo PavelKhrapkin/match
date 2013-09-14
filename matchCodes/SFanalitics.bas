@@ -7,7 +7,7 @@ Attribute VB_Name = "SFanalitics"
 '       Договоров   = Contract      = Contr Отчет SFD
 '   29.8.2013
 '
-' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
+'''''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
 ' - AccId(Account)              - Id SF Организации по имени 1С
 ' - OwnerId(Owner, Buddy)       - Id SF владельца с переадресацией по таблице We
 ' - OppByPay(PayKod)            - получает Имя Проекта SF по Платежу 1С
@@ -26,38 +26,38 @@ Attribute VB_Name = "SFanalitics"
 
 Option Explicit
 
-Sub SFaccSplit(ByVal Col As Long)
-'
-' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
-' 25.8.13
-' 29.8.13 - bug fix
-
-    Const SFACC_DELIMETR = "<ИЛИ>"
-    Dim SFDEL_LNG
-    SFDEL_LNG = Len(SFACC_DELIMETR) + 1
-    
-    Dim R As TOCmatch, i As Long, S() As String
-    
-    StepIn
-    
-    R = GetRep(ActiveSheet.Name)
-    
-    With Workbooks(R.RepFile).Sheets(R.SheetN)
-        i = 2
-        Do While i <= R.EOL
-            Progress i / R.EOL
-            If InStr(.Cells(i, Col), SFACC_DELIMETR) <> 0 Then
-                .Rows(i).Insert Shift:=xlDown
-                .Rows(i + 1).Copy Destination:=.Rows(i)
-                S = Split(.Cells(i, Col), SFACC_DELIMETR)
-                .Cells(i, Col) = Trim(S(0))
-                .Cells(i + 1, Col) = Trim(Mid(.Cells(i + 1, Col), Len(S(0)) + SFDEL_LNG))
-                R.EOL = R.EOL + 1
-            End If
-            i = i + 1
-        Loop
-    End With
-End Sub
+''''Sub SFaccSplit(ByVal Col As Long)
+'''''
+''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
+''''' 25.8.13
+''''' 29.8.13 - bug fix
+''''
+''''    Const SFACC_DELIMETR = "<ИЛИ>"
+''''    Dim SFDEL_LNG
+''''    SFDEL_LNG = Len(SFACC_DELIMETR) + 1
+''''
+''''    Dim R As TOCmatch, i As Long, S() As String
+''''
+''''    StepIn
+''''
+''''    R = GetRep(ActiveSheet.Name)
+''''
+''''    With Workbooks(R.RepFile).Sheets(R.SheetN)
+''''        i = 2
+''''        Do While i <= R.EOL
+''''            Progress i / R.EOL
+''''            If InStr(.Cells(i, Col), SFACC_DELIMETR) <> 0 Then
+''''                .Rows(i).Insert Shift:=xlDown
+''''                .Rows(i + 1).Copy Destination:=.Rows(i)
+''''                S = Split(.Cells(i, Col), SFACC_DELIMETR)
+''''                .Cells(i, Col) = Trim(S(0))
+''''                .Cells(i + 1, Col) = Trim(Mid(.Cells(i + 1, Col), Len(S(0)) + SFDEL_LNG))
+''''                R.EOL = R.EOL + 1
+''''            End If
+''''            i = i + 1
+''''        Loop
+''''    End With
+''''End Sub
 Function Adr1C(Acc) As String
 '
 '   возвращает адрес Организации Acc в Списке клиентов 1С или ошибку, если ее нет
@@ -84,11 +84,11 @@ Function OwnerId(Owner, Buddy) As String
 '   6.3.12 - переход к фамилии Продавца Owner в We
 '   12.3.12 - определение Компаньона OppBuddy
     
-    Dim x As Range
+    Dim X As Range
 
-    For Each x In Range("Продавцы").Rows
-        If InStr(Owner, x.Cells(1, 1)) <> 0 Then GoTo Found
-    Next x
+    For Each X In Range("Продавцы").Rows
+        If InStr(Owner, X.Cells(1, 1)) <> 0 Then GoTo Found
+    Next X
     LogWr "ERROR! Не найден Продавец " & Owner & _
         ". Это ошибка в Match/We или новый сотрудник в 1С"
     Stop
@@ -96,12 +96,12 @@ Found:
 '    If InStr(Owner, "Тучков") Then
 '''        MsgBox "Тучков"
 '    End If
-    If InStr(x.Cells(1, 3), x.Cells(1, 1)) = 0 Then
-        Buddy = x.Cells(1, 1)
+    If InStr(X.Cells(1, 3), X.Cells(1, 1)) = 0 Then
+        Buddy = X.Cells(1, 1)
     Else
         Buddy = ""
     End If
-    OwnerId = x.Cells(1, 4)
+    OwnerId = X.Cells(1, 4)
 End Function
 Function OppByPay(PayKod)
 '
@@ -281,15 +281,15 @@ Function InvoiceN(Str) As Integer
 ' - InvoiceN(Str) возвращает число - номер Счета по текстовой строке Str
 '   24.5.12
 
-    Dim x As Integer        ' номер символа - пробела в Str
+    Dim X As Integer        ' номер символа - пробела в Str
     Dim Y As Integer        ' позиция "Cч-" в Str
     Dim S As String         ' фрагмент Str с номером Счета
     
     InvoiceN = 0
     If Str = "" Then Exit Function
-    x = WorksheetFunction.Search(" ", Str)
+    X = WorksheetFunction.Search(" ", Str)
     Y = WorksheetFunction.Search("Сч-", Str)
-    S = Mid(Str, Y + 3, x - Y - 3)
+    S = Mid(Str, Y + 3, X - Y - 3)
     
     If Not IsNumeric(S) Then Exit Function
     InvoiceN = S
