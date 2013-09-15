@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 8.9.13
+' П.Л.Храпкин, А.Пасс 15.9.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -29,7 +29,7 @@ Attribute VB_Name = "MatchLib"
 ' - CSmatchSht(Val,Col,Sht)     - Case Sensitive match возвращает номер строки с Val в
 '                                 колонке Col листа Sht. Если Val не найден- возвращает 0.
 ' - SheetExists(SheetName)      - проверка, что лист SheetName доступен
-'[X]ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
+''''[X]ClearSheet(SheetN, HDR_Range) - очистка листа SheetN и запись в него шапки
 ' - SheetSort(SheetN, Col)      - сортировка листа SheetN по колонке Col
 ' - SheetDedup(SheetN, Col)     - cортировка и дедупликация SheetN по колонке Col
 ' - SheetDedup2(SheetN, ColSort,ColAcc) - сортировка и слияние листа SheetN
@@ -101,7 +101,7 @@ Sub InsMyCol()
     
     R = GetRep(ActiveSheet.Name)
     
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
         Set FF = DB_MATCH.Sheets(Header).Range(.Cells(R.iTOC, TOC_FORMNAME))
         Fsummary = .Cells(R.iTOC, TOC_FORMSUMMARY)
     End With
@@ -152,7 +152,7 @@ a:
 
 End Sub
 Sub setColWidth(ByVal file As String, ByVal SHEET As String, _
-                ByVal Col As Long, ByVal width As String)
+                ByVal Col As Long, ByVal Width As String)
 '
 ' - setColWidth(file, sheet, col, range, width) -
 '           устанавливает ширину i-й колонки листа
@@ -162,15 +162,15 @@ Sub setColWidth(ByVal file As String, ByVal SHEET As String, _
 ' 28.1.13 width теперь массив: ширина/формат
 '
     Dim widSplit() As String
-    widSplit = Split(width, "/")
+    widSplit = Split(Width, "/")
     If UBound(widSplit) >= 0 Then
-        width = widSplit(0)
+        Width = widSplit(0)
         If Application.DecimalSeparator = "." Then
-            width = Replace(width, ",", ".")        ' Американская машина - заменяем ',' на '.'
+            Width = Replace(Width, ",", ".")        ' Американская машина - заменяем ',' на '.'
         ElseIf Application.DecimalSeparator = "," Then
-            width = Replace(width, ".", ",")        ' Российская машина - заменяем '.' на ','
+            Width = Replace(Width, ".", ",")        ' Российская машина - заменяем '.' на ','
         End If
-        Workbooks(file).Sheets(SHEET).Columns(Col).ColumnWidth = CSng(width)
+        Workbooks(file).Sheets(SHEET).Columns(Col).ColumnWidth = CSng(Width)
     End If
 
 End Sub
@@ -269,7 +269,7 @@ Function AutoFilterReset(SheetN) As Integer
         .Rows("1:1").Select
         On Error Resume Next
         ActiveWindow.FreezePanes = True
-        Application.GoTo .Cells(R.EOL - 3, 1), True
+        Application.Goto .Cells(R.EOL - 3, 1), True
         On Error GoTo 0
     End With
 End Function
@@ -511,59 +511,59 @@ Function SheetExists(SheetName As String) As Boolean
     On Error Resume Next
     SheetExists = Not Sheets(SheetName) Is Nothing
 End Function
-Sub ClearSheet(SheetN, HDR_Range As Range)
-'
-' Полная очистка SheetN и перенос в него заголовка из листа Нeader.HDR_Range
-'   4.2.2012
-'  11.2.2012 - пересмотр спецификаций
-'  10.3.12 - изменение спецификации - параметр HRD_Range
-'  25.3.12 - листы NewContract и NewContractLnk
-'  17.4.12 - лист A_Acc - новые Организации
-'  18.4.12 - лист A_Dic - Словарь Организаций
-'  28.4.12 - лист NewOrderList - лист Новых Заказов
-'  13.5.12 - лист P_ADSKlink - новые связки Платеж - ADSK
-'  15.5.12 - лист SF_PA связей Платежей с Контрактами ADSK
-'   6.6.12 - Delete старый лист, создаем новый
-'  11.6.12 - листы A_Acc и AccntUpd
-'  12.6.12 - лист BTO_SHEET - лог для писем БТО
-
-    DB_MATCH.Sheets(SheetN).Activate
-    
-' -- стираем старый лист
-    On Error Resume Next
-    Application.DisplayAlerts = False
-    Sheets(SheetN).Delete
-    Application.DisplayAlerts = True
-    On Error GoTo 0
-    
-' -- создаем новый лист
-    Sheets.Add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
-    ActiveSheet.Name = SheetN
-    ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
-   
-    HDR_Range.Copy Sheets(SheetN).Cells(1, 1)   ' копируем шапку из Header
-    
-    Select Case SheetN
-    Case O_NewOpp:      EOL_NewOpp = 1
-    Case P_Paid:        EOL_NewPay = 1
-    Case NewContract:       EOL_NewContr = 1
-    Case NewContractLnk:    EOL_ContrLnk = 1
-    Case P_PaymentUpd:  EOL_PaymentUpd = 1
-    Case A_Dic:         EOL_DIC = 1
-    Case A_Acc:         EOL_AdAcc = 1
-    Case AccntUpd:      EOL_AccntUpd = 1
-    Case NewOrderList:  EOL_NewOrderList = 1
-    Case P_ADSKlink:    EOL_ADSKlnkPay = 1
-    Case SF_PA:         EOL_SFlnkADSK = 1
-    Case NewSN:         EOL_NewSN = 1
-    Case BTO_SHEET:     EOL_BTO = 1
-'    Case WP:        EOL_WP = 1
-    Case Else
-        MsgBox "ClearSheet: Очистка странного листа '" & SheetN & "'" _
-            , , "ERROR!"
-        Stop
-    End Select
-End Sub
+''''Sub ClearSheet(SheetN, HDR_Range As Range)
+'''''
+''''' Полная очистка SheetN и перенос в него заголовка из листа Нeader.HDR_Range
+'''''   4.2.2012
+'''''  11.2.2012 - пересмотр спецификаций
+'''''  10.3.12 - изменение спецификации - параметр HRD_Range
+'''''  25.3.12 - листы NewContract и NewContractLnk
+'''''  17.4.12 - лист A_Acc - новые Организации
+'''''  18.4.12 - лист A_Dic - Словарь Организаций
+'''''  28.4.12 - лист NewOrderList - лист Новых Заказов
+'''''  13.5.12 - лист P_ADSKlink - новые связки Платеж - ADSK
+'''''  15.5.12 - лист SF_PA связей Платежей с Контрактами ADSK
+'''''   6.6.12 - Delete старый лист, создаем новый
+'''''  11.6.12 - листы A_Acc и AccntUpd
+'''''  12.6.12 - лист BTO_SHEET - лог для писем БТО
+''''
+''''    DB_MATCH.Sheets(SheetN).Activate
+''''
+''''' -- стираем старый лист
+''''    On Error Resume Next
+''''    Application.DisplayAlerts = False
+''''    Sheets(SheetN).Delete
+''''    Application.DisplayAlerts = True
+''''    On Error GoTo 0
+''''
+''''' -- создаем новый лист
+''''    Sheets.Add After:=Sheets(Sheets.Count)  ' создаем новый лист в конце справа
+''''    ActiveSheet.Name = SheetN
+''''    ActiveSheet.Tab.Color = RGB(50, 153, 204)   ' Tab голубой
+''''
+''''    HDR_Range.Copy Sheets(SheetN).Cells(1, 1)   ' копируем шапку из Header
+''''
+''''    Select Case SheetN
+''''    Case O_NewOpp:      EOL_NewOpp = 1
+''''    Case P_Paid:        EOL_NewPay = 1
+''''    Case NewContract:       EOL_NewContr = 1
+''''    Case NewContractLnk:    EOL_ContrLnk = 1
+''''    Case P_PaymentUpd:  EOL_PaymentUpd = 1
+''''    Case A_Dic:         EOL_DIC = 1
+''''    Case A_Acc:         EOL_AdAcc = 1
+''''    Case AccntUpd:      EOL_AccntUpd = 1
+''''    Case NewOrderList:  EOL_NewOrderList = 1
+''''    Case P_ADSKlink:    EOL_ADSKlnkPay = 1
+''''    Case SF_PA:         EOL_SFlnkADSK = 1
+''''    Case NewSN:         EOL_NewSN = 1
+''''    Case BTO_SHEET:     EOL_BTO = 1
+'''''    Case WP:        EOL_WP = 1
+''''    Case Else
+''''        MsgBox "ClearSheet: Очистка странного листа '" & SheetN & "'" _
+''''            , , "ERROR!"
+''''        Stop
+''''    End Select
+''''End Sub
 Sub SheetSort(SheetN, Col, Optional AscOrder As String = "Ascending")
 '
 ' -/S SheetSort(SheetN, Col,[AscOrder]) - Сортируем лист SheetN по колонке Col
@@ -609,20 +609,20 @@ Sub SheetDedup(SheetN, Col)
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
 
-    Dim i, prev, x, EOL_SheetN As Integer
+    Dim i, prev, X, EOL_SheetN As Integer
     
     Call SheetSort(SheetN, Col)
     EOL_SheetN = EOL(SheetN)
     
     prev = "": i = 2
     Do
-        x = Sheets(SheetN).Cells(i, Col)
-        If x = prev Then
+        X = Sheets(SheetN).Cells(i, Col)
+        If X = prev Then
             Rows(i).Delete
             EOL_SheetN = EOL_SheetN - 1
         Else
             i = i + 1
-            prev = x
+            prev = X
         End If
     Loop While i < EOL_SheetN
 End Sub
@@ -634,7 +634,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '   23.11.12 - отладка в match2.0
 
     Dim i As Integer, EOL_SheetN As Integer
-    Dim prev As String, x As String
+    Dim prev As String, X As String
     Dim PrevAcc As String, NewAcc As String
     Dim PrevSFid As String, NewSFid As String
     
@@ -644,8 +644,8 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
     prev = "": i = 2
     With Sheets(SheetN)
         Do
-            x = .Cells(i, ColSort)
-            If x = prev Then
+            X = .Cells(i, ColSort)
+            If X = prev Then
                 PrevAcc = .Cells(i - 1, СolAcc)
                 PrevSFid = .Cells(i - 1, ColIdSF)
                 NewAcc = .Cells(i, СolAcc)
@@ -666,7 +666,7 @@ Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
                 EOL_SheetN = EOL_SheetN - 1
             Else
                 i = i + 1
-                prev = x
+                prev = X
             End If
         Loop While i < EOL_SheetN
     End With
@@ -871,15 +871,15 @@ Function IsMatchList(W, DicList) As Boolean
     IsMatchList = False
     If W = "" Or DicList = "" Then Exit Function
     
-    Dim x() As String
+    Dim X() As String
     Dim i As Integer
     Dim lW As String
     
     lW = LCase$(W)
-    x = Split(DicList, ",")
+    X = Split(DicList, ",")
     
-    For i = LBound(x) To UBound(x)
-        If InStr(lW, LCase$(x(i))) <> 0 Then
+    For i = LBound(X) To UBound(X)
+        If InStr(lW, LCase$(X(i))) <> 0 Then
             IsMatchList = True
             Exit Function
         End If

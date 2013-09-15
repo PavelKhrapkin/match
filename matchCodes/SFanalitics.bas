@@ -25,7 +25,54 @@ Attribute VB_Name = "SFanalitics"
 ' - PayIdByK(PayK)  - получение Id SF по коду Платежа
 
 Option Explicit
+Sub DicAccSyn(ByVal Dictionary As String)
+'
+' S DicAccSyn(Dictionary)   - построение словаря синонимоов организаций DicAccSynonims
+'
+' 15.9.13
 
+    Const SFACC_DELIMETR = "<ИЛИ>"
+    Dim DicTOC As TOCmatch, R As TOCmatch, i As Long, Str As String, Part() As String
+    
+    StepIn
+
+    R = GetRep(ActiveSheet.Name)
+    NewSheet Dictionary
+'    DicTOC = GetRep(Dictionary)
+    
+    With DB_SFDC.Sheets(R.SheetN)
+        For i = 1 To R.EOL
+            Progress i / R.EOL
+            Str = .Cells(i, 3)
+            Do
+                Part = Split(Str, SFACC_DELIMETR)
+                WrNewSheet Dictionary, R.Name, i, Trim(Part(0))
+                If UBound(Part) < 1 Then Exit Do
+                Str = Trim(Part(1))
+            Loop
+        Next i
+    End With
+End Sub
+Sub testDicAccSyn()
+'
+' T testDicAccSyn
+'
+    Dim Str As String, Part() As String, i As Long
+    Const Dictionary = DIC_ACC_SYNONIMS
+    Const SFACC_DELIMETR = "<ИЛИ>"
+    
+''    NewSheet Dictionary
+            Str = "СП ЗАО ""ИВС"" <ИЛИ> ЗАО ""РИВС-проект"""
+
+            Do
+                Part = Split(Str, SFACC_DELIMETR)
+''                WrNewSheet Dictionary, R.Name, i, Trim(Part(0))
+                If UBound(Part) < 1 Then Exit Do
+                Str = Trim(Part(1))
+            Loop
+
+
+End Sub
 ''''Sub SFaccSplit(ByVal Col As Long)
 '''''
 ''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
