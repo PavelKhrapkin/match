@@ -22,7 +22,8 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 '
 ' 9.9.13
 ' 12.9.13 - пишем DOG_UPDATE
-' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
+' 15.9.13 - использование PAYCANONAME_COL вместо PAYACC_COL
+'         - выходи из цикла по строкам Платежей по первому оплаченому Платежу
 
     StepIn
     
@@ -57,8 +58,8 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         For i = iPayLine To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             IsErr = False
-            If .Cells(i, PAYINSF_COL) = 1 Then
-                GoTo NextRow
+            If .Cells(i, PAYINSF_COL) = 1 Then Exit For
+'' 15.9.13                GoTo NextRow
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
 '!!'                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
 '!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYCANONAME_COL), IsErr)
@@ -80,7 +81,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
                 End If
                 OppId = DB_SFDC.Sheets(SFD).Cells(CLng(sLine), SFD_OPPID_COL)
                 If OppId = "" Then
-'--- Ищем Проект с кодом договорав названии
+'--- Ищем Проект с кодом договора в названии
                     Dim Opps() As Long
                     Opps = OppSelect(i)
                     If Opps(0) = 1 Then
@@ -111,7 +112,7 @@ NextOpp:            FromN = FromN + 1
                 Loop
                 GoTo ToSF
             Else
-'!!'                WP_Adapt HDR_WP, i
+                WP_Adapt HDR_WP, i
                 GoTo NextRow
             End If
 ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
