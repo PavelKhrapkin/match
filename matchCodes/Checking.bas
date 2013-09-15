@@ -13,8 +13,10 @@ Attribute VB_Name = "Checking"
 ' S  CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат Документов
 ' -  RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален
 '                         иначе выводит сообщение о необходимости перезагрузки
+' S CheckProc0(NewProcResult)    - проверка, что вспомогательный Процесс не нашел
+'                                  новых "автоматических" записей в SF
 '
-' 14.9.13
+' 15.9.13
 ' --- история модуля ----
 '   19.2.2012
 '   24.2.2012 - кол-во ошибок по Продавцу в We
@@ -243,6 +245,18 @@ Sub CheckSheet(SheetN, R, C, txt)
         Cells(R, C).Activate
         MsgBox "Неправильный лист " & SheetN, vbCritical, "ERROR!"
         Stop
+    End If
+End Sub
+Sub CheckProc0(NewProcResult As String)
+'
+' S CheckProc0(NewProcResult)   - проверка, что вспомогательный Процесс не нашел
+'                                 новых "автоматических" записей в SF
+' 1/10/12
+' 15.9.13 - перенос в модуль Checking.bas
+
+    If NewProcResult <> "0" Then
+        ErrMsg FATAL_ERR, PublicProcName & ": CheckProc0> в результате не '0'"
+        End
     End If
 End Sub
 Sub CheckGoodType()
