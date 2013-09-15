@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 7.9.13 П.Л.Храпкин, А.Пасс
+' 15.9.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -19,6 +19,7 @@ Attribute VB_Name = "ProcessEngine"
 ' - ToProcEnd(iProc)    - позиционирование на <*>ProcEnd таблицы Процессов
 ' S ProcReset(Proc)     - сброс и новый запуск Процесса Proc
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
+' - StepOut()           - завершение выполнения Шага с записью в TOCmatch
 ' S MergeReps()         - слияние "полных" отчетов в суффиксом "_OLD" и "Update"
 
 Option Explicit
@@ -345,6 +346,7 @@ Sub ProcReset(Proc As String, _
 ' S ProcReset(Proc,[ProcToReset, StepToReset, Col]) - сброс и новый запуск Процесса Proc
 ' 1.10.12
 ' 11.11.12 - очистка ячейки в Шаге StepToReset в колонке Col
+' 15.09.13 - исключаем зацикливание при ProcReset самого себя
 
     Dim i As Long
     
@@ -358,24 +360,18 @@ Sub ProcReset(Proc As String, _
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Do While .Cells(i, PROC_STEP_COL) <> PROC_END
             i = i + 1
-            .Cells(i, PROC_STEPDONE_COL) = ""
+            If .Cells(i, PROC_STEP_COL) = "ProcReset" And _
+                    .Cells(i, PROC_PAR1_COL) = Proc Then
+               .Cells(i, PROC_STEPDONE_COL) = "1"
+            Else
+                .Cells(i, PROC_STEPDONE_COL) = ""
+            End If
             .Cells(i, PROC_TIME_COL) = ""
             .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Loop
     
         ProcStart Proc
     End With
-End Sub
-Sub CheckProc0(NewProcResult As String)
-'
-' S CheckProc0(NewProcResult)   - проверка, что вспомогательный Процесс не нашел
-'                                 новых "автоматических" записей в SF
-' 1/10/12
-
-    If NewProcResult <> "0" Then
-        ErrMsg FATAL_ERR, PublicProcName & ": CheckProc0> в результате не '0'"
-        End
-    End If
 End Sub
 Sub MergeReps()
 '
@@ -403,7 +399,7 @@ Sub MergeReps()
     RoldEOL = EOL(OldRepName) - GetReslines(RepName)
     
 '-- куда вставлять - чтение TOC по НОВОМУ отчету
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
         FrDateRow = .Cells(R.iTOC, TOC_FRDATEROW_COL)
         ToDateRow = .Cells(R.iTOC, TOC_TODATEROW_COL)
         Col = R.MyCol + .Cells(R.iTOC, TOC_DATECOL_COL)
@@ -452,7 +448,7 @@ InsRow: If FrRow = 0 Then FrRow = ToRow
     End With
     
 '---- переписываем FrDate и ToDate в TOCmatch
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
         .Cells(R.iTOC, TOC_FRDATE_COL) = FrDate
         .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
     End With
