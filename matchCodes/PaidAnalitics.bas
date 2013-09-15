@@ -23,7 +23,8 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 ' 9.9.13
 ' 12.9.13 - пишем DOG_UPDATE
 ' 15.9.13 - использование PAYCANONAME_COL вместо PAYACC_COL
-'         - выходи из цикла по строкам Платежей по первому оплаченому Платежу
+'         - выход из цикла по строкам Платежей по первому оплаченому Платежу
+'         - сортировка листа Платежей в этой процедуре, а не Шагами Процесса
 
     StepIn
     
@@ -52,14 +53,16 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         NewSheet NEW_OPP
         NewSheet NEW_CONTRACT
         NewSheet DOG_UPDATE
+        SheetSort PAY_SHEET, PAYRUB_COL, "Desending"
+        SheetSort PAY_SHEET, PAYINSF_COL, "Desending"
     End If
 
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For i = iPayLine To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             IsErr = False
-            If .Cells(i, PAYINSF_COL) = 1 Then Exit For
-'' 15.9.13                GoTo NextRow
+            If .Cells(i, PAYINSF_COL) = 1 Then
+                Exit For
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
 '!!'                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
 '!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYCANONAME_COL), IsErr)
@@ -93,7 +96,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
                     End If
                     GoTo NextRow
                 End If
-            ElseIf .Cells(i, PAYGOODTYPE_COL) = BALKY_TYPE Then
+            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then
                 Dim BalkyExists As Boolean: BalkyExists = False
                 FromN = 2                   '--- подбираем подходящий Проект Balky
                 Do While FromN <> 0
