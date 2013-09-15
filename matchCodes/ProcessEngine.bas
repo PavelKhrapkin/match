@@ -244,6 +244,7 @@ Sub StepOut(Step As String, iProc)
 '   9.11.12 - имя Документа пустое?
 '  11.08.13 - Записываем EOL обрабатываемого документа в TOCmatch
 '  26.08.13 - Если Шаг менял RepTOC.EOL, нужно переписать TOC до проверки Штампа
+'  15.09.13 - исключаем зацикливание при ProcReset самого себя
 
     Dim Proc As String, Doc As String, i As Long
     
@@ -256,7 +257,10 @@ Sub StepOut(Step As String, iProc)
     With DB_MATCH.Sheets(Process)
         Application.StatusBar = False
         .Activate
-        .Cells(iProc, PROC_STEPDONE_COL) = "1"  ' Done = "1" - Шаг выполнен
+        If Step <> "ProcReset" _
+                Or .Cells(iProc, PROC_PAR1_COL) <> .Cells(1, PROCESS_NAME_COL) Then
+            .Cells(iProc, PROC_STEPDONE_COL) = "1"  ' Done = "1" - Шаг выполнен
+        End If
         .Cells(iProc, PROC_TIME_COL) = Now
         .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 35
         .Cells(1, STEP_NAME_COL) = ""
@@ -348,7 +352,8 @@ Sub ProcReset(Proc As String, _
 ' 11.11.12 - очистка ячейки в Шаге StepToReset в колонке Col
 ' 15.09.13 - исключаем зацикливание при ProcReset самого себя
 
-    Dim i As Long
+    Dim i As Long, IsMe As Boolean
+    IsMe = False
     
     GetRep Process
     With DB_MATCH.Sheets(Process)
@@ -360,17 +365,13 @@ Sub ProcReset(Proc As String, _
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
         Do While .Cells(i, PROC_STEP_COL) <> PROC_END
             i = i + 1
-            If .Cells(i, PROC_STEP_COL) = "ProcReset" And _
-                    .Cells(i, PROC_PAR1_COL) = Proc Then
-               .Cells(i, PROC_STEPDONE_COL) = "1"
-            Else
-                .Cells(i, PROC_STEPDONE_COL) = ""
-            End If
+            .Cells(i, PROC_STEPDONE_COL) = ""
             .Cells(i, PROC_TIME_COL) = ""
             .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+            If .Cells(i, PROC_STEP_COL) = "ProcReset" _
+                    And .Cells(i, PROC_PAR1_COL) = Proc Then IsMe = True
         Loop
-    
-        ProcStart Proc
+        If Not IsMe Then ProcStart Proc
     End With
 End Sub
 Sub MergeReps()
