@@ -251,7 +251,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                     nOpp = OppSelect(.Cells(8, 4))
                     QtyOpp = nOpp(0)
                     If QtyOpp = 0 Then GoTo StripEnd
-                    iLine = nOpp(iSelect)   ' вывод Проектов по массиву индексов
+                    iLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
                 End If
                 If .Cells(iRow, 1) <> "" Then
                     R = GetRep(.Cells(iRow, 1))
@@ -262,7 +262,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow + iSelect)
                     
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
@@ -411,7 +411,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
     R = GetRep(ActiveSheet.Name)
     
     Set FF = DB_MATCH.Sheets(Header).Range( _
-        DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME))
+        DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME))
     If FromDoc = "" Then
         R_From = R
     Else
@@ -460,7 +460,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
                             ThisProcCol = Col + 1
                             If FF(PTRN_COLS, Col) = PublicProcName Then GoTo NextCol
                             ErrMsg FATAL_ERR, "Ошибка в Шаблоне '" _
-                                & DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
+                                & DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
                                 & " в Col=" & Col & vbCrLf & "Ожидалось имя Процесса '" _
                                 & PublicProcName & "', а не '" & FF(PTRN_COLS, Col) & "'"
                             End
@@ -505,7 +505,8 @@ NextRow:
 End Sub
 Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As String, _
     ByRef IsErr As Boolean, Optional ByVal EOL_Doc As Long, _
-    Optional ByVal iRow As Long, Optional ByVal iCol As Long) As String
+    Optional ByVal iRow As Long, Optional ByVal iCol As Long, _
+    Optional ByVal PutToRow As Long) As String
 '
 ' - Adater(Request, X, F_rqst, IsErr) - обрабатывает X в Адаптере "Request"
 '    с внешними данными в Документе F_rqst. IsErr=True - ошибка в Адаптере
@@ -532,6 +533,7 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
 ' 1.9.13 - все параметры ByVal, кроме возвращаемого ByRef IsErr
 ' 9.9.13 - добавлены Адаптеры TypOpp, LineOpp, KindOpp
 '14.9.13 - добавлен Адаптер AltFetch: Y=X или его альтернатива из Fetch, если есть
+'16.9.13 - добавлен Optional параметр PutToRow
 
     Dim FF() As String, tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -724,7 +726,7 @@ AdapterSelect:
         Adapter = TypOpp(X)
     Case "CopyToVal", "CopyFrVal", "OppType", "OppFilter", _
             "SetOppButton", "NewOppNameFromWP":
-        Adapter = AdapterWP(AdapterName, X, Par)
+        Adapter = AdapterWP(AdapterName, X, Par, iRow, iCol, PutToRow)
     Case "IsBalky":
         Call ArrayZ(Z, PAY_SHEET, iRow, Par)
         If Z(0) = "" Or Z(1) = "1" Or Z(2) <> "Расходники" Then
@@ -771,44 +773,35 @@ AdapterFailure:
 SkipLine:
     IsErr = True
 End Function
-Function AdapterWP(AdapterName, X, Par) As String
+Function AdapterWP(AdapterName, X, Par, _
+    ByVal iRow As Long, ByVal iCol As Long, ByVal PutToRow As Long) As String
 '
 ' - AdapterWP() - обработка Адаптеров для Шаблонов WP
 ' 5.1.2013
-' 4.9.13 - дописываем
+' 16.9.13 - дописываем
 
     Dim i As Long, Z(10) As String
-
-    ''??'' WP_PAYMENT_LINE =?= iRow
-    
+     
     Set DB_TMP = FileOpen(F_TMP)
     With DB_TMP.Sheets(WP)
     
         Select Case AdapterName
-'''        Case "CopyToVal":
-'''            Set DB_TMP = FileOpen(F_TMP)
-'''            With DB_TMP.Sheets(WP)
-'''                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
-'''               .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
-'''            End With
-'''        Case "CopyFrVal":
-'''            Set DB_TMP = FileOpen(F_TMP)
-'''            With DB_TMP.Sheets(WP)
-'''                WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1
-'''                .Cells(WP_Row, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
-'''            End With
-'''        Case "OppType":             ' инициализация типа Проекта
-'''        ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
-'''            If X = "Оборудование" Then X = "Железо"
-'''            If X = "Autodesk" Then
-'''        ''  !          If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
-'''                If IsSubscription(Z(0), X) Then
-'''                    X = "Подписка"
-'''                Else
-'''                    X = "Лицензии"
-'''                End If              '!' не рассматриваются Работы!!
-'''            End If
-'''            AdapterWP = X
+        Case "CopyToVal":
+            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(PutToRow, iCol)
+        Case "CopyFrVal":
+            .Cells(PutToRow, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
+        Case "OppType":             ' инициализация типа Проекта
+        ''''        Call ArrayZ(Z, PAY_SHEET, iRow, Par)
+            If X = "Оборудование" Then X = "Железо"
+            If X = "Autodesk" Then
+        ''  !          If IsSubscription(.Cells(WP_PAYMENT_LINE, CLng(Par(0))), X) Then
+                If IsSubscription(Z(0), X) Then
+                    X = "Подписка"
+                Else
+                    X = "Лицензии"
+                End If              '!' не рассматриваются Работы!!
+            End If
+            AdapterWP = X
         Case "OppFilter":
             Const SEL_REF = 20
         ' проверить есть ли Проект связанный с Договором
