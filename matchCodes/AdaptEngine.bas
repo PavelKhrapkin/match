@@ -198,8 +198,9 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
-    Dim PtrnType As String                      ' поле Тип Шаблона
+    Dim WP_Row As Long                          ' номер строки WP, куда выводится Y
     Dim PutToRow As Long, putToCol As Long
+    Dim PtrnType As String                      ' поле Тип Шаблона
     Dim X As String                             ' параметр Адаптера
     Dim Rqst As String                          ' строка - обращение к Адаптеру
     Dim F_rqst As String                        '
@@ -238,7 +239,6 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!WP_Adapt_Continue"
 '---- задаем ширину и заголовки вставленных колонок
         For i = 1 To FF.Columns.Count
-'            If Not TraceWidth Then .Columns(i).ColumnWidth = FF.Cells(3, i)
             If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, FF.Cells(3, i)
         Next i
         
@@ -246,6 +246,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
             iSelect = 0: QtyOpp = 0
+            WP_Row = iRow - 1 + PTRN_VALUE + iSelect
             PtrnType = .Cells(iRow, 2)
             If PtrnType = PTRN_SELECT Then
                 nOpp = OppSelect(.Cells(8, 4))
@@ -254,7 +255,6 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
             End If
             Do
                 If QtyOpp > 0 Then iLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
-
                 If .Cells(iRow, 1) <> "" Then
                     R = GetRep(.Cells(iRow, 1))
                     Workbooks(R.RepFile).Sheets(R.SheetN).Activate
@@ -265,12 +265,14 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
                     Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow + iSelect)
+''''                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, WP_Row)
                     
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
                         Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-                        fmtCell DB_TMP, WP, Width, Y, PutToRow + iSelect, putToCol
+''''                        fmtCell DB_TMP, WP, Width, Y, PutToRow + iSelect, putToCol
+                        fmtCell DB_TMP, WP, Width, Y, WP_Row, putToCol
                     End If
                 Next iCol
                 iSelect = iSelect + 1
