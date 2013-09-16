@@ -29,7 +29,7 @@ Attribute VB_Name = "AdaptEngine"
 '         используется для Lookup в Документе SFD: его значение находится в строке 18, а
 '         значение в колонке 2 найденной строки передается Адаптеру как входной аргумент.
 '
-' 14.09.13 П.Л.Храпкин, А.Пасс
+' 17.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -192,6 +192,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 '   19.01.13 - вызвана setColWidth
 '   03.09.13 - смена имени с xAdapt на WP_Adapt
 '   12.09.13 - OppSelect interface changed
+'   17.09.13 - Revision
 
     Const WP_PROTOTYPE = "WP_Prototype"
 
@@ -278,21 +279,17 @@ StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             .Rows(iRow - 1 + PTRN_ADAPT).Hidden = True
             .Rows(iRow - 1 + PTRN_WIDTH).Hidden = True
             .Rows(iRow - 1 + PTRN_FETCH).Hidden = True
-            If PtrnType = PTRN_SELECT And QtyOpp = 0 Then
+            If PtrnType = PTRN_SELECT Then
                 .Rows(iRow + 1).Hidden = True
-                .Cells(iRow + 1 + PTRN_LNS, 11) = "В Salesforce нет подходящих Проектов. " _
+                If QtyOpp = 0 Then
+                .Cells(iRow + 1 + PTRN_LNS, 11) = _
+                    "В Salesforce нет подходящих Проектов. " _
                     & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
                 .Rows(iRow + 1 + PTRN_LNS).Interior.Color = rgbRed
             End If
         Next iRow
     End With
     DB_TMP.Sheets(WP).Activate
-    
-    
-'''    If iSelect = 2 And Y = "-1" Then
-'''       WP_Adapt_Continue "NewOpp", 1
-'''    End If
-
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
@@ -1191,17 +1188,19 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 ' 19.12.12 - изменен разделитель троек в Dbl в testfmtCell()
 ' 17.12.12 - добавлен тест целого формата
 ' 12.9.13 - увеличено количество триад для Dbl
+' 16.9.13 - обработка форматов 0% и Dbl
 
     If UBound(fmt) > 0 Then
         If fmt(1) = "Dbl" Then
-'                                Dim YY As Double
-'                                YY = Y
-'                                .Cells(PutToRow, PutToCol) = YY
+            Value = CDbl(Value)
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "# ### ##0.00"
         ElseIf fmt(1) = "Date" Then
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
         ElseIf fmt(1) = "Txt" Then
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "@"
+       ElseIf fmt(1) = "0%" Then
+            Value = CDbl(Value) / 100
+            db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "0%"
         Else
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = fmt(1)
         End If
