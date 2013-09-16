@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   15.9.2013
+'   16.9.2013
 
 Option Explicit
 Dim t0 As Single, t1 As Single, t2 As Single
@@ -25,6 +25,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 ' 15.9.13 - использование PAYCANONAME_COL вместо PAYACC_COL
 '         - выход из цикла по строкам Платежей по первому оплаченому Платежу
 '         - сортировка листа Платежей в этой процедуре, а не Шагами Процесса
+' 16.9.13 - сортировка Sfopp по Close Date
 
     StepIn
     
@@ -53,8 +54,9 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         NewSheet NEW_OPP
         NewSheet NEW_CONTRACT
         NewSheet DOG_UPDATE
-        SheetSort PAY_SHEET, PAYRUB_COL, "Desending"
-        SheetSort PAY_SHEET, PAYINSF_COL, "Desending"
+        SheetSort PAY_SHEET, PAYRUB_COL, "Descending"
+        SheetSort PAY_SHEET, PAYINSF_COL, "Descending"
+        SheetSort SFopp, SFOPP_CLOSEDATE_COL
     End If
 
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
@@ -145,7 +147,7 @@ Function OppSelect(ByVal iPaid As Long) As Long()
 '                                 по значению  iPaid - номеру строки Платежа.
 '                                 Возвращает массив номеров строк SFopp найденных проектов.
 ' 6.9.13
-' 11.9.13 - возвращает массим индексов - номеров строк SFopp,
+' 11.9.13 - возвращает массив индексов - номеров строк SFopp,
 '           причем в элементе (0) число найденных проектов
 ' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
 
