@@ -246,14 +246,15 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
             iSelect = 0: QtyOpp = 0
+            PtrnType = .Cells(iRow, 2)
+            If PtrnType = PTRN_SELECT Then
+                nOpp = OppSelect(.Cells(8, 4))
+                QtyOpp = nOpp(0)
+                If QtyOpp = 0 Then GoTo StripEnd
+            End If
             Do
-                PtrnType = .Cells(iRow, 2)
-                If PtrnType = PTRN_SELECT Then
-                    nOpp = OppSelect(.Cells(8, 4))
-                    QtyOpp = nOpp(0)
-                    If QtyOpp = 0 Then GoTo StripEnd
-                    iLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
-                End If
+                If QtyOpp > 0 Then iLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
+
                 If .Cells(iRow, 1) <> "" Then
                     R = GetRep(.Cells(iRow, 1))
                     Workbooks(R.RepFile).Sheets(R.SheetN).Activate
@@ -282,10 +283,11 @@ StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
             If PtrnType = PTRN_SELECT Then
                 .Rows(iRow + 1).Hidden = True
                 If QtyOpp = 0 Then
-                .Cells(iRow + 1 + PTRN_LNS, 11) = _
-                    "В Salesforce нет подходящих Проектов. " _
-                    & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
-                .Rows(iRow + 1 + PTRN_LNS).Interior.Color = rgbRed
+                    .Cells(iRow + 1 + PTRN_LNS, 11) = _
+                        "В Salesforce нет подходящих Проектов. " _
+                        & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
+                    .Rows(iRow + 1 + PTRN_LNS).Interior.Color = rgbRed
+                End If
             End If
         Next iRow
     End With
