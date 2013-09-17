@@ -5,7 +5,7 @@ Attribute VB_Name = "SFanalitics"
 '       Проектов    = Opportunity   = Opp   Отчет SFopp или SF
 '       Платежей -- для занесенных в SF --  Отчет SF
 '       Договоров   = Contract      = Contr Отчет SFD
-'   29.8.2013
+'   18.9.2013
 '
 '''''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
 ' - AccId(Account)              - Id SF Организации по имени 1С
@@ -25,33 +25,42 @@ Attribute VB_Name = "SFanalitics"
 ' - PayIdByK(PayK)  - получение Id SF по коду Платежа
 
 Option Explicit
-Sub DicAccSyn(ByVal Dictionary As String)
+Sub DicAccSyn()
 '
-' S DicAccSyn(Dictionary)   - построение словаря синонимоов организаций DicAccSynonims
+' S DicAccSyn()   - построение словаря синонимов организаций DicAccSynonims
 '
-' 15.9.13
+' 18.9.13
 
     Const SFACC_DELIMETR = "<ИЛИ>"
-    Dim DicTOC As TOCmatch, R As TOCmatch, i As Long, Str As String, Part() As String
+    Const SFACC_CANONIC_COL = 3
+    
+    Dim R As TOCmatch, i As Long, Str As String, Part() As String
     
     StepIn
 
-    R = GetRep(ActiveSheet.Name)
-    NewSheet Dictionary
-'    DicTOC = GetRep(Dictionary)
+    R = GetRep("SF_DicAccSyn")
+    NewSheet DIC_ACC_SYNONIMS
+    With DB_TMP
+        .Sheets(DIC_ACC_SYNONIMS).Move After:=.Sheets("DicAcc")
+    End With
     
     With DB_SFDC.Sheets(R.SheetN)
-        For i = 1 To R.EOL
+        For i = 2 To R.EOL
             Progress i / R.EOL
-            Str = .Cells(i, 3)
+            Str = .Cells(i, SFACC_CANONIC_COL)
             Do
                 Part = Split(Str, SFACC_DELIMETR)
-                WrNewSheet Dictionary, R.Name, i, Trim(Part(0))
+                WrNewSheet DIC_ACC_SYNONIMS, R.Name, i, Trim(Part(0))
                 If UBound(Part) < 1 Then Exit Do
                 Str = Trim(Part(1))
             Loop
         Next i
     End With
+    R = GetRep(DIC_ACC_SYNONIMS)
+    R.Dat = Now: R.Made = "DicAccSyn"
+    DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_CREATED_COL) = R.Dat 'WrTOC это не пишет
+    RepTOC = R
+    WrTOC DIC_ACC_SYNONIMS
 End Sub
 Sub testDicAccSyn()
 '
