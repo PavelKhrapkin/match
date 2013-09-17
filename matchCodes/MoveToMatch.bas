@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 27.8.2013
+' П.Л.Храпкин 17.9.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -30,6 +30,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 23.8.13 - SheetSort загружаемого документа, если это часть полного
 ' 24.8.13 - упразднил InSheetN в TOC. Теперь Документ всегда должен быть в листе 1
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC
+' 17.9.13 - избавился от Workbooks MyDB, вместо этого GetRep
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -46,11 +47,11 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     RepName = ActiveSheet.Name
     Lines = EOL(RepName, Workbooks(NewRep))
     
-    LocalTOC = GetRep(TOC)
+    LocalTOC = GetRep(ToC)
     
     IsSF = CheckStamp(6, NewRep, Lines)
 
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
         For i = TOCrepLines To LocalTOC.EOL
             If .Cells(i, TOC_REPNAME_COL) = "" Then GoTo NxDoc
             InSheetN = 1
@@ -64,20 +65,19 @@ NxDoc:  Next i
         
 '----- новый отчет распознан. Заменяем прежний отчет новым -----
 RepNameHandle:
-    Dim RepFile As String
+    Dim RepFileName As String
     Dim RepLoader As String
     Dim Created As Date
-    Dim MyDB As Workbook
     Dim TabColor
     
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
     
         If NewRep = .Cells(i, TOC_REPFILE_COL) Then
             MS "Это файл базы данных match! Его не надо загружать."
             End
         End If
         RepName = .Cells(i, TOC_REPNAME_COL)
-        RepFile = .Cells(i, TOC_REPFILE_COL)
+        RepFileName = .Cells(i, TOC_REPFILE_COL)
          'Lines = EOL - пятка
         Lines = Lines - GetReslines(RepName, True, .Cells(i, TOC_RESLINES_COL))
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
@@ -99,10 +99,12 @@ RepNameHandle:
         
     End With
     
-    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
+'    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
+    Dim MyDB As TOCmatch
+    MyDB = GetRep(RepName)
     
     With Workbooks(NewRep).Sheets(InSheetN)
-        If RepFile = F_SFDC Then
+        If RepFileName = F_SFDC Then
             Dim tst As String
             tst = .Cells(Lines + 5, 1)
             Created = GetDate(Right(.Cells(Lines + 5, 1), 16))
@@ -139,18 +141,18 @@ RepNameHandle:
             End If
         ElseIf RepName = Acc1C Then
             Created = GetDate(Right$(.Cells(1, 1), 8))
-        ElseIf RepFile = F_STOCK Then
-            Created = GetDate(MyDB.BuiltinDocumentProperties(12))   'дата последнего Save
+        ElseIf RepFileName = F_STOCK Then
+            Created = Workbooks(NewRep).BuiltinDocumentProperties(12)   'дата последнего Save
         Else
             Created = "0:0"
             NewFrDate = "0:0": NewToDate = "0:0"
         End If
         .UsedRange.Rows.RowHeight = 15
         .Name = "TMP"
-        .Move Before:=MyDB.Sheets(RepName)
+        .Move Before:=Workbooks(MyDB.RepFile).Sheets(RepName)
     End With
     
-    With MyDB
+    With Workbooks(MyDB.RepFile)
         .Activate
   '-- если частичное обновление - прежний отчет не стираем, а переименовываем
   '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
@@ -171,7 +173,7 @@ DelRep: If SheetExists(RepName) Then
     End With
     
 '------------- match TOC и Log write и Save --------------
-    With DB_MATCH.Sheets(TOC)
+    With DB_MATCH.Sheets(ToC)
         .Activate
         .Cells(i, TOC_DATE_COL) = Now
         .Cells(i, TOC_EOL_COL) = Lines
@@ -216,7 +218,7 @@ DelRep: If SheetExists(RepName) Then
     Else
         PartStatus = PartStatus & "ПОЛНЫЙ документ."
     End If
-    LogWr "MoveToMatch: В файл '" & RepFile & "' загружен новый отчет '" _
+    LogWr "MoveToMatch: В файл '" & RepFileName & "' загружен новый отчет '" _
         & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld _
         & PartStatus
         
@@ -224,16 +226,16 @@ DelRep: If SheetExists(RepName) Then
     If RepLoader <> "" Then
         ProcStart RepLoader
     End If
-    MyDB.Save
+    Workbooks(MyDB.RepFile).Save
     Exit Sub
-    Dim Msg As String
-FatalInFile:    Msg = "Не найден Штамп": GoTo FatMsg
-FatalFrDate:    Msg = "FrDate": GoTo FatErMsg
-FatalToDate:    Msg = "ToDate"
-FatErMsg:       Msg = " не дата в ячейке " & Msg & "='" & DateCell & "'": GoTo FatMsg
-FatalFrToDate:  Msg = " странные даты входного документа '" & NewRep _
+    Dim msg As String
+FatalInFile:    msg = "Не найден Штамп": GoTo FatMsg
+FatalFrDate:    msg = "FrDate": GoTo FatErMsg
+FatalToDate:    msg = "ToDate"
+FatErMsg:       msg = " не дата в ячейке " & msg & "='" & DateCell & "'": GoTo FatMsg
+FatalFrToDate:  msg = " странные даты входного документа '" & NewRep _
                     & "': NewFrDate=" & NewFrDate & " < " & "NewToDate=" & NewToDate
-FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & Msg & vbCrLf & "Входной документ " & NewRep
+FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & msg & vbCrLf & "Входной документ " & NewRep
 End Sub
 Sub StepReset(iStep)
 '
