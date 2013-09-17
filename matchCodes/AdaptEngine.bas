@@ -171,7 +171,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     End With
     If Not IsErr Then
 '!        RepTOC = Rnew
-        WrTOC SheetNew
+'!!        WrTOC SheetNew
     End If
 End Sub
 Sub testWP_Adapt()
@@ -261,18 +261,23 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                 End If
                 For iCol = 5 To .UsedRange.Columns.Count
                     X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
+                    
+        WP_Row = iRow - 1 + PTRN_VALUE
+        If PtrnType = PTRN_SELECT Then
+            WP_Row = iRow + PTRN_LNS + .Cells(iRow + 3, 3) - 1
+        End If
+        PutToRow = WP_Row + iSelect
+                    
                     Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
                     F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
                     
-                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow + iSelect)
-''''                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, WP_Row)
+                    Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow)
                     
                     X = .Cells(iRow + PTRN_COLS - 1, iCol)
                     If X = "-1" Then Exit For
                     If Not IsErr And X <> "" Then
                         Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-''''                        fmtCell DB_TMP, WP, Width, Y, PutToRow + iSelect, putToCol
-                        fmtCell DB_TMP, WP, Width, Y, WP_Row, putToCol
+                        fmtCell DB_TMP, WP, Width, Y, PutToRow, putToCol
                     End If
                 Next iCol
                 iSelect = iSelect + 1
@@ -412,7 +417,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
     R = GetRep(ActiveSheet.Name)
     
     Set FF = DB_MATCH.Sheets(Header).Range( _
-        DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME))
+        DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME))
     If FromDoc = "" Then
         R_From = R
     Else
@@ -461,7 +466,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
                             ThisProcCol = Col + 1
                             If FF(PTRN_COLS, Col) = PublicProcName Then GoTo NextCol
                             ErrMsg FATAL_ERR, "Ошибка в Шаблоне '" _
-                                & DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
+                                & DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
                                 & " в Col=" & Col & vbCrLf & "Ожидалось имя Процесса '" _
                                 & PublicProcName & "', а не '" & FF(PTRN_COLS, Col) & "'"
                             End
@@ -973,10 +978,10 @@ Err_iLine:      ErrMsg FATAL_ERR, ErrStr & "странный iLine=" & iLine
 Err_iCol:       ErrMsg FATAL_ERR, ErrStr & "странный iCol=" & iCol
 ErrPutToRow:    ErrMsg FATAL_ERR, ErrStr & "странный PutToRow=" & PutToRow
 End Function
-Function X_ParseWP(ByVal iRow, ByVal iCol, PutToRow, putToCol, _
+Function X_ParseWP(ByVal iRow, ByVal iCol, ByVal PutToRow, putToCol, _
     Optional iLine, Optional ExtPar As String) As String
 '
-'
+' -  X_ParseWP([InDoc,OutDoc,X_rqst,iLine,PutToRow,ExtPar)  - разбор строки Х для WP
 '
 '''''                X = X_Parse(iRow, iCol, putToRow, putToCol, iLine)
 
