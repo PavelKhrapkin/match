@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content Документов в match.xlsx
 '
-' 28.08.2013
+' 18.09.2013
 '=========================== Описания ================================
 '       * TOC храниться в листе TOC. Данные о Документе хранятся в виде строки этого листа
 '       * при работе отдельных Шагов, параметры и константы передаются в структуре TOCmatch,
@@ -48,7 +48,6 @@ Function GetRep(RepName) As TOCmatch
     Else
         EOL_TOC = DB_MATCH.Sheets(TOC).Cells(TOClineN, TOC_EOL_COL)
     End If
-    
             
     DirDBs = DB_MATCH.Path & "\"
     If DB_MATCH.Sheets(TOC).Cells(1, TOC_F_DIR_COL) <> DirDBs Then
@@ -159,6 +158,7 @@ Function CheckStamp(iTOC As Long, _
 '  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
 ' 14.7.13 - дополнительная диагностика и действия, если Штамп не найден
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC за счет GetTOC(iTOC)
+' 17.9.13 - bug fix при вызове EOL для RightEOL
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -176,11 +176,11 @@ Function CheckStamp(iTOC As Long, _
     CheckStamp = True
     
     With DB_MATCH.Sheets(TOC)
-        SR = split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
-        SC = split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
+        SR = Split(.Cells(iTOC, TOC_STAMP_R_COL), ",")
+        SC = Split(.Cells(iTOC, TOC_STAMP_C_COL), ",")
         txt = .Cells(iTOC, TOC_STAMP_COL)
         Typ = .Cells(iTOC, TOC_STAMP_TYPE_COL)
-        If Typ = "N" Then GoTo ex
+        If Typ = "N" Then GoTo Ex
         RepName = .Cells(iTOC, TOC_REPNAME_COL)
         Continued = .Cells(iTOC, TOC_PARCHECK_COL)
     End With
@@ -209,13 +209,13 @@ Function CheckStamp(iTOC As Long, _
                 End If
             
                 If Continued <> "" Then CheckStamp iTOC + 1, NewRep, NewRepEOL, IsSF, InSheetN
-ex:             Exit Function
+Ex:             Exit Function
 NxtChk:
             Next j
         Next i
         If NewRep = "" Then
             Dim ToChangeEOLinTOC As String, RightEOL As Long
-            RightEOL = EOL(.SheetN) - .ResLines
+            RightEOL = EOL(.SheetN, Workbooks(.RepFile)) - .ResLines
             ToChangeEOLinTOC = MsgBox("CheckStamp: не нашли Штамп '" & txt & "' в строке " & Str _
                 & vbCrLf & "полагая,  что EOL = " & .EOL & ";" _
                 & vbCrLf & "на самом деле EOL = " & RightEOL _
@@ -283,7 +283,7 @@ Function GetReslines(Optional ByVal Doc As String, _
 '''        If Resl = "" Then Exit Function
         
         If InStr(Resl, "/") <> 0 Then
-            ss = split(Resl, "/")
+            ss = Split(Resl, "/")
             If IsMissing(LoadMode) Then
                 LoadMode = False
                 If R.Made = REP_LOADED Then LoadMode = True
@@ -315,6 +315,7 @@ Sub WrTOC(Optional ByVal Name As String = "")
 ' 15.08.13 - Optional Name - имя документа, по которому сохраняем строку TOCmatch
 ' 26.08.13 - переписываем EOL в TOC
 ' 28.08.13 - Name из RepTOC.Name
+' 18.09.13 - Save файл в котором находится обработанный Документ
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых Документов
@@ -333,10 +334,11 @@ FoundRep:
     W = DB_MATCH.Sheets(TOC).Cells(i, TOC_REPFILE_COL)
     S = DB_MATCH.Sheets(TOC).Cells(i, TOC_SHEETN_COL)
     Call FileOpen(W)
-    Workbooks(W).Sheets(S).Activate
+''    Workbooks(W).Sheets(S).Activate
+    
     Dim Resl As String
     Resl = DB_MATCH.Sheets(1).Cells(i, TOC_RESLINES_COL)
-    NewEOL = EOL(Name) - GetReslines(Name, , Resl)
+    NewEOL = EOL(Name, Workbooks(W)) - GetReslines(Name, , Resl)
     If NewEOL <= 0 Then GoTo Err
     With DB_MATCH.Sheets(TOC)
 '        .Cells(i, TOC_EOL_COL) = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
@@ -357,6 +359,7 @@ FoundRep:
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
     End With
+    Workbooks(W).Save
     DB_MATCH.Save
     Exit Sub
 Err: ErrMsg FATAL_ERR, "WrTOC> На Шаге '" & RepTOC.Made _
