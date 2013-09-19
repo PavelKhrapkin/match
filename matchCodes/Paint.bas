@@ -95,7 +95,7 @@ Sub PaymentPaint()
             .Rows(LocalTOC.EOL + 1 & ":" & LocalTOC.EOL + 2).Delete 'пятка есть- стереть
             LocalTOC.EOL = LocalTOC.EOL - 2
             
-AddSummary: Fsummary = DB_MATCH.Sheets(ToC).Cells(LocalTOC.iTOC, TOC_FORMSUMMARY)
+AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(LocalTOC.iTOC, TOC_FORMSUMMARY)
             DB_MATCH.Sheets(Header).Range(Fsummary).Copy _
                 Destination:=.Cells(LocalTOC.EOL + 2, 1)
         End With
@@ -165,24 +165,29 @@ Sub Acc1C_Bottom()
     Dim R As TOCmatch
     Dim b As Range, FF As Range
     Dim Fsummary As String
+    Const BotStampLng = 22  ' размер проверяемой части пятки
+    
+    StepIn
     
     R = GetRep(Acc1C)
-    DB_1C.Sheets(Acc1C).Activate
     With DB_MATCH
-        Fsummary = .Sheets(ToC).Cells(R.iTOC, TOC_FORMSUMMARY)
+        Fsummary = .Sheets(TOC).Cells(R.iTOC, TOC_FORMSUMMARY)
         Set FF = .Sheets(Header).Range(Fsummary)
     End With
-    With ActiveSheet
-'---- А может ActiveSheet - это лист Список клиентов 1С в 1C.xlsx?
-        If .Cells(1, 4) = FF.Cells(1, 4) Then Exit Sub
 
-        Set b = .Range(.Cells(1, 1), .Cells(2, 1))
-        b.Copy Destination:=FF.Cells(1, 3)
-        Set b = .Rows("1:3")
-        b.Copy Destination:=.Cells(R.EOL + 2, 1)
-        b.Delete
+    With DB_1C.Sheets(Acc1C)
+'---- Действительно первые 2 строки из пятки? Если нет -> NOP
+        If Left(.Cells(1, 1), BotStampLng) = Left(FF.Cells(1, 3), BotStampLng) And _
+           Left(.Cells(2, 1), BotStampLng) = Left(FF.Cells(2, 3), BotStampLng) Then
+        
+            Set b = .Range(.Cells(1, 1), .Cells(2, 1))
+            b.Copy Destination:=FF.Cells(1, 3)
+            Set b = .Rows("1:3")
+            b.Copy Destination:=.Cells(R.EOL + 2, 1)
+            b.Delete
+            AutoFilterReset Acc1C
+        End If
     End With
-    AutoFilterReset R.Name
 End Sub
 Sub AccPaint()
 '
