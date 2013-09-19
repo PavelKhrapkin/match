@@ -11,7 +11,7 @@ Attribute VB_Name = "Paint"
 ' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 27.8.13 - ревизия для match2.1
+' 19.9.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint()
@@ -33,7 +33,8 @@ Sub PaymentPaint()
     Dim Rub, Doc            'поля "Итого руб" и "Плат.док"
     Dim Fsummary As String  'имя пятки Платежей в TOC
     
-    LocalTOC = RepTOC
+    LocalTOC = GetRep(PAY_SHEET)
+'    LocalTOC = RepTOC
     
     LocalTOC.EOL = EOL(LocalTOC.Name)
     Range("A1:AC" & LocalTOC.EOL).Interior.Color = rgbWhite   ' сбрасываем окраску
@@ -94,7 +95,7 @@ Sub PaymentPaint()
             .Rows(LocalTOC.EOL + 1 & ":" & LocalTOC.EOL + 2).Delete 'пятка есть- стереть
             LocalTOC.EOL = LocalTOC.EOL - 2
             
-AddSummary: Fsummary = DB_MATCH.Sheets(TOC).Cells(LocalTOC.iTOC, TOC_FORMSUMMARY)
+AddSummary: Fsummary = DB_MATCH.Sheets(ToC).Cells(LocalTOC.iTOC, TOC_FORMSUMMARY)
             DB_MATCH.Sheets(Header).Range(Fsummary).Copy _
                 Destination:=.Cells(LocalTOC.EOL + 2, 1)
         End With
@@ -159,6 +160,7 @@ Sub Acc1C_Bottom()
 ' - Acc1C_Bottom() - перенос первыx трех строк Acc1С в пятку и в Шаблон пятки
 '   14.8.12
 '   26.8.13 - добавлен AutoFilterReset и обновляю Шаблон пятки из отчета Acc1C
+'   19.9.13 - дополнительная защита от обработки Списка клиентов 1С
 
     Dim R As TOCmatch
     Dim b As Range, FF As Range
@@ -167,10 +169,13 @@ Sub Acc1C_Bottom()
     R = GetRep(Acc1C)
     DB_1C.Sheets(Acc1C).Activate
     With DB_MATCH
-        Fsummary = .Sheets(TOC).Cells(R.iTOC, TOC_FORMSUMMARY)
+        Fsummary = .Sheets(ToC).Cells(R.iTOC, TOC_FORMSUMMARY)
         Set FF = .Sheets(Header).Range(Fsummary)
     End With
     With ActiveSheet
+'---- А может ActiveSheet - это лист Список клиентов 1С в 1C.xlsx?
+        If .Cells(1, 4) = FF.Cells(1, 4) Then Exit Sub
+
         Set b = .Range(.Cells(1, 1), .Cells(2, 1))
         b.Copy Destination:=FF.Cells(1, 3)
         Set b = .Rows("1:3")
