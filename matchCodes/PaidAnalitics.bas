@@ -9,9 +9,26 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   16.9.2013
+'   21.9.2013
 
 Option Explicit
+
+'       --- Выходные листы ---           ---Шаблоны---
+Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
+Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
+Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
+Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
+Const DOG_UPDATE = "ContractUpdate" ' лист изменений (связок с Opp) Договоров
+
+'       --- для извлечения значений из Документов -  Fetch ---
+Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
+'''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
+Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
+Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+Const FETCH_DOGOVOR = DOG_SHEET & "/" & DOGCOD_COL & ":№/0"
+
+Const BALKY_TYPE = "Расходники"
+
 Dim t0 As Single, t1 As Single, t2 As Single
 
 Sub Paid1C(Optional ByVal iPayLine As Long = 2)
@@ -29,22 +46,10 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 
     StepIn
     
-'           --- Выходные листы ---           ---Шаблоны---
-    Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
-    Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
-    Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
-    Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
-    
-    Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
-'''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
-    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
-    Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
-    Const FETCH_DOGOVOR = DOG_SHEET & "/" & DOGCOD_COL & ":№/0"
-    
-    Const BALKY_TYPE = "Расходники"
+    Dim NewNines As Long    '= количество новых рекордов в NewEntities
     Dim LocalTOC As TOCmatch, i As Long, iLine As Long
     Dim sLine As String
-    Dim IsErr As Boolean, FromN As Long
+    Dim isErr As Boolean, FromN As Long
     Dim ContrK As String, OppId As String, ThisOppId As String
        
     LocalTOC = GetRep(PAY_SHEET)
@@ -57,12 +62,16 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         SheetSort PAY_SHEET, PAYRUB_COL, "Descending"
         SheetSort PAY_SHEET, PAYINSF_COL, "Descending"
         SheetSort SFopp, SFOPP_CLOSEDATE_COL
+        
+        NewLines = NonDialogPass()  'неинтерактивный проход по Платежам
+        
     End If
 
+    
     With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For i = iPayLine To LocalTOC.EOL
             Progress i / LocalTOC.EOL
-            IsErr = False
+            isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then
                 Exit For
             ElseIf .Cells(i, PAYISACC_COL) = "" Then
@@ -70,39 +79,111 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 '!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYCANONAME_COL), IsErr)
  ''''               If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
                 GoTo NextRow
-            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
+''''            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   ' есть Договор в 1С
+''''                ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
+''''                sLine = FetchDoc(FETCH_SFD, ContrK, isErr)
+''''                If sLine = "" Or Not IsNumeric(sLine) Then
+''''                                            '--- если Договор не заведен в SF
+''''                    sLine = FetchDoc(FETCH_DOGOVOR, ContrK, isErr)
+''''                    If sLine = "" Or Not IsNumeric(sLine) Then
+''''                        ErrMsg WARNING, "В строке " & i & "Платежей 1С ссылка на Договор " _
+''''                            & ContrK & ", которого нет в листе Договоров 1С"
+''''                        GoTo NextRow
+''''                    End If
+''''                    WrNewSheet NEW_CONTRACT, DOG_SHEET, CLng(sLine)
+''''                    GoTo NextRow
+''''                End If
+''''                OppId = DB_SFDC.Sheets(SFD).Cells(CLng(sLine), SFD_OPPID_COL)
+''''                If OppId = "" Then
+'''''--- Ищем Проект с кодом договора в названии
+''''                    Dim Opps() As Long
+''''                    Opps = OppSelect(i)
+''''                    If Opps(0) = 1 Then
+''''                        Dim S As String
+''''                        S = DB_SFDC.Sheets(SFopp).Cells(Opps(1), SFOPP_OPPID_COL)
+''''                        WrNewSheet DOG_UPDATE, PAY_SHEET, iPayLine, S
+''''                    Else
+''''                        WP_Adapt HDR_WP, i   '--- если в SF нет Проекта по Договору
+''''                    End If
+''''                    GoTo NextRow
+''''                End If
+''''            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then
+''''                Dim BalkyExists As Boolean: BalkyExists = False
+''''                FromN = 2                   '--- подбираем подходящий Проект Balky
+''''                Do While FromN <> 0
+''''                    ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), isErr, FromN)
+''''                    If ThisOppId = "" Then GoTo NextOpp
+''''                    With DB_SFDC.Sheets(SFopp)
+''''                        If .Cells(FromN, SFOPP_LINE_COL) <> BALKY_TYPE Then GoTo NextOpp
+''''                        If .Cells(FromN, SFOPP_CLOSEDATE_COL) - Now < 365 Then GoTo NextOpp
+''''                    End With
+''''                    If BalkyExists Then
+''''                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYCANONAME_COL) & "' несколько проектов по Расходникам"
+''''                        GoTo NextRow
+''''                    End If
+''''                    OppId = ThisOppId
+''''NextOpp:            FromN = FromN + 1
+''''                Loop
+''''                GoTo ToSF
+            Else
+                WP_Adapt HDR_WP, i
+                GoTo NextRow
+            End If
+ToSF:       If Not isErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
+NextRow:
+        Next i
+    End With
+    SheetDedup NEW_CONTRACT, 1
+End Sub
+Function NonDialogPass() As Long
+'
+' - NonDialogPass() - неинтерактивный проход по Платежам
+'
+' 21.09.13
+
+    Dim LocalTOC As TOCmatch, i As Long, isErr As Boolean
+    Dim ContrK As String, OppId As String, ThisOppId As String
+    Dim sLine As String
+    
+    LocalTOC = GetRep(PAY_SHEET)
+    With DB_1С.Sheets(PAY_SHEET)
+            For i = iPayLine To LocalTOC.EOL
+            Progress i / LocalTOC.EOL
+            isErr = False
+            If .Cells(i, PAYINSF_COL) = 1 Then          '=== если дошли до Платежей,
+                Exit For                                '    ..которые уже есть в SF
+            ElseIf .Cells(i, PAYISACC_COL) = "" Then    '=== если Организации нет в SF ->
+                GoTo NextRow
+            ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   '== в Платеже есть Договор в 1С
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
-                sLine = FetchDoc(FETCH_SFD, ContrK, IsErr)
+                sLine = FetchDoc(FETCH_SFD, ContrK, isErr)
                 If sLine = "" Or Not IsNumeric(sLine) Then
-                                            '--- если Договор не заведен в SF
-                    sLine = FetchDoc(FETCH_DOGOVOR, ContrK, IsErr)
+                                                        '=== если Договор не заведен в SF
+                    sLine = FetchDoc(FETCH_DOGOVOR, ContrK, isErr)
                     If sLine = "" Or Not IsNumeric(sLine) Then
                         ErrMsg WARNING, "В строке " & i & "Платежей 1С ссылка на Договор " _
                             & ContrK & ", которого нет в листе Договоров 1С"
                         GoTo NextRow
                     End If
-                    WrNewSheet NEW_CONTRACT, DOG_SHEET, CLng(sLine)
+                    WrNewSheet NEW_CONTRACT, DOG_SHEET, CLng(sLine) '>>> Новый Договор <<<
                     GoTo NextRow
                 End If
                 OppId = DB_SFDC.Sheets(SFD).Cells(CLng(sLine), SFD_OPPID_COL)
-                If OppId = "" Then
-'--- Ищем Проект с кодом договора в названии
-                    Dim Opps() As Long
+                If OppId = "" Then              '=== если нет Проекта, связанного с Договором,
+                    Dim Opps() As Long          '    ..ищем ищем Проект с кодом договора в названии
                     Opps = OppSelect(i)
                     If Opps(0) = 1 Then
                         Dim S As String
                         S = DB_SFDC.Sheets(SFopp).Cells(Opps(1), SFOPP_OPPID_COL)
-                        WrNewSheet DOG_UPDATE, PAY_SHEET, iPayLine, S
-                    Else
-                        WP_Adapt HDR_WP, i   '--- если в SF нет Проекта по Договору
-                    End If
+                        WrNewSheet DOG_UPDATE, PAY_SHEET, iPayLine, S   '>>> Новая связь Проекта с Договором <<<
+                    End If                      '=== если подходящего проекта нет -> в диалог
                     GoTo NextRow
                 End If
-            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then
+            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
                 Dim BalkyExists As Boolean: BalkyExists = False
-                FromN = 2                   '--- подбираем подходящий Проект Balky
+                FromN = 2                       '=== подбираем подходящий Проект Balky
                 Do While FromN <> 0
-                    ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), IsErr, FromN)
+                    ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), isErr, FromN)
                     If ThisOppId = "" Then GoTo NextOpp
                     With DB_SFDC.Sheets(SFopp)
                         If .Cells(FromN, SFOPP_LINE_COL) <> BALKY_TYPE Then GoTo NextOpp
@@ -117,15 +198,17 @@ NextOpp:            FromN = FromN + 1
                 Loop
                 GoTo ToSF
             Else
-                WP_Adapt HDR_WP, i
                 GoTo NextRow
             End If
-ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId
+ToSF:       If Not isErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId   '>>> Новый Платеж в SF <<<
 NextRow:
         Next i
     End With
-    SheetDedup NEW_CONTRACT, 1
-End Sub
+    NonDialogPass = EOL(NEW_PAYMENT, DB_TMP) - 1 _
+        + EOL(NEW_CONTRACT, DB_TMP) - 1 _
+        + EOL(NOW_OPP, DB_TMP) - 1 _
+        + EOL(DOG_UPDATE, DB_TMP) - 1
+End Function
 Sub TestOppSelect()
 '
 ' T отладка OppSelect
@@ -154,7 +237,7 @@ Function OppSelect(ByVal iPaid As Long) As Long()
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
     
     Dim Opps() As Long, nOpp As Long, maxNopp As Long
-    Dim LocalTOC As TOCmatch, iOpp As Long, IsErr As Boolean
+    Dim LocalTOC As TOCmatch, iOpp As Long, isErr As Boolean
     Dim sN As String
     Dim Account As String, Salesman As String, PaidDate As Date
     Dim ContrK As String, Rub As Long, GoodT As String
@@ -175,8 +258,8 @@ Function OppSelect(ByVal iPaid As Long) As Long()
         iOpp = 1: maxNopp = 0
         ReDim Opps(0): Opps(0) = 0
         Do
-            sN = FetchDoc(FETCH_SFOPP, Account, IsErr, iOpp + 1)
-            If IsErr Or Not IsNumeric(sN) Then Exit Do
+            sN = FetchDoc(FETCH_SFOPP, Account, isErr, iOpp + 1)
+            If isErr Or Not IsNumeric(sN) Then Exit Do
             iOpp = sN
             sN = .Cells(iOpp, SFOPP_OPPN_COL): nOpp = sN
             If Not IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), nOpp) Then GoTo NxtOpp
