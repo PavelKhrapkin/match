@@ -46,7 +46,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
 
     StepIn
     
-    Dim NewNines As Long    '= количество новых рекордов в NewEntities
+    Dim NewLines As Long    '= количество новых рекордов в NewEntities
     Dim LocalTOC As TOCmatch, i As Long, iLine As Long
     Dim sLine As String
     Dim isErr As Boolean, FromN As Long
@@ -141,13 +141,14 @@ Function NonDialogPass() As Long
 '
 ' 21.09.13
 
-    Dim LocalTOC As TOCmatch, i As Long, isErr As Boolean
+    Dim LocalTOC As TOCmatch
     Dim ContrK As String, OppId As String, ThisOppId As String
-    Dim sLine As String
+    Dim i As Long, isErr As Boolean, sLine As String
+    Dim SFoppEOL As Long: SFoppEOL = EOL(SFopp, DB_SFDC)
     
     LocalTOC = GetRep(PAY_SHEET)
-    With DB_1С.Sheets(PAY_SHEET)
-            For i = iPayLine To LocalTOC.EOL
+    With DB_1C.Sheets(PAY_SHEET)
+            For i = 2 To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then          '=== если дошли до Платежей,
@@ -175,14 +176,14 @@ Function NonDialogPass() As Long
                     If Opps(0) = 1 Then
                         Dim S As String
                         S = DB_SFDC.Sheets(SFopp).Cells(Opps(1), SFOPP_OPPID_COL)
-                        WrNewSheet DOG_UPDATE, PAY_SHEET, iPayLine, S   '>>> Новая связь Проекта с Договором <<<
+                        WrNewSheet DOG_UPDATE, PAY_SHEET, i, S  '>>> Новая связь Проекта с Договором <<<
                     End If                      '=== если подходящего проекта нет -> в диалог
                     GoTo NextRow
                 End If
             ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
                 Dim BalkyExists As Boolean: BalkyExists = False
-                FromN = 2                       '=== подбираем подходящий Проект Balky
-                Do While FromN <> 0
+                Dim FromN As Long:  FromN = 2   '=== подбираем подходящий Проект Balky
+                Do While FromN <> 0 And FromN <= SFoppEOL
                     ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), isErr, FromN)
                     If ThisOppId = "" Then GoTo NextOpp
                     With DB_SFDC.Sheets(SFopp)
@@ -206,7 +207,6 @@ NextRow:
     End With
     NonDialogPass = EOL(NEW_PAYMENT, DB_TMP) - 1 _
         + EOL(NEW_CONTRACT, DB_TMP) - 1 _
-        + EOL(NOW_OPP, DB_TMP) - 1 _
         + EOL(DOG_UPDATE, DB_TMP) - 1
 End Function
 Sub TestOppSelect()
