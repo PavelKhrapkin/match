@@ -310,7 +310,7 @@ Public Const PAY_SHEET = "Платежи"  ' лист Платежей
 ''' Public Const PAY_RESLINES = 3       ' кол-во строк пятки отчета по Платежам
 ''' Public Const PAY_MYCOLS = 5         ' количество моих колонок слева
 
-Public Const PAYISACC_COL = 1       ' колонка =1, если Организация есть в SF
+Public Const PAYIDACC_COL = 1       ' колонка =Id, если Организация есть в SF или ""
 Public Const PAYINSF_COL = 2        ' колонка =1, если Платеж есть в SF
 Public Const PAYIDSF_COL = 3        ' колонка - Id Платежа в SF
 Public Const PAYADSK_COL = 4        ' колонка - связи Платежа с ADSK в SF
