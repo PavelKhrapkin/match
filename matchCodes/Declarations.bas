@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  14.9.13
+'  21.9.13
 
 Option Explicit
 
@@ -329,6 +329,7 @@ Public Const PAYDOGOVOR_COL = 25    ' колонка Договор
 Public Const PAYOSNDOGOVOR_COL = 26 ' колонка Осн.Договор
 Public Const PAYDOGVAL_COL = 27     ' колонка Сумма договора
 Public Const PAYDOGCUR_COL = 28     ' колонка Валюта договора
+Public Const PAYCANONAME_COL = 30   ' колонка CanonicAccName
 Public Const PAYINV_COL = 32        ' колонка CX-XXX - Счет без даты
 Public Const PAYGOODTYPE_COL = 33   ' колонка Тип товара
 
@@ -483,7 +484,6 @@ Public Const NEWDOG_ACCINDEX_COL = 19   ' индекс
 Public Const NEWDOG_ACCSTATE_COL = 20   ' область
 Public Const NEWDOG_ACCCOUNTRY_COL = 21 ' страна
 
-Public Const DOG_UPDATE = "ContractUpdate" ' лист изменений (связок с Opp) Договоров
 '................ Лист новых Проектов NewOpp ..........................
 Public Const NEW_OPP = "NewOpp"         '"голубой" лист новых Проектов
 
