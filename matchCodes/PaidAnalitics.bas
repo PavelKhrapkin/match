@@ -25,6 +25,7 @@ Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
 '''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
 Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
 Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+Const FETCH_SFACC = "SFacc/" & SFACC_IDACC_COL & ":" & SFACC_ACCNAME_COL
 Const FETCH_DOGOVOR = DOG_SHEET & "/" & DOGCOD_COL & ":№/0"
 
 Const BALKY_TYPE = "Расходники"
@@ -74,7 +75,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
             isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then
                 Exit For
-            ElseIf .Cells(i, PAYISACC_COL) = "" Then
+            ElseIf .Cells(i, PAYIDACC_COL) = "" Then
 '!!'                WP_Adapt HDR_WPacc, i       '--- если Организации нет в SF
 '!!'                iLine = FetchDoc(FETCH_ACC1C, .Cells(i, PAYCANONAME_COL), IsErr)
  ''''               If Not IsErr Then WrNewSheet NEW_ACC, Acc1C, iLine, HDR_NEWACC
@@ -153,7 +154,7 @@ Function NonDialogPass() As Long
             isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then          '=== если дошли до Платежей,
                 Exit For                                '    ..которые уже есть в SF
-            ElseIf .Cells(i, PAYISACC_COL) = "" Then    '=== если Организации нет в SF ->
+            ElseIf .Cells(i, PAYIDACC_COL) = "" Then    '=== если Организации нет в SF ->
                 GoTo NextRow
             ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   '== в Платеже есть Договор в 1С
                 ContrK = ContrCod(.Cells(i, PAYDOGOVOR_COL), .Cells(i, PAYOSNDOGOVOR_COL))
@@ -182,10 +183,10 @@ Function NonDialogPass() As Long
                 End If
             ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
                 Dim BalkyExists As Boolean: BalkyExists = False
-                Dim FromN As Long:  FromN = 2   '=== подбираем подходящий Проект Balky
-                Do While FromN <> 0 And FromN <= SFoppEOL
+                Dim FromN As Long               '=== подбираем подходящий Проект Balky
+                For FromN = 2 To SFoppEOL
                     ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), isErr, FromN)
-                    If ThisOppId = "" Then GoTo NextOpp
+                    If ThisOppId = "" Then GoTo NewOppBalky
                     With DB_SFDC.Sheets(SFopp)
                         If .Cells(FromN, SFOPP_LINE_COL) <> BALKY_TYPE Then GoTo NextOpp
                         If .Cells(FromN, SFOPP_CLOSEDATE_COL) - Now < 365 Then GoTo NextOpp
@@ -195,18 +196,27 @@ Function NonDialogPass() As Long
                         GoTo NextRow
                     End If
                     OppId = ThisOppId
-NextOpp:            FromN = FromN + 1
-                Loop
+NextOpp:        Next FromN
                 GoTo ToSF
             Else
                 GoTo NextRow
             End If
+NewOppBalky:  Dim OppName As String             '=== еще нет Проекта по Расходикам -> создаем
+            sLine = FetchDoc(FETCH_SFACC, .Cells(i, PAYIDACC_COL), isErr)
+            OppName = sLine & "-Расходники"
+            MS "NonDialogPass: не могу автоматически создать новый Проект " _
+                & vbCrLf & vbCrLf & vbTab & OppName & vbCrLf _
+                & vbCrLf & "Пожалуйста, создай его в SF со всеми атрибутами сам!"
+'''            WrNewSheet NEW_OPP, PAY_SHEET, i, OppName
+            GoTo NextRow
+
 ToSF:       If Not isErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId   '>>> Новый Платеж в SF <<<
 NextRow:
         Next i
     End With
     NonDialogPass = EOL(NEW_PAYMENT, DB_TMP) - 1 _
         + EOL(NEW_CONTRACT, DB_TMP) - 1 _
+        + EOL(NEW_OPP, DB_TMP) - 1 _
         + EOL(DOG_UPDATE, DB_TMP) - 1
 End Function
 Sub TestOppSelect()
@@ -385,7 +395,7 @@ End Function
 '''        For i = 2 To P.EOL
 '''            Progress i / P.EOL
 '''            If .Cells(i, PAYINSF_COL) <> 1 _
-'''                    And Trim(.Cells(i, PAYISACC_COL)) <> "" _
+'''                    And Trim(.Cells(i, PAYIDACC_COL)) <> "" _
 '''                    And Trim(.Cells(i, PAYDOC_COL)) <> "" Then
 '''                Acc = Compressor(.Cells(i, PAYCANONAME_COL)) ' Организация
 '''                Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
@@ -421,7 +431,7 @@ End Function
 '''    With DB_1C.Sheets(PAY_SHEET)
 '''        For i = 2 To P.EOL
 '''            Progress i / P.EOL
-'''            If .Cells(i, PAYISACC_COL) <> "" And .Cells(i, PAYINSF_COL) = "" Then
+'''            If .Cells(i, PAYIDACC_COL) <> "" And .Cells(i, PAYINSF_COL) = "" Then
 '''                If .Cells(i, PAYDOGOVOR_COL) <> "" Then
 '''                    WrNewSheet NEW_PAYMENT, PAY_SHEET, i
 '''                End If
@@ -483,7 +493,7 @@ End Function
 ''''''''            .Activate
 '''        ' Account в SF есть, Платежа в SF нет, Док и Продавец не пустой
 '''            Acc = Compressor(.Cells(i, PAYCANONAME_COL)) ' Организация
-'''            If .Cells(i, PAYISACC_COL) <> "" And _
+'''            If .Cells(i, PAYIDACC_COL) <> "" And _
 '''                    Trim(.Cells(i, PAYDOC_COL)) <> "" And _
 '''                    Trim(.Cells(i, PAYSALE_COL)) <> "" Then
 '''                Dat = .Cells(i, PAYDATE_COL)    ' дата Платежа
