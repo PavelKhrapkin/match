@@ -397,6 +397,7 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
 ' 24.8.13 - Основной Документ- активный, а его Шаблон - атрибут в TOC
 ' 31.8.13 - для ускорения работы Шаблона выходим, если Процесса нет в ForProcess
 '  1.8.13 - если ThisProc - не обрабатываем Шаблон слева от колонки <ThisProcess>
+' 23.9.13 - Дополнительный Шаблон проверяется в AdaptPass0
 
     StepIn
     
@@ -409,10 +410,10 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
     Dim R_From As TOCmatch, R_To As TOCmatch
     Dim Width() As String
     Dim Proc As String  ' поле в Шаблоне для проверки имени Процесса
-    Dim ThisProcCol As Long, iProc As Long, sProc() As String, IsThisProc As Boolean
-
-    ' профилирование
+    Dim IsThisProc As Boolean, ThisProcCol As Long, iProc As Long, sProc() As String
+    Dim Pass0Arr() As Long, iPass As Long, iPassArr As Long
     
+    ' профилирование
     Dim tot1 As Single, beg1 As Single: tot1 = 0
     Dim tot2(40) As Single, beg2(40) As Single
     Dim profileStr As String
@@ -420,7 +421,10 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
     R = GetRep(ActiveSheet.Name)
     
     Set FF = DB_MATCH.Sheets(Header).Range( _
-        DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME))
+        DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME))
+        
+    Pass0Arr = AdaptPass0(DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME))
+   
     If FromDoc = "" Then
         R_From = R
     Else
@@ -441,63 +445,75 @@ Sub Adapt(Optional FromDoc As String = "", Optional ToDoc As String = "")
         Progress i / R_From.EOL
         iTo = iTo + 1
         If ToDoc = "" Then iTo = i
-        For Col = 1 To FF.Columns.Count
-            beg2(Col) = Timer()       ' профилирование
-                            ' если ThisProc - пропускаем левую часть Шаблона
-            If IsThisProc And Col < ThisProcCol Then Col = ThisProcCol
-         '--- подготовка X - параметра Адаптера
-            sX = FF(PTRN_COLS, Col)
-            If sX = "" Then GoTo NextCol
-            If IsNumeric(sX) Then
-                iX = sX
-                If iX < 0 Then Exit For
-                X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
-            ElseIf Left(sX, 1) = "#" Then
-                sX = Mid(sX, 2)
-                If Not IsNumeric(sX) Or CLng(sX) < 0 Then
-                    ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
-                    End
-                End If
-            ElseIf FF(PTRN_HDR, Col) = FOR_PROCESS Then
-              '-- проверка контекста Процесса - заполнение IsThisProc
-                If Proc = "" Then               'только первый раз
-                    Proc = FF(PTRN_VALUE, Col)
-                    sProc = Split(Proc, ",")
-                    For iProc = LBound(sProc) To UBound(sProc)
-                        If sX = PublicProcName Then
-                            IsThisProc = True
-                            ThisProcCol = Col + 1
-                            If FF(PTRN_COLS, Col) = PublicProcName Then GoTo NextCol
-                            ErrMsg FATAL_ERR, "Ошибка в Шаблоне '" _
-                                & DB_MATCH.Sheets(ToC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
-                                & " в Col=" & Col & vbCrLf & "Ожидалось имя Процесса '" _
-                                & PublicProcName & "', а не '" & FF(PTRN_COLS, Col) & "'"
-                            End
+        For iPass = 1 To 2
+            For Col = 1 To FF.Columns.Count
+                beg2(Col) = Timer()       ' профилирование
+                                ' если ThisProc - пропускаем левую часть Шаблона
+                If IsThisProc And Col < ThisProcCol Then Col = ThisProcCol
+                If iPass = 1 Then
+                    For iPassArr = 1 To Pass0Arr(0)
+                        If Pass0Arr(iPassArr) = Col Then
+                            GoTo HandlAdapt
+                        Else
+                            GoTo NextCol
                         End If
-                    Next iProc
+                    Next iPassArr
                 End If
-                If Not IsThisProc Then GoTo NextRow
-'''            Else
-'''                iX = sX
-'''                X = Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(i, iX)
-            End If
-            
-          '--- вызов Адаптера
-            Rqst = FF.Cells(PTRN_ADAPT, Col)
-            F_rqst = FF.Cells(PTRN_FETCH, Col)
-
-            Y = Adapter(Rqst, X, F_rqst, isErr, R_From.EOL, i, Col)
-
-            If isErr Then
-                iTo = iTo - 1
-                Exit For
-            End If
-          '--- записываем в SheetNew значение Y с установкой формата вывода
-            Width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
-            fmtCell Workbooks(R_To.RepFile), R_To.SheetN, Width, Y, iTo, Col
-            
-NextCol:    tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
-        Next Col
+HandlAdapt:
+             '--- подготовка X - параметра Адаптера
+                sX = FF(PTRN_COLS, Col)
+                If sX = "" Then GoTo NextCol
+                If IsNumeric(sX) Then
+                    iX = sX
+                    If iX < 0 Then Exit For
+                    X = Workbooks(R_From.RepFile).Sheets(R_From.SheetN).Cells(i, iX)
+                ElseIf Left(sX, 1) = "#" Then
+                    sX = Mid(sX, 2)
+                    If Not IsNumeric(sX) Or CLng(sX) < 0 Then
+                        ErrMsg FATAL_ERR, "Bad Column in Adapter ='" & sX & "'"
+                        End
+                    End If
+                ElseIf FF(PTRN_HDR, Col) = FOR_PROCESS Then
+                  '-- проверка контекста Процесса - заполнение IsThisProc
+                    If Proc = "" Then               'только первый раз
+                        Proc = FF(PTRN_VALUE, Col)
+                        sProc = Split(Proc, ",")
+                        For iProc = LBound(sProc) To UBound(sProc)
+                            If sX = PublicProcName Then
+                                IsThisProc = True
+                                ThisProcCol = Col + 1
+                                If FF(PTRN_COLS, Col) = PublicProcName Then GoTo NextCol
+                                ErrMsg FATAL_ERR, "Ошибка в Шаблоне '" _
+                                    & DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_FORMNAME) & "'" _
+                                    & " в Col=" & Col & vbCrLf & "Ожидалось имя Процесса '" _
+                                    & PublicProcName & "', а не '" & FF(PTRN_COLS, Col) & "'"
+                                End
+                            End If
+                        Next iProc
+                    End If
+                    If Not IsThisProc Then GoTo NextRow
+    '''            Else
+    '''                iX = sX
+    '''                X = Workbooks(R_To.RepFile).Sheets(R_To.SheetN).Cells(i, iX)
+                End If
+                
+              '--- вызов Адаптера
+                Rqst = FF.Cells(PTRN_ADAPT, Col)
+                F_rqst = FF.Cells(PTRN_FETCH, Col)
+    
+                Y = Adapter(Rqst, X, F_rqst, isErr, R_From.EOL, i, Col)
+    
+                If isErr Then
+                    iTo = iTo - 1
+                    Exit For
+                End If
+              '--- записываем в SheetNew значение Y с установкой формата вывода
+                Width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
+                fmtCell Workbooks(R_To.RepFile), R_To.SheetN, Width, Y, iTo, Col
+                
+NextCol:            tot2(Col) = tot2(Col) + (Timer() - beg2(Col))   ' профилирование
+            Next Col
+        Next iPass
 NextRow:
     Next i
 'если ошибка в Адаптере NewSheet последней строки, тогда IsErr остается=True - стираем эту строку
@@ -1243,8 +1259,9 @@ Function AdaptPass0(ByVal FormName As String) As Long()
     Dim IsAddForm As Boolean: IsAddForm = False
     Dim Arr() As Long, ArrLng As Long
     
-    On Error GoTo NoAddForm
-        Set FF = Range(FormName & "_Pass0")
+    ReDim Arr(0) As Long:   Arr(0) = 0
+    On Error GoTo Ex
+        Set FF = DB_MATCH.Sheets(Header).Range(FormName & "_Pass0")
     On Error GoTo 0
     With FF
         ArrLng = .Columns.Count - 1
@@ -1255,5 +1272,4 @@ Function AdaptPass0(ByVal FormName As String) As Long()
         Next i
     End With
 Ex: AdaptPass0 = Arr
-NoAddForm:
 End Function
