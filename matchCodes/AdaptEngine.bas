@@ -505,7 +505,8 @@ HandlAdapt:
     
                 If isErr Then
                     iTo = iTo - 1
-                    Exit For
+''                    Exit For
+                    GoTo NextRow
                 End If
               '--- записываем в SheetNew значение Y с установкой формата вывода
                 Width = Split(FF.Cells(PTRN_WIDTH, Col), "/")
