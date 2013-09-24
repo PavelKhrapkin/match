@@ -32,7 +32,7 @@ Attribute VB_Name = "AdaptEngine"
 '         в проходе Pass0 до работы основного Шаблона. Имя Дополнительного Шаблона имеет
 '         вид Шаблон_Pass0
 '
-' 23.09.13 П.Л.Храпкин, А.Пасс
+' 24.09.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -67,6 +67,7 @@ Const WP_CONTEXT_LINE = 8, WP_CONTEXT_COL = 4   ' ячейка передачи iLine
 Const WP_PAYMENT_LINE = 8                       ' строка Платежа в WP
 
 Const EXT_PAR = "ExtPar"    ' текст в Шаблоне - признак передачи параметра Х
+Const EXT_PAR_2 = "ExtPar2" ' текст в Шаблоне - признак другого параметра Х
 
 Const PTRN_HDR = 1   ' смещение строки - значения шапки в Шаблоне
 Const PTRN_VALUE = 2 ' смещение строки - значения - Value в Шаблоне
@@ -81,10 +82,10 @@ Const FOR_PROCESS = "ForProcess"    'колонка в Шаблоне для проверки
 Const PTRN_SELECT = "Select"
 Const OPP_BALKY = "Расходные материалы и ЗИП"
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
-    Optional ExtPar As String)
+    Optional ExtPar As String, Optional ExtPar2 As String)
 '
-' - WrNewSheet(SheetNew, SheetDB, DB_Line[,IdOpp]) - записывает новый рекорд
-'                               в лист SheetNew из строки DB_Line листа SheetDB
+' - WrNewSheet(SheetNew, SheetDB, DB_Line[,ExtPar,ExtPar2]) - записывает
+'           новый рекорд в лист SheetNew из строки DB_Line листа SheetDB
 '   * Используется Шаблон с Адаптерами "HDR_" & SheetNew.
 '     Шаблоны обычно храняться в Headers или WP_Prototype
 '   * Обращение к Адаптеру имеет вид <ИмяАдаптера>/<Пар1>,<Пар2>...
@@ -103,6 +104,7 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
 ' 28.08.13 - WrTOC SheetNew
 '  6.09.13 - диагностическое сообщение при IsErr=True
 '  8.09.13 - использование X_Pars
+' 24.09.13 - поддержка ExtPar2
 
 ''    Dim Rnew As TOCmatch, Rdoc As TOCmatch
     Dim P As Range
@@ -127,49 +129,23 @@ Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
         For i = 1 To P.Columns.Count
             Width = Split(P.Cells(PTRN_WIDTH, i), "/")
             '------------------------
-            X = X_Parse(SheetDB, SheetNew, P.Cells(PTRN_COLS, i), DB_Line, NewEOL, ExtPar)
+            X = X_Parse(SheetDB, SheetNew, P.Cells(PTRN_COLS, i), DB_Line, NewEOL, ExtPar, ExtPar2)
             '--------------------------
-'            sX = P.Cells(PTRN_COLS, i)
-'            If sX <> "" Then
-'                If InStr(sX, EXT_PAR) > 0 Then
-'                    sXarr = Split(sX, "/")
-'                    If UBound(sXarr) = 0 Then
-'                        X = ExtPar
-'                    Else
-'                        If Not IsNumeric(sXarr(1)) Then
-'ErrExtPar:                  ErrMsg FATAL_ERR, "Bad ExtPar: '" & sX & "'"
-'                            End
-'                        End If
-'                        If UBound(ExtPar) < CLng(sXarr(1)) Then GoTo ErrExtPar
-'                        X = ExtPar(sXarr(1))
-'                    End If
-'                ElseIf Left(sX, 1) = "#" Then
-'                    sX = Mid(sX, 2)
-'                    X = Workbooks(Rnew.RepFile).Sheets(Rnew.SheetN).Cells(Rnew.EOL, CLng(sX))
-'                Else
-'                    X = Workbooks(Rdoc.RepFile).Sheets(Rdoc.SheetN).Cells(DB_Line, CLng(sX))
-'                End If
                 
-                Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), isErr, , DB_Line)
-                
-                If isErr Then
-                    MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
-                        & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
-                        & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
-                        & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
-                        & " Fetch =" & P.Cells(PTRN_FETCH, i)
-                    .Rows(NewEOL).Delete
-                    Exit For
-                Else
-'                    .Cells(Rnew.EOL, i) = y
-                    '-- записываем в SheetNew значение Y с установкой формата вывода
-                    fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
-                End If
-'!            Else
-'                .Cells(Rnew.EOL, i) = P.Cells(2, i) '!!!!!!!!!!!!!???????????!!!!!!!!!!!!
-                '-- iX пустой - записываем в SheetNew значение из Шаблона в указанном формате
-'!                fmtCell DB_TMP, SheetNew, Width, P.Cells(2, i), Rnew.EOL, i
-'!            End If
+            Y = Adapter(P.Cells(PTRN_ADAPT, i), X, P.Cells(PTRN_FETCH, i), isErr, , DB_Line)
+            
+            If isErr Then
+                MS "WrNewSheet: Ошибка при записи в лист '" & SheetNew & "'" _
+                    & vbCrLf & " из листа '" & SheetDB & "' строки=" & DB_Line _
+                    & vbCrLf & " в колонке=" & i & " =" & P.Cells(PTRN_COLS, i) & " X=" & X _
+                    & vbCrLf & " Адаптер=" & P.Cells(PTRN_ADAPT, i) _
+                    & " Fetch =" & P.Cells(PTRN_FETCH, i)
+                .Rows(NewEOL).Delete
+                Exit For
+            Else
+                '-- записываем в SheetNew значение Y с установкой формата вывода
+                fmtCell DB_TMP, SheetNew, Width, Y, NewEOL, i
+            End If
         Next i
     End With
     If Not isErr Then
@@ -313,6 +289,7 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
 ' 8/10/12
 ' 20.10.12 - обработка кнопок "Занести"
 ' 10.11.12 - bug fix - рекурсивный вызов WP с неправильным Namer Range
+' 24.09.13 - WrNewSheet NewOpp с CloseDate
 
     Dim Proc As String, Step As String, iStep As Long
     Dim iPayment As Long, OppId As String, isErr As Boolean
@@ -351,7 +328,9 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
             & " Договор " & PaymentContract
         Respond = MsgBox(DefName, vbYesNo, "Имя нового Проекта")
         If Respond = vbYes Then
-            WrNewSheet NEW_OPP, PAY_SHEET, iPayment, DefName
+            Dim CloseDate As String
+            CloseDate = DB_1C.Sheets(PAY_SHEET).Cells(iPayment, PAYDATE_COL)
+            WrNewSheet NEW_OPP, PAY_SHEET, iPayment, DefName, CloseDate
         End If
         Paid1C iPayment + 1
     Case "NewAcc":
@@ -923,7 +902,7 @@ Sub TestX_Parse()
 End Sub
 Function X_Parse(Optional InDoc As String, Optional OutDoc As String = "", _
     Optional X_rqst As String, Optional iLine, Optional PutToRow, _
-    Optional ExtPar As String) As String
+    Optional ExtPar As String, Optional ExtPar2 As String) As String
 '
 ' -  X_Parse([InDoc,OutDoc,X_rqst,iLine,PutToRow,ExtPar)  - разбор строки Х-параметра Адаптера
 '            из поля X_rqst Шаблона. По префиксу # в X_rqst X извлекается из OutDoc
@@ -947,6 +926,7 @@ Function X_Parse(Optional InDoc As String, Optional OutDoc As String = "", _
 ' 15.11.12 - Optional параметры
 '  8.09.13 - обработка любого Шаблона из Optional параметр X_rqst, не только из WP
 '          - Optional параметр ExtPar: если в поле Шаблона "ExtPar", Х=этому параметру
+' 24.09.13 - поддержка ExtPar2
 
     Dim InDocTOC As TOCmatch, OutDocTOC As TOCmatch
     Dim ErrStr As String, FF As Range
@@ -969,6 +949,10 @@ Function X_Parse(Optional InDoc As String, Optional OutDoc As String = "", _
     ElseIf X_rqst = EXT_PAR Then
         If IsMissing(ExtPar) Then GoTo ErrExtPar
         X_Parse = ExtPar
+        GoTo Ex
+    ElseIf X_rqst = EXT_PAR_2 Then
+        If IsMissing(ExtPar2) Then GoTo ErrExtPar
+        X_Parse = ExtPar2
         GoTo Ex
     Else
         RefType = Left(X_rqst, 1)
