@@ -148,7 +148,7 @@ Function NonDialogPass() As Long
     
     LocalTOC = GetRep(PAY_SHEET)
     With DB_1C.Sheets(PAY_SHEET)
-            For i = 2 To LocalTOC.EOL
+        For i = 2 To LocalTOC.EOL
             Progress i / LocalTOC.EOL
             isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then          '=== если дошли до Платежей,
@@ -180,26 +180,27 @@ Function NonDialogPass() As Long
                     End If                      '=== если подходящего проекта нет -> в диалог
                     GoTo NextRow
                 End If
-            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
-                Dim BalkyExists As Boolean: BalkyExists = False
-                Dim FromN As Long               '=== подбираем подходящий Проект Balky
-                Dim OppDate As Date
-                For FromN = 2 To SFoppEOL
-                    sLine = FetchDoc(FETCH_SFOPP, .Cells(i, PAYCANONAME_COL), isErr, FromN)
-                    If sLine = "" Or Not IsNumeric(sLine) Then GoTo NewOppBalky
-                    With DB_SFDC.Sheets(SFopp)
-                        ThisOppN = sLine: OppDate = .Cells(ThisOppN, SFOPP_CLOSEDATE_COL)
-                        If .Cells(ThisOppN, SFOPP_TYP_COL) <> BALKY_OPP_TYPE _
-                            Or OppDate - Now < 365 Then GoTo NextOpp
-                    End With
-                    If BalkyExists Then
-                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYCANONAME_COL) & "' несколько проектов по Расходникам"
-                        GoTo NextRow
-                    End If
-                    OppId = .Cells(ThisOppN, SFOPP_OPPID_COL)
-                    GoTo ToSF
-NextOpp:        Next FromN
-                GoTo NextRow
+                GoTo ToSF
+'''            ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
+'''                Dim BalkyExists As Boolean: BalkyExists = False
+'''                Dim FromN As Long               '=== подбираем подходящий Проект Balky
+'''                Dim OppDate As Date
+'''                For FromN = 2 To SFoppEOL
+'''                    sLine = FetchDoc(FETCH_SFOPP, .Cells(i, PAYCANONAME_COL), isErr, FromN)
+'''                    If sLine = "" Or Not IsNumeric(sLine) Then GoTo NewOppBalky
+'''                    With DB_SFDC.Sheets(SFopp)
+'''                        ThisOppN = sLine: OppDate = .Cells(ThisOppN, SFOPP_CLOSEDATE_COL)
+'''                        If .Cells(ThisOppN, SFOPP_TYP_COL) <> BALKY_OPP_TYPE _
+'''                            Or OppDate - Now < 365 Then GoTo NextOpp
+'''                    End With
+'''                    If BalkyExists Then
+'''                        ErrMsg WARNING, "В Организации '" & .Cells(i, PAYCANONAME_COL) & "' несколько проектов по Расходникам"
+'''                        GoTo NextRow
+'''                    End If
+'''                    OppId = .Cells(ThisOppN, SFOPP_OPPID_COL)
+'''                    GoTo ToSF
+'''NextOpp:        Next FromN
+'''                GoTo NextRow
             Else
                 GoTo NextRow
             End If
