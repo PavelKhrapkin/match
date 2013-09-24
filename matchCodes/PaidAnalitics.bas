@@ -9,26 +9,26 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   21.9.2013
+'   24.9.2013
 
 Option Explicit
 
 '       --- Выходные листы ---           ---Шаблоны---
 Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
 Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
-Const NEW_OPP = "NewOpp":           Const HDR_WPopp = "HDR_WPopp"
 Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
 Const DOG_UPDATE = "ContractUpdate" ' лист изменений (связок с Opp) Договоров
 
 '       --- для извлечения значений из Документов -  Fetch ---
 Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
-'''    Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":" & SFD_OPPID_COL & "/W"
 Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
-Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":" & SFOPP_OPPID_COL & "/0"
+Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№/0"
 Const FETCH_SFACC = "SFacc/" & SFACC_IDACC_COL & ":" & SFACC_ACCNAME_COL
 Const FETCH_DOGOVOR = DOG_SHEET & "/" & DOGCOD_COL & ":№/0"
 
 Const BALKY_TYPE = "Расходники"
+Const BALKY_OPPDATE = "1.1.2020"
+Const BALKY_OPP_TYPE = "продажа расходных материалов и ЗИП"
 
 Dim t0 As Single, t1 As Single, t2 As Single
 
@@ -65,7 +65,6 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         SheetSort SFopp, SFOPP_CLOSEDATE_COL
         
         NewLines = NonDialogPass()  'неинтерактивный проход по Платежам
-        
     End If
 
     
@@ -143,7 +142,7 @@ Function NonDialogPass() As Long
 ' 21.09.13
 
     Dim LocalTOC As TOCmatch
-    Dim ContrK As String, OppId As String, ThisOppId As String
+    Dim ContrK As String, OppId As String, ThisOppN As Long
     Dim i As Long, isErr As Boolean, sLine As String
     Dim SFoppEOL As Long: SFoppEOL = EOL(SFopp, DB_SFDC)
     
@@ -153,7 +152,7 @@ Function NonDialogPass() As Long
             Progress i / LocalTOC.EOL
             isErr = False
             If .Cells(i, PAYINSF_COL) = 1 Then          '=== если дошли до Платежей,
-                Exit For                                '    ..которые уже есть в SF
+                Exit For                                '    ..которые уже есть в SF ->
             ElseIf .Cells(i, PAYIDACC_COL) = "" Then    '=== если Организации нет в SF ->
                 GoTo NextRow
             ElseIf Trim(.Cells(i, PAYDOGOVOR_COL)) <> "" Then   '== в Платеже есть Договор в 1С
@@ -184,30 +183,33 @@ Function NonDialogPass() As Long
             ElseIf GoodType(.Cells(i, PAYGOOD_COL)) = BALKY_TYPE Then   '== по Расходникам
                 Dim BalkyExists As Boolean: BalkyExists = False
                 Dim FromN As Long               '=== подбираем подходящий Проект Balky
+                Dim OppDate As Date
                 For FromN = 2 To SFoppEOL
-                    ThisOppId = FetchDoc(FETCH_SFOPP, .Cells(i, SFOPP_ACC1C_COL), isErr, FromN)
-                    If ThisOppId = "" Then GoTo NewOppBalky
+                    sLine = FetchDoc(FETCH_SFOPP, .Cells(i, PAYCANONAME_COL), isErr, FromN)
+                    If sLine = "" Or Not IsNumeric(sLine) Then GoTo NewOppBalky
                     With DB_SFDC.Sheets(SFopp)
-                        If .Cells(FromN, SFOPP_LINE_COL) <> BALKY_TYPE Then GoTo NextOpp
-                        If .Cells(FromN, SFOPP_CLOSEDATE_COL) - Now < 365 Then GoTo NextOpp
+                        ThisOppN = sLine: OppDate = .Cells(ThisOppN, SFOPP_CLOSEDATE_COL)
+                        If .Cells(ThisOppN, SFOPP_TYP_COL) <> BALKY_OPP_TYPE _
+                            Or OppDate - Now < 365 Then GoTo NextOpp
                     End With
                     If BalkyExists Then
                         ErrMsg WARNING, "В Организации '" & .Cells(i, PAYCANONAME_COL) & "' несколько проектов по Расходникам"
                         GoTo NextRow
                     End If
-                    OppId = ThisOppId
+                    OppId = .Cells(ThisOppN, SFOPP_OPPID_COL)
+                    GoTo ToSF
 NextOpp:        Next FromN
-                GoTo ToSF
+                GoTo NextRow
             Else
                 GoTo NextRow
             End If
 NewOppBalky:  Dim OppName As String             '=== еще нет Проекта по Расходикам -> создаем
             sLine = FetchDoc(FETCH_SFACC, .Cells(i, PAYIDACC_COL), isErr)
             OppName = sLine & "-Расходники"
-            MS "NonDialogPass: не могу автоматически создать новый Проект " _
-                & vbCrLf & vbCrLf & vbTab & OppName & vbCrLf _
-                & vbCrLf & "Пожалуйста, создай его в SF со всеми атрибутами сам!"
-'''            WrNewSheet NEW_OPP, PAY_SHEET, i, OppName
+'            MS "NonDialogPass: не могу автоматически создать новый Проект " _
+'                & vbCrLf & vbCrLf & vbTab & OppName & vbCrLf _
+'                & vbCrLf & "Пожалуйста, создай его в SF со всеми атрибутами сам!"
+            WrNewSheet NEW_OPP, PAY_SHEET, i, OppName, BALKY_OPPDATE
             GoTo NextRow
 
 ToSF:       If Not isErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId   '>>> Новый Платеж в SF <<<
@@ -771,22 +773,22 @@ End Function
 '''End Sub
 
 Sub testGoodType()
-    Dim res(1 To 5) As String, Flg(4) As Boolean
+    Dim Res(1 To 5) As String, Flg(4) As Boolean
     Set DB_MATCH = FileOpen(F_MATCH)
     
     Call GoodType("AutoCAD Subscription Renewal/3", Flg)
     
-    res(1) = GoodType("xxx Плоттер xxx")    ' оборудование  (описано 'плоттер[ $]'
+    Res(1) = GoodType("xxx Плоттер xxx")    ' оборудование  (описано 'плоттер[ $]'
                                             ', т.е. слово точно, без флексий)
-    res(2) = GoodType("xx плот ")           ' не распознается, т.е. оплата
-    res(3) = GoodType("xxx плоттерА")       ' расходники    (описано 'плоттер')
+    Res(2) = GoodType("xx плот ")           ' не распознается, т.е. оплата
+    Res(3) = GoodType("xxx плоттерА")       ' расходники    (описано 'плоттер')
                                             '   т.е. после слова - не менее 1 произвольного символа
-    res(4) = GoodType("xxххx сканирА")
-    res(5) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
-    If res(1) <> "Оборудование" Then Stop
-    If res(2) <> "О П Л А Т А" Then Stop
-    If res(3) <> "Расходники" Then Stop
-    If res(4) <> "Печать" Then Stop
+    Res(4) = GoodType("xxххx сканирА")
+    Res(5) = GoodType("3D Манипулятор SpacePilot PRO, black, USB, CAD Professional/1;")
+    If Res(1) <> "Оборудование" Then Stop
+    If Res(2) <> "О П Л А Т А" Then Stop
+    If Res(3) <> "Расходники" Then Stop
+    If Res(4) <> "Печать" Then Stop
     
     Stop
  
