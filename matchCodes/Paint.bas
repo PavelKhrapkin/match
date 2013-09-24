@@ -11,7 +11,7 @@ Attribute VB_Name = "Paint"
 ' ? IsP_AbyN(Nstr)  - возвращает TRUE, если строка Nstr Платежа связана с ADSK
 '
 ' 8.11.2012 П.Л.Храпкин match 2.0
-' 19.9.13 - ревизия для match2.1
+' 24.9.13 - ревизия для match2.1
 
 Option Explicit
 Sub PaymentPaint()
@@ -161,33 +161,32 @@ Sub Acc1C_Bottom()
 '   14.8.12
 '   26.8.13 - добавлен AutoFilterReset и обновляю Шаблон пятки из отчета Acc1C
 '   19.9.13 - дополнительная защита от обработки Списка клиентов 1С
+'   24.9.13 - bug fix в проверке колонки шапки
 
     Dim R As TOCmatch
     Dim b As Range, FF As Range
     Dim Fsummary As String
-    Const BotStampLng = 22  ' размер проверяемой части пятки
-    
-    StepIn
     
     R = GetRep(Acc1C)
+    DB_1C.Sheets(Acc1C).Activate
     With DB_MATCH
         Fsummary = .Sheets(TOC).Cells(R.iTOC, TOC_FORMSUMMARY)
         Set FF = .Sheets(Header).Range(Fsummary)
     End With
-
-    With DB_1C.Sheets(Acc1C)
-'---- Действительно первые 2 строки из пятки? Если нет -> NOP
-        If Left(.Cells(1, 1), BotStampLng) = Left(FF.Cells(1, 3), BotStampLng) And _
-           Left(.Cells(2, 1), BotStampLng) = Left(FF.Cells(2, 3), BotStampLng) Then
-        
-            Set b = .Range(.Cells(1, 1), .Cells(2, 1))
-            b.Copy Destination:=FF.Cells(1, 3)
-            Set b = .Rows("1:3")
-            b.Copy Destination:=.Cells(R.EOL + 2, 1)
-            b.Delete
-            AutoFilterReset Acc1C
+    With ActiveSheet
+'---- А может ActiveSheet - это лист Список клиентов 1С в 1C.xlsx?
+        If .Cells(1, 3) = FF.Cells(1, 3) Then
+            MS "Это 'Список клиентов 1С' в базе match. Его обрабатывать не надо!"
+            Exit Sub
         End If
+
+        Set b = .Range(.Cells(1, 1), .Cells(2, 1))
+        b.Copy Destination:=FF.Cells(1, 3)
+        Set b = .Rows("1:3")
+        b.Copy Destination:=.Cells(R.EOL + 2, 1)
+        b.Delete
     End With
+    AutoFilterReset R.Name
 End Sub
 Sub AccPaint()
 '
@@ -207,7 +206,7 @@ Sub AccPaint()
     With Workbooks(RepTo.RepFile).Sheets(RepTo.SheetN)
         For i = 2 To RepTo.EOL
             Progress i / RepTo.EOL
-            Set R = .Cells(i, PAYISACC_COL)
+            Set R = .Cells(i, PAYIDACC_COL)
             If R <> "" Then
                 R.Interior.Color = rgbYellow
             Else
