@@ -134,6 +134,8 @@ NextRow:
         Next i
     End With
     SheetDedup NEW_CONTRACT, 1
+    SheetDedup DOG_UPDATE, 1
+    SheetDedup NEW_OPP, NEWOPP_OPPNAME_COL
 End Sub
 Function NonDialogPass() As Long
 '
@@ -247,7 +249,8 @@ Function OppSelect(ByVal iPaid As Long) As Long()
 ' 6.9.13
 ' 11.9.13 - возвращает массив индексов - номеров строк SFopp,
 '           причем в элементе (0) число найденных проектов
-' 15.9.13 использование PAYCANONAME_COL вместо PAYACC_COL
+' 15.9.13 - использование PAYCANONAME_COL вместо PAYACC_COL
+' 26.9.13 - доп фильтры по CloseDate и по закрытым платежам
 
     Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
     
@@ -278,6 +281,11 @@ Function OppSelect(ByVal iPaid As Long) As Long()
             iOpp = sN
             sN = .Cells(iOpp, SFOPP_OPPN_COL): nOpp = sN
             If Not IsSameTeam(Salesman, .Cells(iOpp, SFOPP_SALE_COL), nOpp) Then GoTo NxtOpp
+            Dim Probability As Long, CloseDate As Date
+            Probability = .Cells(iOpp, SFOPP_PROBABILITY_COL)
+            If Probability >= 95 Or Probability = 0 Then GoTo NxtOpp    'Opp Won или Lost? ->
+            CloseDate = .Cells(iOpp, SFOPP_CLOSEDATE_COL)
+            If PaidDate > CloseDate Then GoTo NxtOpp            'Дата Платежа > CloseDate? ->
 '---            по продавцу в SFopp проверяем что тип товара Платежа подходит для Проекта
 '''            OppGoodType = .Cells(iOpp, SFOPP_TYP_COL)
 '''            On Error Resume Next
