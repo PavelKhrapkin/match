@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  21.9.13
+'  1.10.13
 
 Option Explicit
 
@@ -105,7 +105,7 @@ Public Const DATE_BULKY = "1.1.20"  ' дата окончания для Bulky Проектов
 Public Const BIG = 77777            ' большое число для границ поиска
 
 '------------- match TOC - Оглавление отчетов в базе данных ----------
-Public Const ToC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
+Public Const TOC = "TOCmatch"           ' Оглавление листов всех файлов - баз данных
 Public Const TOC_F_DIR_COL = 10         ' в TOCmatch записан Path файлов DBs - DirDBs
 
 Public Const TOC_DATE_COL = 1           ' дата и время загрузки отчета
@@ -483,6 +483,8 @@ Public Const NEWDOG_ACCCITY_COL = 18    ' город
 Public Const NEWDOG_ACCINDEX_COL = 19   ' индекс
 Public Const NEWDOG_ACCSTATE_COL = 20   ' область
 Public Const NEWDOG_ACCCOUNTRY_COL = 21 ' страна
+
+Public Const DOG_UPDATE = "ContractUpdate" ' лист изменений (связок с Opp) Договоров
 
 '................ Лист новых Проектов NewOpp ..........................
 Public Const NEW_OPP = "NewOpp"         '"голубой" лист новых Проектов
