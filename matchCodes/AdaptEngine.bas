@@ -32,7 +32,7 @@ Attribute VB_Name = "AdaptEngine"
 '         в проходе Pass0 до работы основного Шаблона. Имя Дополнительного Шаблона имеет
 '         вид Шаблон_Pass0
 '
-' 27.09.13 П.Л.Храпкин, А.Пасс
+' 1.10.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -293,6 +293,7 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
 ' 20.10.12 - обработка кнопок "Занести"
 ' 10.11.12 - bug fix - рекурсивный вызов WP с неправильным Namer Range
 ' 24.09.13 - WrNewSheet NewOpp с CloseDate
+'  1.10.13 - SheetDedup
 
     Dim Proc As String, Step As String, iStep As Long
     Dim iPayment As Long, OppId As String, isErr As Boolean
@@ -322,6 +323,11 @@ Sub WP_Adapt_Continue(Button As String, iRow As Long)
     Select Case Button
     Case "STOP":
         StepOut Step, iStep
+        
+        SheetDedup NEW_CONTRACT, 1
+        SheetDedup DOG_UPDATE, 1
+        SheetDedup NEW_OPP, NEWOPP_OPPNAME_COL
+
         ProcStart Proc
         End
     Case "->":
@@ -681,6 +687,7 @@ AdapterSelect:
         If X = "Оборудование" Then Adapter = "Железо"
     Case "LineOpp":
         Adapter = "Программное обеспечение (ПО)"
+        X = GoodType(X)
         Select Case X
         Case "Расходники": Adapter = "Расходные материалы и ЗИП"
         Case "Работы":     Adapter = "Услуги"
@@ -724,7 +731,7 @@ AdapterSelect:
             End If
             Vdog = CDbl(sDog) * CurRate(DogCur)
         End If
-        Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog))
+        Adapter = Dec(Application.Max(Vpaid, Vinv, Vdog, CLng(X)))
     Case "TypOpp":  '!!' сменить название
     ' -- распознавание типа Проекта по типу и спецификации Товара
 '        Dim Good As String
