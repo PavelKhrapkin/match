@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 15.9.13 П.Л.Храпкин, А.Пасс
+' 6.10.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -382,6 +382,7 @@ Sub MergeReps()
 '
 ' 24.8.13
 '  7.9.13 - bug fix - всегда заменяем низ остарого отчета до конца
+'  6.10.13 - bug fix - изменение кода по FrDate и ToDate
 
     Dim RefSummary As String
     Dim R As TOCmatch
@@ -400,7 +401,7 @@ Sub MergeReps()
     RoldEOL = EOL(OldRepName) - GetReslines(RepName)
     
 '-- куда вставлять - чтение TOC по НОВОМУ отчету
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
         FrDateRow = .Cells(R.iTOC, TOC_FRDATEROW_COL)
         ToDateRow = .Cells(R.iTOC, TOC_TODATEROW_COL)
         Col = R.MyCol + .Cells(R.iTOC, TOC_DATECOL_COL)
@@ -420,13 +421,20 @@ Sub MergeReps()
         FrRow = 0: ToRow = 0
         For i = 2 To RoldEOL
             If .Cells(i, Col) >= FrDate And FrRow = 0 Then FrRow = i
-            If .Cells(i, Col) >= ToDate And ToRow = 0 Then
+            If .Cells(i, Col) <= ToDate Then
                 ToRow = i
+            Else
                 GoTo InsRow
             End If
         Next i
         ToRow = RoldEOL + 1
-InsRow: If FrRow = 0 Then FrRow = ToRow
+InsRow: If FrRow = 0 Then FrRow = RoldEOL + 1
+        .Rows(FrRow & ":" & ToRow).Delete   ' стираем заменяемые строки
+        Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy
+        .Rows(FrRow & ":" & FrRow).Insert Shift:=xlDown
+''
+'' НАДО ПЕРЕПИСЫВАТЬ ДАЛЬШЕ
+''
 '-- копируем Update и пятку в прежний документ (_OLD) от строки FrRow
        .Rows(FrRow & ":" & RoldEOL + 1111).Delete    ' стираем старый хвост
         Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
@@ -449,7 +457,7 @@ InsRow: If FrRow = 0 Then FrRow = ToRow
     End With
     
 '---- переписываем FrDate и ToDate в TOCmatch
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
         .Cells(R.iTOC, TOC_FRDATE_COL) = FrDate
         .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
     End With
