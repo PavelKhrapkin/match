@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 17.9.2013
+' П.Л.Храпкин 6.10.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -30,7 +30,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 23.8.13 - SheetSort загружаемого документа, если это часть полного
 ' 24.8.13 - упразднил InSheetN в TOC. Теперь Документ всегда должен быть в листе 1
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC
-' 17.9.13 - избавился от Workbooks MyDB, вместо этого GetRep
+' 6.10.13 - bug fix - игнорируем строки Платежа "авт нал"
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -47,11 +47,11 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     RepName = ActiveSheet.Name
     Lines = EOL(RepName, Workbooks(NewRep))
     
-    LocalTOC = GetRep(ToC)
+    LocalTOC = GetRep(TOC)
     
     IsSF = CheckStamp(6, NewRep, Lines)
 
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
         For i = TOCrepLines To LocalTOC.EOL
             If .Cells(i, TOC_REPNAME_COL) = "" Then GoTo NxDoc
             InSheetN = 1
@@ -65,27 +65,28 @@ NxDoc:  Next i
         
 '----- новый отчет распознан. Заменяем прежний отчет новым -----
 RepNameHandle:
-    Dim RepFileName As String
+    Dim RepFile As String
     Dim RepLoader As String
     Dim Created As Date
+    Dim MyDB As Workbook
     Dim TabColor
     
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
     
         If NewRep = .Cells(i, TOC_REPFILE_COL) Then
             MS "Это файл базы данных match! Его не надо загружать."
             End
         End If
         RepName = .Cells(i, TOC_REPNAME_COL)
-        RepFileName = .Cells(i, TOC_REPFILE_COL)
+        RepFile = .Cells(i, TOC_REPFILE_COL)
          'Lines = EOL - пятка
         Lines = Lines - GetReslines(RepName, True, .Cells(i, TOC_RESLINES_COL))
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
         TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
       '--получение диапазона дат в match и новом отчете ---
-        FrDateTOC = .Cells(i, TOC_FRDATE_COL)   ' Даты прежнего отчета
-        ToDateTOC = .Cells(i, TOC_TODATE_COL)   '.. в Match
+        FrDateTOC = .Cells(i, TOC_FRDATE_COL)
+        ToDateTOC = .Cells(i, TOC_TODATE_COL)
         NewFrDate_Row = .Cells(i, TOC_FRDATEROW_COL)
         NewFrDate_Col = .Cells(i, TOC_DATECOL_COL)
         Dim ToStr As String
@@ -99,12 +100,10 @@ RepNameHandle:
         
     End With
     
-'    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
-    Dim MyDB As TOCmatch
-    MyDB = GetRep(RepName)
+    Set MyDB = Workbooks.Open(DirDBs & RepFile, UpdateLinks:=False)
     
     With Workbooks(NewRep).Sheets(InSheetN)
-        If RepFileName = F_SFDC Then
+        If RepFile = F_SFDC Then
             Dim tst As String
             tst = .Cells(Lines + 5, 1)
             Created = GetDate(Right(.Cells(Lines + 5, 1), 16))
@@ -114,7 +113,7 @@ RepNameHandle:
             DateCol InSheetN, NewToDate_Col
             SheetSort InSheetN, NewToDate_Col
             Created = GetDate(Right$(.Name, 8))
-            Dim DateCell As String
+            Dim DateCell As String, PayDoc As String, Doc As Boolean
             Do
                 DateCell = .Cells(NewFrDate_Row, NewFrDate_Col)
                 If IsDate(DateCell) Then
@@ -126,8 +125,14 @@ RepNameHandle:
             Loop
             NewFrDate = GetDate(DateCell)
             Do
+                Doc = True
+                If RepName = PAY_SHEET Then
+            '-- платежный док. !! только для Платежа
+                    PayDoc = Trim(.Cells(NewToDate_Row, 1))
+                    If PayDoc = "" Or InStr(PayDoc, "авт нал") <> 0 Then Doc = False
+                End If
                 DateCell = .Cells(NewToDate_Row, NewToDate_Col)
-                If IsDate(DateCell) Then
+                If IsDate(DateCell) And Doc Then
                     Exit Do
                 Else
                     NewToDate_Row = NewToDate_Row - 1
@@ -141,18 +146,18 @@ RepNameHandle:
             End If
         ElseIf RepName = Acc1C Then
             Created = GetDate(Right$(.Cells(1, 1), 8))
-        ElseIf RepFileName = F_STOCK Then
-            Created = Workbooks(NewRep).BuiltinDocumentProperties(12)   'дата последнего Save
+        ElseIf RepFile = F_STOCK Then
+            Created = GetDate(MyDB.BuiltinDocumentProperties(12))   'дата последнего Save
         Else
             Created = "0:0"
             NewFrDate = "0:0": NewToDate = "0:0"
         End If
         .UsedRange.Rows.RowHeight = 15
         .Name = "TMP"
-        .Move Before:=Workbooks(MyDB.RepFile).Sheets(RepName)
+        .Move Before:=MyDB.Sheets(RepName)
     End With
     
-    With Workbooks(MyDB.RepFile)
+    With MyDB
         .Activate
   '-- если частичное обновление - прежний отчет не стираем, а переименовываем
   '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
@@ -173,7 +178,7 @@ DelRep: If SheetExists(RepName) Then
     End With
     
 '------------- match TOC и Log write и Save --------------
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
         .Activate
         .Cells(i, TOC_DATE_COL) = Now
         .Cells(i, TOC_EOL_COL) = Lines
@@ -218,7 +223,7 @@ DelRep: If SheetExists(RepName) Then
     Else
         PartStatus = PartStatus & "ПОЛНЫЙ документ."
     End If
-    LogWr "MoveToMatch: В файл '" & RepFileName & "' загружен новый отчет '" _
+    LogWr "MoveToMatch: В файл '" & RepFile & "' загружен новый отчет '" _
         & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld _
         & PartStatus
         
@@ -226,7 +231,7 @@ DelRep: If SheetExists(RepName) Then
     If RepLoader <> "" Then
         ProcStart RepLoader
     End If
-    Workbooks(MyDB.RepFile).Save
+    MyDB.Save
     Exit Sub
     Dim msg As String
 FatalInFile:    msg = "Не найден Штамп": GoTo FatMsg
