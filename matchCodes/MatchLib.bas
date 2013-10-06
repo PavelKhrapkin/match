@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 15.9.13
+' П.Л.Храпкин, А.Пасс 6.10.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -101,7 +101,7 @@ Sub InsMyCol()
     
     R = GetRep(ActiveSheet.Name)
     
-    With DB_MATCH.Sheets(ToC)
+    With DB_MATCH.Sheets(TOC)
         Set FF = DB_MATCH.Sheets(Header).Range(.Cells(R.iTOC, TOC_FORMNAME))
         Fsummary = .Cells(R.iTOC, TOC_FORMSUMMARY)
     End With
@@ -238,14 +238,17 @@ Sub LogReset()
 ' сброс Log листа и его очистка
 ' запускается кнопкой [Reset] на лосте Log
 '   19.2.2012
+' 6.10.13 - переписано для match 2.1, Log стираем до EOL
 
-    Dim N
-    Sheets(Log).Select
-    Cells(1, 3).Select
-    N = Cells(1, 4)
-    Cells(1, 4) = 1
-    Rows("2:" & N).Delete
-    LogWr ("LogReset")
+    Dim N As String
+    GetRep TOC
+    With DB_MATCH.Sheets(Log)
+        N = EOL(Log, DB_MATCH)
+        .Rows("2:" & N).Delete
+        .Cells(1, 4) = 1
+        .Cells(1, 1) = Now
+    End With
+    LogWr ("LogReset, предыдущий Log из " & N & "  строк стерт")
 End Sub
 Function AutoFilterReset(SheetN) As Integer
 '
@@ -269,7 +272,7 @@ Function AutoFilterReset(SheetN) As Integer
         .Rows("1:1").Select
         On Error Resume Next
         ActiveWindow.FreezePanes = True
-        Application.Goto .Cells(R.EOL - 3, 1), True
+        Application.GoTo .Cells(R.EOL - 3, 1), True
         On Error GoTo 0
     End With
 End Function
@@ -382,10 +385,10 @@ Function GetDate(txt As String) As Date
 End Function
 Sub tGetDate()
 
-    Dim res(1 To 5) As Date
-    res(1) = GetDate("12/24/2012 4:12")
-    res(2) = GetDate("12.24.2012 4:12")
-    res(3) = GetDate("24.2.12 4:12")
+    Dim Res(1 To 5) As Date
+    Res(1) = GetDate("12/24/2012 4:12")
+    Res(2) = GetDate("12.24.2012 4:12")
+    Res(3) = GetDate("24.2.12 4:12")
     Stop
 End Sub
 Function Dec(a) As String
