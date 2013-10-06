@@ -381,8 +381,8 @@ Sub MergeReps()
 '   * Отлажено для Платежей и Договоров 1С
 '
 ' 24.8.13
-'  7.9.13 - bug fix - всегда заменяем низ остарого отчета до конца
-'  6.10.13 - bug fix - изменение кода по FrDate и ToDate
+'  7.9.13 - bug fix - всегда заменяем низ старого отчета до конца
+'  6.10.13 - записываем строки из прежнего документа в новый
 
     Dim RefSummary As String
     Dim R As TOCmatch
@@ -428,32 +428,33 @@ Sub MergeReps()
             End If
         Next i
         ToRow = RoldEOL + 1
+'-- копируем прежний документ (_OLD) от строки FrRow и от ToRow до EOL в новый документ
 InsRow: If FrRow = 0 Then FrRow = RoldEOL + 1
-        .Rows(FrRow & ":" & ToRow).Delete   ' стираем заменяемые строки
-        Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy
-        .Rows(FrRow & ":" & FrRow).Insert Shift:=xlDown
-''
-'' НАДО ПЕРЕПИСЫВАТЬ ДАЛЬШЕ
-''
-'-- копируем Update и пятку в прежний документ (_OLD) от строки FrRow
-       .Rows(FrRow & ":" & RoldEOL + 1111).Delete    ' стираем старый хвост
-        Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:" & R.EOL).Copy _
-            Destination:=.Cells(FrRow, 1)
-        RoldEOL = EOL(OldRepName)
-        DB_MATCH.Sheets(Header).Range(RefSummary).Copy _
-            Destination:=.Cells(RoldEOL + 2, 1)
-'-- переписываем FrDate и ToDate
-        If ToDateRow = "EOL" Then ToDateRow = RoldEOL
-        FrDate = .Cells(FrDateRow, Col)
-        ToDate = .Cells(ToDateRow, Col)
+        If FrRow > 2 Then
+            .Rows("2:" & FrRow - 1).Copy
+            Workbooks(R.RepFile).Sheets(R.SheetN).Rows("2:2").Insert Shift:=xlDown
+        End If
+        ToRow = ToRow + 1
+        If ToRow < RoldEOL Then
+            .Rows(ToRow & ":" & RoldEOL).Copy
+            Workbooks(R.RepFile).Sheets(R.SheetN).Rows(R.EOL & ":" & R.EOL).Insert Shift:=xlDown
+        End If
     End With
-
-'-- переменовываем листы и уничтожаем Update документ
+        
+'-- дописываем пятку в новый и уничтожаем прежний документ
     With Workbooks(R.RepFile)
+        With .Sheets(R.SheetN)
+            R.EOL = EOL(RepName, Workbooks(R.RepFile)) - GetReslines(RepName)
+            DB_MATCH.Sheets(Header).Range(RefSummary).Copy _
+                Destination:=.Cells(R.EOL + 2, 1)
+            SheetSort i, Col
+            If ToDateRow = "EOL" Then ToDateRow = R.EOL
+            FrDate = .Cells(FrDateRow, Col) ' переписываем FrDate и ToDate
+            ToDate = .Cells(ToDateRow, Col)
+        End With
         Application.DisplayAlerts = False
-        .Sheets(R.SheetN).Delete
+            .Sheets(OldRepName).Delete
         Application.DisplayAlerts = True
-        .Sheets(OldRepName).Name = R.SheetN
     End With
     
 '---- переписываем FrDate и ToDate в TOCmatch
