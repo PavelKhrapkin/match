@@ -13,10 +13,8 @@ Attribute VB_Name = "Checking"
 ' S  CheckRepDate(Rep1,[Rep2],[Rep3],[Rep4],[Rep5])  - проверка дат Документов
 ' -  RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален
 '                         иначе выводит сообщение о необходимости перезагрузки
-' S CheckProc0(NewProcResult)    - проверка, что вспомогательный Процесс не нашел
-'                                  новых "автоматических" записей в SF
 '
-' 15.9.13
+' 10.10.13
 ' --- история модуля ----
 '   19.2.2012
 '   24.2.2012 - кол-во ошибок по Продавцу в We
@@ -247,18 +245,6 @@ Sub CheckSheet(SheetN, R, C, txt)
         Stop
     End If
 End Sub
-Sub CheckProc0(NewProcResult As String)
-'
-' S CheckProc0(NewProcResult)   - проверка, что вспомогательный Процесс не нашел
-'                                 новых "автоматических" записей в SF
-' 1/10/12
-' 15.9.13 - перенос в модуль Checking.bas
-
-    If NewProcResult <> "0" Then
-        ErrMsg FATAL_ERR, PublicProcName & ": CheckProc0> в результате не '0'"
-        End
-    End If
-End Sub
 Sub CheckGoodType()
 '
 ' Проход по Платежам и проверка, все ли типы товаров распознаются
@@ -355,11 +341,12 @@ Sub CheckRepDate(ByVal Rep1 As String, _
 End Sub
 Sub RepDateSub(Rep As String, Name As String)
 '
-' - RepDateSub(Rep, Name, Dat)  - возвращает TRUE, если Документ Rep актуален,
-'                       то есть создан Документ Rep создан ПОЗЖЕ него.
+' - RepDateSub(Rep, Name)  - возвращает TRUE, если Документ Rep актуален,
+'                       то есть создан Документ Name создан ПОЗЖЕ него.
 '                       иначе выводит сообщение о необходимости перезагрузки
 ' 30.8.13
 ' 14.9.13 - изменен интерфейс, перенос в модуль Checking
+' 10.10.13 - bug fix - ActTOC.Dat
 
     Dim LocalTOC As TOCmatch, ActTOC As TOCmatch
     
@@ -368,11 +355,11 @@ Sub RepDateSub(Rep As String, Name As String)
     LocalTOC = GetRep(Rep)
     ActTOC = GetRep(Name)
     
-    If LocalTOC.CreateDat < ActTOC.CreateDat Then GoTo Er
-      
+    If ActTOC.CreateDat <= LocalTOC.CreateDat Then GoTo Er
+    
 Ex: Exit Sub
 Er: ErrMsg FATAL_ERR, "Необходимо загрузить заново '" & Rep & "' за " _
-        & LocalTOC.CreateDat & vbCrLf & "Он устарел относительно '" _
-        & Name & "' за " & ActTOC.CreateDat
+        & LocalTOC.CreateDat & vbCrLf & "Он устарел относительно '" & Name & "' за " _
+        & ActTOC.Dat
 End Sub
 
