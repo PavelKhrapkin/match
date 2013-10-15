@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content Документов в match.xlsx
 '
-' 18.09.2013
+' 16.10.2013
 '=========================== Описания ================================
 '       * TOC храниться в листе TOC. Данные о Документе хранятся в виде строки этого листа
 '       * при работе отдельных Шагов, параметры и константы передаются в структуре TOCmatch,
@@ -22,7 +22,7 @@ Attribute VB_Name = "TOCengine"
 ' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
 ' - WrTOC([Name])               - записывает Public RepTOC в TOCmatch для Документа Name
 
-Function GetRep(RepName) As TOCmatch
+Function GetRep(RepName, Optional ChkStamp As Boolean = True) As TOCmatch
 '
 ' - GetRep(RepName) - находит и проверяет штамп отчета RepName
 '   26.7.12
@@ -35,6 +35,7 @@ Function GetRep(RepName) As TOCmatch
 '   13.8.13 - добавлено поле iTOC в структуру TOCmatch - номер строки в TOC
 '   18.8.13 - с подпрограммой GetReslines - изменение размера пятки при загрузке и далее
 '   27.8.13 - не используем глобальную структуру RepTOC
+'   16.10.13 - Optional ChkStamp - проверка Штампа не обязательна; по умолчанию проверим
 
     Const TOClineN = 4  ' номер строки в TOCmatch описывающей саму себя
     Dim i As Long, EOL_TOC As Long, RepFile As String
@@ -73,7 +74,6 @@ Function GetRep(RepName) As TOCmatch
             .Cells(1, 2) = DirDBs
         End With
         F_match_env.Close
-'''''        Exit Function
     End If
     
     With DB_MATCH.Sheets(TOC)
@@ -86,10 +86,6 @@ FoundRep:
         RepFile = .Cells(i, TOC_REPFILE_COL)
     End With
     
-'---- проверка штампа ----------
-    Dim Str As Long, StC As Long
-    Dim TestedStamp As String
-    
     Select Case RepFile
     Case F_MATCH:
     Case F_1C:      Set DB_1C = FileOpen(RepFile)
@@ -100,11 +96,9 @@ FoundRep:
     Case Else: FatalRep "GetRep: файл штампа=" & RepFile, RepName
     End Select
             
-    If CheckStamp(i) Then
-        GetRep = GetTOC(i)
-    Else
-        FatalRep "GetRep", RepName
-    End If
+    GetRep = GetTOC(i)
+'---- проверка штампа ----------
+    If ChkStamp Then If Not CheckStamp(i) Then FatalRep "GetRep", RepName
 End Function
 Function GetTOC(ByVal iTOC As Long) As TOCmatch
 '
@@ -158,7 +152,6 @@ Function CheckStamp(iTOC As Long, _
 '  6.4.13 - обработка Exception при поиске Штампа. Ошибка - значит Штампа нет.
 ' 14.7.13 - дополнительная диагностика и действия, если Штамп не найден
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC за счет GetTOC(iTOC)
-' 17.9.13 - bug fix при вызове EOL для RightEOL
 
     Dim SR() As String, SC() As String
     Dim Str As Long, StC As Long
@@ -215,7 +208,7 @@ NxtChk:
         Next i
         If NewRep = "" Then
             Dim ToChangeEOLinTOC As String, RightEOL As Long
-            RightEOL = EOL(.SheetN, Workbooks(.RepFile)) - .ResLines
+            RightEOL = EOL(.SheetN) - .ResLines
             ToChangeEOLinTOC = MsgBox("CheckStamp: не нашли Штамп '" & txt & "' в строке " & Str _
                 & vbCrLf & "полагая,  что EOL = " & .EOL & ";" _
                 & vbCrLf & "на самом деле EOL = " & RightEOL _
@@ -315,7 +308,6 @@ Sub WrTOC(Optional ByVal Name As String = "")
 ' 15.08.13 - Optional Name - имя документа, по которому сохраняем строку TOCmatch
 ' 26.08.13 - переписываем EOL в TOC
 ' 28.08.13 - Name из RepTOC.Name
-' 18.09.13 - Save файл в котором находится обработанный Документ
 
     Dim i As Long
     Const BEGIN = 8 ' начало списка обрабатываемых Документов
@@ -334,11 +326,10 @@ FoundRep:
     W = DB_MATCH.Sheets(TOC).Cells(i, TOC_REPFILE_COL)
     S = DB_MATCH.Sheets(TOC).Cells(i, TOC_SHEETN_COL)
     Call FileOpen(W)
-''    Workbooks(W).Sheets(S).Activate
-    
+    Workbooks(W).Sheets(S).Activate
     Dim Resl As String
     Resl = DB_MATCH.Sheets(1).Cells(i, TOC_RESLINES_COL)
-    NewEOL = EOL(Name, Workbooks(W)) - GetReslines(Name, , Resl)
+    NewEOL = EOL(Name) - GetReslines(Name, , Resl)
     If NewEOL <= 0 Then GoTo Err
     With DB_MATCH.Sheets(TOC)
 '        .Cells(i, TOC_EOL_COL) = EOL(Name, Workbooks(RepTOC.RepFile)) - RepTOC.ResLines
@@ -359,7 +350,6 @@ FoundRep:
 '''        .Cells(i, TOC_REPLOADER_COL) = RepTOC.Loader
         .Cells(1, 1) = Now
     End With
-    Workbooks(W).Save
     DB_MATCH.Save
     Exit Sub
 Err: ErrMsg FATAL_ERR, "WrTOC> На Шаге '" & RepTOC.Made _

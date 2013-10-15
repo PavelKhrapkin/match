@@ -5,7 +5,7 @@ Attribute VB_Name = "SFanalitics"
 '       Проектов    = Opportunity   = Opp   Отчет SFopp или SF
 '       Платежей -- для занесенных в SF --  Отчет SF
 '       Договоров   = Contract      = Contr Отчет SFD
-'   18.9.2013
+'   16.10.2013
 '
 '''''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
 ' - AccId(Account)              - Id SF Организации по имени 1С
@@ -25,42 +25,34 @@ Attribute VB_Name = "SFanalitics"
 ' - PayIdByK(PayK)  - получение Id SF по коду Платежа
 
 Option Explicit
-Sub DicAccSyn()
+Sub DicAccSyn(ByVal Dictionary As String)
 '
-' S DicAccSyn()   - построение словаря синонимов организаций DicAccSynonims
+' S DicAccSyn(Dictionary)   - построение словаря синонимоов организаций DicAccSynonims
 '
-' 18.9.13
+' 15.9.13
+' 16.10.13 - без проверки Штампа при создании DicAccSynonims
 
     Const SFACC_DELIMETR = "<ИЛИ>"
-    Const SFACC_CANONIC_COL = 3
-    
-    Dim R As TOCmatch, i As Long, Str As String, Part() As String
+    Dim DicTOC As TOCmatch, R As TOCmatch, i As Long, Str As String, Part() As String
     
     StepIn
 
-    R = GetRep("SF_DicAccSyn")
-    NewSheet DIC_ACC_SYNONIMS
-    With DB_TMP
-        .Sheets(DIC_ACC_SYNONIMS).Move After:=.Sheets("DicAcc")
-    End With
+    R = GetRep(ActiveSheet.Name, False)
+    NewSheet Dictionary
+'    DicTOC = GetRep(Dictionary)
     
     With DB_SFDC.Sheets(R.SheetN)
         For i = 2 To R.EOL
             Progress i / R.EOL
-            Str = .Cells(i, SFACC_CANONIC_COL)
+            Str = .Cells(i, 3)
             Do
                 Part = Split(Str, SFACC_DELIMETR)
-                WrNewSheet DIC_ACC_SYNONIMS, R.Name, i, Trim(Part(0))
+                WrNewSheet Dictionary, R.Name, i, Trim(Part(0))
                 If UBound(Part) < 1 Then Exit Do
                 Str = Trim(Part(1))
             Loop
         Next i
     End With
-    R = GetRep(DIC_ACC_SYNONIMS)
-    R.Dat = Now: R.Made = "DicAccSyn"
-    DB_MATCH.Sheets(TOC).Cells(R.iTOC, TOC_CREATED_COL) = R.Dat 'WrTOC это не пишет
-    RepTOC = R
-    WrTOC DIC_ACC_SYNONIMS
 End Sub
 Sub testDicAccSyn()
 '

@@ -555,6 +555,7 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
 ' 9.9.13 - добавлены Адаптеры TypOpp, LineOpp, KindOpp
 '14.9.13 - добавлен Адаптер AltFetch: Y=X или его альтернатива из Fetch, если есть
 '16.9.13 - добавлен Optional параметр PutToRow
+'16.10.13 -bug fix - убрали обращение к WP для Адаптера ContrK
 
     Dim FF() As String, Tmp() As String, InitX As String
     Dim i As Long, Par() As String, Z(10) As String
@@ -594,10 +595,8 @@ Function Adapter(ByVal Request As String, ByVal X As String, ByVal F_rqst As Str
             Exit Function
         End If
     Case "ContrK":
-        Const PAY_REF = 8
-        Dim MainDog As String, iPay As Long
-        iPay = DB_TMP.Sheets(WP).Cells(PAY_REF, 4)
-        MainDog = DB_1C.Sheets(PAY_SHEET).Cells(iPay, CLng(Par(0)))
+        Dim MainDog As String
+        MainDog = DB_1C.Sheets(PAY_SHEET).Cells(iRow, CLng(Par(0)))
         X = ContrCod(X, MainDog)
     Case "AltFetch":    ' Y=X или его альтернатива из Fetch, если есть
         Dim Str As String
@@ -800,7 +799,7 @@ Function AdapterWP(AdapterName, X, ByRef Par, _
 '
 ' - AdapterWP() - обработка Адаптеров для Шаблонов WP
 ' 5.1.2013
-' 13.10.13 - дописываем
+' 16.10.13 - дописываем
 
     Dim i As Long, Z(10) As String, WP_Row As Long
      
@@ -809,7 +808,7 @@ Function AdapterWP(AdapterName, X, ByRef Par, _
     
         Select Case AdapterName
         Case "CopyToVal":
-            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(PutToRow, iCol)
+            .Cells(PutToRow, iCol) = .Cells(iRow - 1 + PTRN_VALUE, iCol)
         Case "CopyFrVal":
             .Cells(PutToRow, iCol).Copy .Cells(iRow - 1 + PTRN_VALUE, iCol)
         Case "OppType":             ' инициализация типа Проекта
