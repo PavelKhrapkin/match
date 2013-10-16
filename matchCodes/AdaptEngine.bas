@@ -160,9 +160,9 @@ Sub testWP_Adapt()
     WP_Adapt "HDR_WP", 2
     Stop
 End Sub
-Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
+Sub WP_Adapt(ByVal F As String, ByVal iPayLine As Long)
 '
-' - WP_Adapt(F, iLine)    - выводит на экран WP по Платежу в iLine, подготавливая диалог,
+' - WP_Adapt(F, iPayLine)    - выводит на экран WP по Платежу в iPayLine, подготавливая диалог,
 '                           где F - прототип выводимой формы документа (WP_Prototype)
 '
 '   21.10.12
@@ -179,6 +179,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
     Const WP_PROTOTYPE = "WP_Prototype"
 
     Dim R As TOCmatch                           ' обрабатываемый Документ
+    Dim iOppLine As Long                        ' номер строки в SFopp
     Dim iRow As Integer, iCol As Integer        ' строка и колонка Шаблона F
     Dim WP_Row As Long                          ' номер строки WP, куда выводится Y
     Dim PutToRow As Long, putToCol As Long
@@ -199,9 +200,9 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
 ''    Set DB_TMP = FileOpen(F_TMP)
     With Workbooks(LocalTOC.RepFile)
         Application.DisplayAlerts = False
-        On Error Resume Next
-        .Sheets(WP).Delete
-        On Error GoTo 0
+            On Error Resume Next
+                .Sheets(WP).Delete
+            On Error GoTo 0
         Application.DisplayAlerts = True
         DB_MATCH.Sheets(WP_PROTOTYPE).Copy Before:=.Sheets(1)
         .Sheets(1).Name = WP
@@ -224,7 +225,7 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
             If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, FF.Cells(3, i)
         Next i
         
-        .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
+''''''''''''''''''''''''''        .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iLine
         WP_Prototype_Lines = EOL(WP, DB_TMP)
         For iRow = 1 To WP_Prototype_Lines Step PTRN_LNS
             iSelect = 0: QtyOpp = 0
@@ -236,13 +237,13 @@ Sub WP_Adapt(ByVal F As String, ByVal iLine As Long)
                 If QtyOpp = 0 Then GoTo StripEnd
             End If
             Do
-                If QtyOpp > 0 Then iLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
+                If QtyOpp > 0 Then iOppLine = nOpp(iSelect + 1) ' вывод Проектов по массиву индексов
                 If .Cells(iRow, 1) <> "" Then
                     R = GetRep(.Cells(iRow, 1))
                     Workbooks(R.RepFile).Sheets(R.SheetN).Activate
                 End If
                 For iCol = 5 To .UsedRange.Columns.Count
-                    X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iLine)
+                    X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iOppLine)
                     
         WP_Row = iRow - 1 + PTRN_VALUE
         If PtrnType = PTRN_SELECT Then
@@ -288,6 +289,60 @@ StripEnd:   .Rows(iRow - 1 + PTRN_COLS).Hidden = True
 '''''''''''''''''''''''''''''''''''
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
+End Sub
+Sub WP_Adapt(ByVal F As String, ByVal iPayLine As Long)
+'
+' - WP_Adapt(F, iPayLine)    - выводит на экран WP по Платежу в iPayLine, подготавливая диалог,
+'                           где F - прототип выводимой формы документа (WP_Prototype)
+'
+' 17.10.13
+
+    Dim nOpp() As Long, iOpp As Long
+    
+    WP_Initiation
+
+    Strip 1, 2
+    Strip 7, 8
+    Strip 13, 14
+    
+    nOpp = OppSelect(iPayLine)
+    For iOpp = 1 To nOpp(0)
+        Strip 19, 24 + iOpp
+    Next iOpp
+'''''''''''''''''''''''''''''''''''
+    DB_TMP.Sheets(WP).Activate
+    End '''  остановка VBA ''''''''
+'''''''''''''''''''''''''''''''''''
+End Sub
+Sub Strip(ByVal iPattern As Long, ByVal iOut As Long)
+'
+' - Strip(iPattern, iOut)   - вывод в лист WP по Шаблону из строки iPattern
+'                             с выводом в строку iOut
+' 17.10.13
+    
+    Dim LocalTOC As TOCmatch
+    
+    If .Cells(iPattern, 1) <> "" Then
+        LocalTOC = GetRep(.Cells(iRow, 1)) ' открываем Документ, с которым работает Шаблон
+'''        Workbooks(R.RepFile).Sheets(R.SheetN).Activate
+    End If
+    
+    With DB_TMP.Sheets(WP)
+        For iCol = 5 To .UsedRange.Columns.Count
+'---            X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iOppLine)
+            Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
+            F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+            
+            Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow)
+            
+            X = .Cells(iRow + PTRN_COLS - 1, iCol)
+            If X = "-1" Then Exit For
+            If Not IsErr And X <> "" Then
+                Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
+                fmtCell DB_TMP, WP, Width, Y, PutToRow, putToCol
+            End If
+        Next iCol
+    End With
 End Sub
 Sub WP_Adapt_Continue(Button As String, iRow As Long)
 '
