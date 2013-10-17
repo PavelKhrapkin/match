@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  1.10.13
+'  17.10.13
 
 Option Explicit
 
@@ -167,11 +167,6 @@ Type TOCmatch
 End Type
 
 Public RepTOC As TOCmatch   ' структура TOCmatch
-''''''''''''Public RepMatch As TOCmatch ' структура TOCmatch для отчета в match.xlsm
-''''''''''''Public Rep1C As TOCmatch    ' структура TOCmatch для отчета в 1С.xlsm
-''''''''''''Public RepSF As TOCmatch    ' структура TOCmatch для отчета в SFDC.xlsm
-''''''''''''Public RepADSK As TOCmatch  ' структура TOCmatch для отчета в ADSK.xlsm
-''''''''''''Public RepStock As TOCmatch ' структура TOCmatch для отчета в Stock.xlsm
 
 Public Const REP_LOADED = "Loaded"            ' MoveToMatch: отчет загружен в файл DB
 
@@ -563,7 +558,7 @@ Type PostAddr               'Атрибуты почтового адреса
 End Type
 
 Type SNatr                  'Атрибуты SN Autodesk
-    sN      As String           ' Серийный номер
+    SN      As String           ' Серийный номер
     Contr   As String           ' Контракт Autodesk / Agreement
     AccN    As String           ' Customer Account Number, CSN на PartnerCenter
     AccName As String           ' Имя клиента на PartnerCenter
