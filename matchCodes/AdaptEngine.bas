@@ -32,7 +32,7 @@ Attribute VB_Name = "AdaptEngine"
 '         в проходе Pass0 до работы основного Шаблона. Имя Дополнительного Шаблона имеет
 '         вид Шаблон_Pass0
 '
-' 13.10.13 П.Л.Храпкин, А.Пасс
+' 18.10.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -82,6 +82,9 @@ Const FOR_PROCESS = "ForProcess"    'колонка в Шаблоне для проверки
                                     '.. в Адаптере имени Процесса
 Const PTRN_SELECT = "Select"
 Const OPP_BALKY = "Расходные материалы и ЗИП"
+
+Const WP_PROTOTYPE = "WP_Prototype"
+
 Sub WrNewSheet(SheetNew As String, SheetDB As String, DB_Line As Long, _
     Optional ExtPar As String, Optional ExtPar2 As String, Optional ExtPar3 As String)
 '
@@ -160,7 +163,7 @@ Sub testWP_Adapt()
     WP_Adapt "HDR_WP", 2
     Stop
 End Sub
-Sub WP_Adapt(ByVal F As String, ByVal iPayLine As Long)
+Sub WP_Adapt_Old(ByVal F As String, ByVal iPayLine As Long)
 '
 ' - WP_Adapt(F, iPayLine)    - выводит на экран WP по Платежу в iPayLine, подготавливая диалог,
 '                           где F - прототип выводимой формы документа (WP_Prototype)
@@ -295,51 +298,87 @@ Sub WP_Adapt(ByVal F As String, ByVal iPayLine As Long)
 ' - WP_Adapt(F, iPayLine)    - выводит на экран WP по Платежу в iPayLine, подготавливая диалог,
 '                           где F - прототип выводимой формы документа (WP_Prototype)
 '
-' 17.10.13
-
-    Dim nOpp() As Long, iOpp As Long
+' 18.10.13
     
-    WP_Initiation
-
-    Strip 1, 2
-    Strip 7, 8
-    Strip 13, 14
+    Dim LocalTOC As TOCmatch
+    Dim nOpp() As Long, iOpp As Long, i As Long
     
+    StepIn
+    
+'---- Создаем заново лист WP, перенося класс-рутину из WP_Prototype
+    
+    LocalTOC = GetRep(WP)
+
+    With Workbooks(LocalTOC.RepFile)
+        Application.DisplayAlerts = False
+            On Error Resume Next
+                .Sheets(WP).Delete
+            On Error GoTo 0
+        Application.DisplayAlerts = True
+        DB_MATCH.Sheets(WP_PROTOTYPE).Copy Before:=.Sheets(1)
+        .Sheets(1).Name = WP
+        With .Sheets(LocalTOC.SheetN)
+            .Tab.Color = rgbCoral
+            .Rows("1:" & EOL(WP, DB_TMP)).Delete    ' стираем строки из Шаблона
+            
+            Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
+            FF.Copy .Cells(1, 1)
+    '''        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!WP_Adapt_Continue"
+    '---- задаем ширину и заголовки вставленных колонок
+            For i = 1 To FF.Columns.Count
+                If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, FF.Cells(3, i)
+            Next i
+        End With
+    End With
+    
+    Strip 1, 2, iPayLine    ' Кнопки
+    Strip 7, 8, iPayLine    ' Платеж
+    Strip 13, 14, iPayLine  ' Организация
+    
+                            ' Проекты
     nOpp = OppSelect(iPayLine)
     For iOpp = 1 To nOpp(0)
-        Strip 19, 24 + iOpp
+        Strip 19, 24 + iOpp, iPayLine
     Next iOpp
 '''''''''''''''''''''''''''''''''''
     DB_TMP.Sheets(WP).Activate
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
 End Sub
-Sub Strip(ByVal iPattern As Long, ByVal iOut As Long)
+Sub Strip(ByVal iPattern As Long, ByVal iOut As Long, ByVal iPayLine As Long)
 '
-' - Strip(iPattern, iOut)   - вывод в лист WP по Шаблону из строки iPattern
-'                             с выводом в строку iOut
+' - Strip(iPattern, iOut, iPayLine)   - вывод в лист WP по Шаблону
+'      из строки iPattern с выводом в строку iOut по строке Платежа iPayLine
 ' 17.10.13
     
-    Dim LocalTOC As TOCmatch
+    Dim LocalTOC As TOCmatch, IsErr As Boolean, Width As String
+    Dim X As String, Y As String, Rqst As String, F_rqst As String
+    Dim iCol As Long
     
-    If .Cells(iPattern, 1) <> "" Then
-        LocalTOC = GetRep(.Cells(iRow, 1)) ' открываем Документ, с которым работает Шаблон
+    If W_TMP.Sheets(WP).Cells(iPattern, 1) <> "" Then
+        LocalTOC = GetRep(.Cells(iPattern, 1)) ' открываем Документ, с которым работает Шаблон
 '''        Workbooks(R.RepFile).Sheets(R.SheetN).Activate
     End If
     
-    With DB_TMP.Sheets(WP)
+    With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
         For iCol = 5 To .UsedRange.Columns.Count
-'---            X = X_ParseWP(iRow, iCol, PutToRow, putToCol, iOppLine)
-            Rqst = .Cells(iRow - 1 + PTRN_ADAPT, iCol)
-            F_rqst = .Cells(iRow - 1 + PTRN_FETCH, iCol)
+            Dim X_rqst As String, F_rqst As String
+            X = X_Parse(InDoc:=.Cells(iPattern, 1), _
+                    OutDoc:=WP, _
+                    X_rqst:=.Cells(iPattern - 1 + PTRN_COLS, iCol), _
+                    iLine:=iPayLine, _
+                    PutToRow:=iOut)
+
+            Rqst = .Cells(iPattern - 1 + PTRN_ADAPT, iCol)
+            F_rqst = .Cells(iPattern - 1 + PTRN_FETCH, iCol)
             
-            Y = Adapter(Rqst, X, F_rqst, IsErr, R.EOL, iRow, iCol, PutToRow)
+            Y = Adapter(Rqst, X, F_rqst, IsErr, , iPattern, iCol, iOut)
             
-            X = .Cells(iRow + PTRN_COLS - 1, iCol)
+            X = .Cells(iPattern + PTRN_COLS - 1, iCol)
             If X = "-1" Then Exit For
             If Not IsErr And X <> "" Then
-                Width = Split(.Cells(iRow + PTRN_WIDTH - 1, iCol), "/")
-                fmtCell DB_TMP, WP, Width, Y, PutToRow, putToCol
+                Width = Split(.Cells(iPattern + PTRN_WIDTH - 1, iCol), "/")
+                fmtCell DB_TMP, WP, Width, Y, iOut, putToCol
             End If
         Next iCol
     End With
