@@ -355,7 +355,7 @@ Sub Strip(ByVal iPattern As Long, ByVal iOut As Long, ByVal iPayLine As Long)
     Dim X As String, Y As String, Rqst As String, F_rqst As String
     Dim iCol As Long
     
-    If W_TMP.Sheets(WP).Cells(iPattern, 1) <> "" Then
+    If DB_TMP.Sheets(WP).Cells(iPattern, 1) <> "" Then
         LocalTOC = GetRep(.Cells(iPattern, 1)) ' открываем Документ, с которым работает Шаблон
 '''        Workbooks(R.RepFile).Sheets(R.SheetN).Activate
     End If
