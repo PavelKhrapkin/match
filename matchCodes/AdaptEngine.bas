@@ -323,64 +323,77 @@ Sub WP_Adapt(ByVal F As String, ByVal iPayLine As Long)
             
             Dim FF As Range:  Set FF = DB_MATCH.Sheets(WP_PROTOTYPE).Range(F)
             FF.Copy .Cells(1, 1)
-    '''        .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!WP_Adapt_Continue"
     '---- задаем ширину и заголовки вставленных колонок
             For i = 1 To FF.Columns.Count
-                If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, FF.Cells(3, i)
+''                If Not TraceWidth Then setColWidth DB_TMP.Name, WP, i, FF.Cells(3, i)
             Next i
+    
+            Strip 1, 2, 0           ' Кнопки
+            Strip 7, 8, iPayLine    ' Платеж
+            Strip 13, 14, 0         ' Организация
+            Strip 19, 20, 0         ' Договоры
+        '-------------              ' Проекты
+            nOpp = OppSelect(iPayLine)
+            For iOpp = 1 To nOpp(0)
+                Strip 25, 30 + iOpp, nOpp(iOpp)
+            Next iOpp
+           
+    '        .Rows(iPattern + 1).Hidden = True
+            If nOpp(0) = 0 Then
+                .Rows("25:30").Hidden = True
+                .Cells(32, 11) = _
+                    "В Salesforce нет подходящих Проектов. " _
+                    & "Поэтому нажмите одну из кнопок [NewOpp], [->] или [STOP]"
+                .Rows(32).Interior.Color = rgbRed
+            End If
+            .Cells(1, 5) = "'" & DirDBs & F_MATCH & "'!WP_Adapt_Continue"
+            .Cells(WP_CONTEXT_LINE, WP_CONTEXT_COL) = iPayLine
+            .Activate
         End With
     End With
-    
-    Strip 1, 2, iPayLine    ' Кнопки
-    Strip 7, 8, iPayLine    ' Платеж
-    Strip 13, 14, iPayLine  ' Организация
-    
-                            ' Проекты
-    nOpp = OppSelect(iPayLine)
-    For iOpp = 1 To nOpp(0)
-        Strip 19, 24 + iOpp, iPayLine
-    Next iOpp
 '''''''''''''''''''''''''''''''''''
-    DB_TMP.Sheets(WP).Activate
     End '''  остановка VBA ''''''''
 '''''''''''''''''''''''''''''''''''
 End Sub
-Sub Strip(ByVal iPattern As Long, ByVal iOut As Long, ByVal iPayLine As Long)
+Sub Strip(ByVal iPattern As Long, ByVal iOut As Long, ByVal iLine As Long)
 '
-' - Strip(iPattern, iOut, iPayLine)   - вывод в лист WP по Шаблону
-'      из строки iPattern с выводом в строку iOut по строке Платежа iPayLine
-' 17.10.13
+' - Strip(iPattern, iOut, iLine)   - вывод в лист WP по Шаблону
+'                       из строки iPattern с выводом в строку iOut
+'                       по строке входного Документа номер iLine
+' 19.10.13
     
-    Dim LocalTOC As TOCmatch, IsErr As Boolean, Width As String
-    Dim X As String, Y As String, Rqst As String, F_rqst As String
+    Dim LocalTOC As TOCmatch, IsErr As Boolean, Width() As String
+    Dim X As String, Y As String, Rqst As String, X_rqst As String, F_rqst As String
     Dim iCol As Long
     
-    If DB_TMP.Sheets(WP).Cells(iPattern, 1) <> "" Then
-        LocalTOC = GetRep(.Cells(iPattern, 1)) ' открываем Документ, с которым работает Шаблон
-'''        Workbooks(R.RepFile).Sheets(R.SheetN).Activate
-    End If
-    
-    With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
+    With DB_TMP.Sheets(WP)
+        If .Cells(iPattern, 1) <> "" Then
+            LocalTOC = GetRep(.Cells(iPattern, 1)) ' открываем Документ, с которым работает Шаблон
+        End If
+        
         For iCol = 5 To .UsedRange.Columns.Count
-            Dim X_rqst As String, F_rqst As String
             X = X_Parse(InDoc:=.Cells(iPattern, 1), _
                     OutDoc:=WP, _
                     X_rqst:=.Cells(iPattern - 1 + PTRN_COLS, iCol), _
-                    iLine:=iPayLine, _
+                    iLine:=iLine, _
                     PutToRow:=iOut)
 
             Rqst = .Cells(iPattern - 1 + PTRN_ADAPT, iCol)
             F_rqst = .Cells(iPattern - 1 + PTRN_FETCH, iCol)
             
-            Y = Adapter(Rqst, X, F_rqst, IsErr, , iPattern, iCol, iOut)
+            Y = Adapter(Rqst, X, F_rqst, IsErr, , iLine)
             
             X = .Cells(iPattern + PTRN_COLS - 1, iCol)
             If X = "-1" Then Exit For
             If Not IsErr And X <> "" Then
                 Width = Split(.Cells(iPattern + PTRN_WIDTH - 1, iCol), "/")
-                fmtCell DB_TMP, WP, Width, Y, iOut, putToCol
+                fmtCell DB_TMP, WP, Width, Y, iOut, iCol
             End If
         Next iCol
+        .Rows(iPattern - 1 + PTRN_COLS).Hidden = True
+        .Rows(iPattern - 1 + PTRN_ADAPT).Hidden = True
+        .Rows(iPattern - 1 + PTRN_WIDTH).Hidden = True
+        .Rows(iPattern - 1 + PTRN_FETCH).Hidden = True
     End With
 End Sub
 Sub WP_Adapt_Continue(Button As String, iRow As Long)
@@ -955,9 +968,15 @@ Function AdapterWP(AdapterName, X, ByRef Par, _
             ' есть но не связан с Проектом  "Связать"
             ' есть и он связан с Проектом   "Занести"
             '---------------------------------------------
-            WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1  ' копирование кнопки "Связать"
-            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
-            If X = "" Or .Cells(WP_Row, PAY_DOG_COL) <> "" Then
+ '           WP_Row = WP_Row
+             WP_Row = iRow + .Cells(iRow + 3, 3) + PTRN_LNS - 1  ' копирование кнопки "Связать"
+            WP_Row = 31
+            iCol = 11
+''            .Cells(iRow - 1 + PTRN_VALUE, iCol).Copy .Cells(WP_Row, iCol)
+            .Cells(26, iCol).Copy .Cells(WP_Row, iCol)
+'            If X = "" Or .Cells(WP_Row, PAY_DOG_COL) <> "" Then
+            If X = "" Or .Cells(8, 10) <> "" Then
+'                .Cells(WP_Row, iCol).Value = "Занести ->"
                 .Cells(WP_Row, iCol).Value = "Занести ->"
             End If
             
@@ -1035,7 +1054,7 @@ Function X_Parse(Optional InDoc As String, Optional OutDoc As String = "", _
 '
 ' в поле Шаблона возможна конструкция #6 или !6, а также "ExtPar"
 '  * знак # означает, что адресуется не колонка в ActiveSheet, а колонка самого Шаблона
-'  * знак @ - что Х надо извлечь из Шаблона -- не дописано
+'  * знак & - что Х надо извлечь из Шаблона -- не дописано
 '  * знак ! - что Х надо извлечь из строки WProw ниже Шаблона
 '  * "ExtPar" - возвращает X_Parse значение параметра ExtPar
 '  ? будет дописана конструкция вида #3/Format, где после "/" указана доп.информация
@@ -1088,6 +1107,10 @@ Function X_Parse(Optional InDoc As String, Optional OutDoc As String = "", _
             With OutDocTOC
                 X_Parse = Workbooks(.RepFile).Sheets(.SheetN).Cells(PutToRow, iCol)
             End With
+        ElseIf RefType = "&" Then
+            iCol = Mid(X_rqst, 2)
+            X_Parse = DB_TMP.Sheets(WP).Cells(, iCol)
+            GoTo GetX
         End If
         GoTo Ex
     End If
@@ -1326,6 +1349,7 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
 ' 17.12.12 - добавлен тест целого формата
 ' 12.9.13 - увеличено количество триад для Dbl
 ' 16.9.13 - обработка форматов 0% и Dbl
+' 20.10.13 - специальная обработка Txt для данных, похожих на даты
 
     If UBound(fmt) > 0 Then
         If fmt(1) = "Dbl" Then
@@ -1334,6 +1358,7 @@ Sub fmtCell(ByVal db As Workbook, ByVal list As String, fmt() As String, _
         ElseIf fmt(1) = "Date" Then
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "[$-409]d-mmm-yyyy;@"
         ElseIf fmt(1) = "Txt" Then
+            Value = "'" & Value
             db.Sheets(list).Cells(PutToRow, putToCol).NumberFormat = "@"
        ElseIf fmt(1) = "0%" Then
             Value = CDbl(Value) / 100
