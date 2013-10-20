@@ -32,7 +32,7 @@ Attribute VB_Name = "AdaptEngine"
 '         в проходе Pass0 до работы основного Шаблона. Имя Дополнительного Шаблона имеет
 '         вид Шаблон_Pass0
 '
-' 18.10.13 П.Л.Храпкин, А.Пасс
+' 20.10.13 П.Л.Храпкин, А.Пасс
 '   История модуля:
 ' 11.11.12 - выделение AdaptEngine из ProcessEngine
 '  7.12.12 - введены форматы вывода "Dbl", "Txt", "Date" в строке "width" в sub WP_Adapt
@@ -1235,6 +1235,7 @@ Function FetchDoc(F_rqst, X, IsErr, Optional ByRef FromN As Long = 1) As String
 ' 14.9.12 - работает /D для второй группы - "по умолчанию"
 ' 4.11.12 - Fetch возвращает номер строки в случае <Doc>/C1:№
 ' 3.09.13 - Optional FromN позволяет вести поиск не с начала Документа
+' 20.10.13 - bug fix - /0 с X="" не должен давать IsErr=True
 
     FetchDoc = ""
     If F_rqst = "" Or X = "" Then GoTo ErrExit
@@ -1296,8 +1297,8 @@ Function FetchDoc(F_rqst, X, IsErr, Optional ByRef FromN As Long = 1) As String
     
 OK_Exit:    IsErr = False
     Exit Function
-ErrExit:    IsErr = True
-
+ErrExit:    If Right(F_rqst, 2) = "/0" Then GoTo OK_Exit
+            IsErr = True
 End Function
 Sub testfmtCell()
 '   тесты fmtCell()
