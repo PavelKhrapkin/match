@@ -158,7 +158,7 @@ RepNameHandle:
     End With
     
     With MyDB
-        .Activate
+''''        .Activate
   '-- если частичное обновление - прежний отчет не стираем, а переименовываем
   '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
   '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
@@ -179,7 +179,7 @@ DelRep: If SheetExists(RepName) Then
     
 '------------- match TOC и Log write и Save --------------
     With DB_MATCH.Sheets(TOC)
-        .Activate
+''''        .Activate
         .Cells(i, TOC_DATE_COL) = Now
         .Cells(i, TOC_EOL_COL) = Lines
         .Cells(i, TOC_MADE_COL) = REP_LOADED
@@ -205,7 +205,7 @@ DelRep: If SheetExists(RepName) Then
     End With
 '---------- Сброс всех Процессов, работающих с загружаемым Документом
     With DB_MATCH.Sheets(Process)
-        .Activate
+''''        .Activate
         For i = 6 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_REP1_COL) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 1) = RepName _
