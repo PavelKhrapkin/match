@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   12.10.2013
+'   22.10.2013
 
 Option Explicit
 
@@ -250,8 +250,9 @@ Function OppSelect(ByVal iPaid As Long) As Long()
 ' 15.9.13 - использование PAYCANONAME_COL вместо PAYACC_COL
 ' 26.9.13 - доп фильтры по CloseDate и по закрытым платежам
 ' 12.10.13 - разрешаем Проекты с пустым полем "Тип и Вид деятельности"
+' 22.10.13 - bug fix - Fetch SFopp/4:№/0 - отсутствие Проекта вполне возможно
 
-    Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№"
+    Const FETCH_SFOPP = "SFopp/" & SFOPP_ACC1C_COL & ":№/0"
     
     Dim Opps() As Long, nOpp As Long, maxNopp As Long
     Dim LocalTOC As TOCmatch, iOpp As Long, IsErr As Boolean
