@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 6.10.2013
+' П.Л.Храпкин 22.10.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -31,6 +31,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 24.8.13 - упразднил InSheetN в TOC. Теперь Документ всегда должен быть в листе 1
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC
 ' 6.10.13 - bug fix - игнорируем строки Платежа "авт нал"
+' 22.10.13 - убираем избыточные .Activate; делаем Freeze Top Row
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim i As Long
@@ -158,7 +159,6 @@ RepNameHandle:
     End With
     
     With MyDB
-''''        .Activate
   '-- если частичное обновление - прежний отчет не стираем, а переименовываем
   '-- .. его в *_OLD, чтобы потом слить их в Шаге MergeRep Loader'а.
   '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
@@ -179,7 +179,6 @@ DelRep: If SheetExists(RepName) Then
     
 '------------- match TOC и Log write и Save --------------
     With DB_MATCH.Sheets(TOC)
-''''        .Activate
         .Cells(i, TOC_DATE_COL) = Now
         .Cells(i, TOC_EOL_COL) = Lines
         .Cells(i, TOC_MADE_COL) = REP_LOADED
@@ -205,7 +204,6 @@ DelRep: If SheetExists(RepName) Then
     End With
 '---------- Сброс всех Процессов, работающих с загружаемым Документом
     With DB_MATCH.Sheets(Process)
-''''        .Activate
         For i = 6 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_REP1_COL) = RepName _
                     Or .Cells(i, PROC_REP1_COL + 1) = RepName _
@@ -231,6 +229,12 @@ DelRep: If SheetExists(RepName) Then
     If RepLoader <> "" Then
         ProcStart RepLoader
     End If
+    MyDB.Sheets(RepName).Activate
+    With ActiveWindow
+        .SplitColumn = 0
+        .SplitRow = 1
+        .FreezePanes = True
+    End With
     MyDB.Save
     Exit Sub
     Dim msg As String
@@ -248,6 +252,7 @@ Sub StepReset(iStep)
 ' 28.8.12
 '  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
 ' 13.9.12 - bug fix - не сбрасываем Шаги <*>ProcStart
+' 22.10.13 - bug fix - Range колонок 1..3 переписан
 
     Dim Step As String, PrevStep As String
     Dim Proc As String, ThisProc As String
@@ -263,15 +268,15 @@ Sub StepReset(iStep)
                 If .Cells(i, PROC_STEPDONE_COL) = "1" Then ' пропускаем <*>ProcStart
                     .Cells(i, PROC_STEPDONE_COL) = ""
                 End If
-                .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
-                .Range(Cells(iProc, 1), Cells(iProc, 3)).Interior.ColorIndex = 0
+                .Range(i & "1:" & i & "3").Interior.ColorIndex = 0
+                .Range(iProc & "1:" & iProc & "3").Interior.ColorIndex = 0
                 Exit For
             End If
         Next i
 '---- сброс окраски конца Процедуры "<*>ProcEnd"
         For i = iProc + 1 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_STEP_COL) = PROC_END Then
-                .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+                .Range(i & "1:" & i & "3").Interior.ColorIndex = 0
                 Exit For
             End If
         Next i
