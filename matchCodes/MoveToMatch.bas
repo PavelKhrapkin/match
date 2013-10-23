@@ -253,47 +253,37 @@ Sub StepReset(iStep)
 '  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
 ' 13.9.12 - bug fix - не сбрасываем Шаги <*>ProcStart
 ' 22.10.13 - bug fix - Range колонок 1..3 переписан
+' 23.10.13 - сбрасываем не только Шаг iStep, а весь остаток процедуры и ссылки
+'            и все Шаги, для которых iStep является "предыдущим" - PrevStep
 
-    Dim Step As String, PrevStep As String
-    Dim Proc As String, ThisProc As String
     Dim i As Integer, iProc As Integer
+    Dim ThisProc As String, PrevSteps() As String
+    Dim PrevS, PrS() As String
     
     With DB_MATCH.Sheets(Process)
-        If .Cells(iStep, PROC_STEPDONE_COL) = "" Then Exit Sub
-        Step = .Cells(iStep, PROC_STEP_COL)
-'---- сброс Шага iStep и окраски старта его Процедуры "<*>ProcStart"
+        If .Cells(iStep, PROC_STEPDONE_COL) = "" Then GoTo L
+'---- сброс Шагов от iStep до <*>ProcEnd и окраски старта Процедуры "<*>ProcStart"
         For i = 6 To EOL(Process, DB_MATCH)
             If .Cells(i, PROC_STEP_COL) = PROC_START Then iProc = i
-            If i = iStep Then
-                If .Cells(i, PROC_STEPDONE_COL) = "1" Then ' пропускаем <*>ProcStart
-                    .Cells(i, PROC_STEPDONE_COL) = ""
+            If i >= iStep Then
+                .Cells(i, PROC_STEPDONE_COL) = ""
+                .Range("A" & i & ":C" & i).Interior.ColorIndex = 0
+            End If
+            If .Cells(i, PROC_STEP_COL) = PROC_END And i > iStep Then Exit For
+        Next i
+        .Range("A" & iProc & ":C" & iProc).Interior.ColorIndex = 0
+'---- сброс всех Шагов, в которых в PrevStep ссылаются на невыполненные Шаги
+L:      For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_STEP_COL) = PROC_START Then ThisProc = .Cells(i, PROC_NAME_COL)
+            PrevSteps = Split(.Cells(i, PROC_PREVSTEP_COL), ",")
+            For Each PrevS In PrevSteps
+                If InStr(PrevS, "/") = 0 Then
+                   If Not IsStepDone(ThisProc, PrevS) Then StepReset i  ' РЕКУРСИЯ!
+                Else
+                   PrS = Split(PrevS, "/")
+                   If Not IsStepDone(PrS(0), PrS(1)) Then StepReset i   ' РЕКУРСИЯ!
                 End If
-                .Range(i & "1:" & i & "3").Interior.ColorIndex = 0
-                .Range(iProc & "1:" & iProc & "3").Interior.ColorIndex = 0
-                Exit For
-            End If
-        Next i
-'---- сброс окраски конца Процедуры "<*>ProcEnd"
-        For i = iProc + 1 To EOL(Process, DB_MATCH)
-            If .Cells(i, PROC_STEP_COL) = PROC_END Then
-                .Range(i & "1:" & i & "3").Interior.ColorIndex = 0
-                Exit For
-            End If
-        Next i
-'---- сброс Шагов, в которых в PrevStep ссылаются на Шаг в "своем" Процессе
-        Proc = .Cells(iProc, PROC_NAME_COL)
-        For i = iProc + 1 To EOL(Process, DB_MATCH)
-            PrevStep = .Cells(i, PROC_PREVSTEP_COL)
-            If InStr(PrevStep, Step) <> 0 And i <> iStep Then
-                StepReset i                                     '* РЕКУРСИЯ *
-            End If
-            If .Cells(i, PROC_STEP_COL) = PROC_END Then Exit For
-        Next i
-'---- сброс Шагов, в которых в PrevStep ссылаются на Шаг из "другого" Процесса
-        For i = 2 To EOL(Process, DB_MATCH)
-            PrevStep = .Cells(iStep, PROC_PREVSTEP_COL)
-            ThisProc = .Cells(iStep, PROC_NAME_COL)
-            If InStr(PrevStep, Proc & "/" & Step) Then StepReset i '* РЕКУРСИЯ *
+            Next PrevS
         Next i
     End With
 End Sub
