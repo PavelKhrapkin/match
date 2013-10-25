@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 6.10.13 П.Л.Храпкин, А.Пасс
+' 26.10.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -21,6 +21,8 @@ Attribute VB_Name = "ProcessEngine"
 ' - StepIn()            - начало исполнения Шага, т.е. активация нужных листов
 ' - StepOut()           - завершение выполнения Шага с записью в TOCmatch
 ' S MergeReps()         - слияние "полных" отчетов в суффиксом "_OLD" и "Update"
+' -DocReset(DocName)    - сброс всех шагов, работающих с DocName
+' - StepReset(iStep)    - сброс Шага в таблице Процессов - РЕКУРСИЯ!
 
 Option Explicit
 
@@ -37,6 +39,7 @@ Sub ProcStart(Proc As String)
 '  26.8.12 - окраска выполненного Процесса
 '  24.8.13 - по завершению Процесса записываем <*>ProcEnd в ТОС Документа
 '  30.8.13 - выход по PROC_END без Документа
+'  26.10.13 - по <*>ProcEnd сбрасываем все Шаги, которые используют выходные Документы
 
     Dim Step As String, PrevStep As String
     Dim i As Integer, Doc As String, К As TOCmatch
@@ -72,9 +75,14 @@ Sub ProcStart(Proc As String)
             
             End If
         Loop
+        
+        Dim ProcEndLine As Long: ProcEndLine = i + 1
+        For i = 0 To 5
+            DocReset .Cells(ProcEndLine, i + PROC_REP1_COL)
+        Next i
         .Activate
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
-        .Range(Cells(i + 1, 1), Cells(i + 1, 2)).Interior.ColorIndex = 35
+        .Range(Cells(ProcEndLine, 1), Cells(ProcEndLine, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
         Doc = .Cells(i, PROC_REP1_COL)
         If Doc = "" Then GoTo Ex
@@ -141,6 +149,19 @@ Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
         Exit Function
     End If
 End Function
+Function IsStepDone(ByVal Proc As String, ByVal Step As String) As Boolean
+'
+' - IsStepDone(Proc, Step) - проверка, что шаг Step процесса уже Proc выполнен
+' 23.10.12
+
+    Dim i As Long
+    
+    IsStepDone = True
+    If Step = REP_LOADED Then Exit Function
+    i = ToStep(Trim(Proc), Trim(Step))
+    If DB_MATCH.Sheets(Process).Cells(i, PROC_STEPDONE_COL) <> "1" Then IsStepDone = False
+End Function
+
 Sub Exec(Step As String, iProc)
 '
 ' - Exec(Step, iProc) - вызов Шага Step по строке iProc таблицы Процессов
@@ -463,3 +484,68 @@ InsRow: If FrRow = 0 Then FrRow = RoldEOL + 1
         .Cells(R.iTOC, TOC_TODATE_COL) = ToDate
     End With
 End Sub
+Sub DocReset(DocName As String)
+'
+' -DocReset(DocName)    - сброс всех шагов, работающих с DocName
+'
+' 26.10.13
+
+    Dim i As Long
+    With DB_MATCH.Sheets(Process)
+        For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_REP1_COL) = DocName _
+                    Or .Cells(i, PROC_REP1_COL + 1) = DocName _
+                    Or .Cells(i, PROC_REP1_COL + 2) = DocName _
+                    Or .Cells(i, PROC_REP1_COL + 3) = DocName _
+                    Or .Cells(i, PROC_REP1_COL + 4) = DocName Then
+                StepReset i
+            End If
+        Next i
+    End With
+End Sub
+Sub StepReset(iStep)
+'
+' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
+' 28.8.12
+'  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
+' 13.9.12 - bug fix - не сбрасываем Шаги <*>ProcStart
+' 22.10.13 - bug fix - Range колонок 1..3 переписан
+' 23.10.13 - сбрасываем не только Шаг iStep, а весь остаток процедуры и ссылки
+'            и все Шаги, для которых iStep является "предыдущим" - PrevStep
+' 24.10.13 - bug fix - обход обработки ссылки <*>ProcEnd PrevStep
+
+    Dim i As Integer, iProc As Integer
+    Dim ThisProc As String, PrevSteps() As String
+    Dim PrevS, PrS() As String
+    
+    With DB_MATCH.Sheets(Process)
+        If .Cells(iStep, PROC_STEPDONE_COL) = "" Then Exit Sub
+'---- сброс Шагов от iStep до <*>ProcEnd и окраски старта Процедуры "<*>ProcStart"
+        For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_STEP_COL) = PROC_START Then iProc = i
+            If i >= iStep Then
+                .Cells(i, PROC_STEPDONE_COL) = ""
+                .Range("A" & i & ":C" & i).Interior.ColorIndex = 0
+            End If
+            If .Cells(i, PROC_STEP_COL) = PROC_END And i > iStep Then Exit For
+        Next i
+        .Range("A" & iProc & ":C" & iProc).Interior.ColorIndex = 0
+'---- сброс всех Шагов, в которых в PrevStep ссылаются на невыполненные Шаги
+        For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_STEP_COL) = PROC_START Then ThisProc = .Cells(i, PROC_NAME_COL)
+            If .Cells(i, PROC_STEP_COL) <> PROC_END _
+                    And .Cells(i, PROC_COMMENT_COL) <> "" Then
+                PrevSteps = Split(.Cells(i, PROC_PREVSTEP_COL), ",")
+                For Each PrevS In PrevSteps
+                    If InStr(PrevS, "/") = 0 Then
+                       If Not IsStepDone(ThisProc, PrevS) Then StepReset i  ' РЕКУРСИЯ!
+                    Else
+                       PrS = Split(PrevS, "/")
+                       If Not IsStepDone(PrS(0), PrS(1)) Then StepReset i   ' РЕКУРСИЯ!
+                    End If
+                Next PrevS
+            End If
+        Next i
+    End With
+End Sub
+
