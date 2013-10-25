@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 22.10.2013
+' П.Л.Храпкин 26.10.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -32,8 +32,10 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 27.8.13 - минимизируем использование глобальной структуры RepTOC
 ' 6.10.13 - bug fix - игнорируем строки Платежа "авт нал"
 ' 22.10.13 - убираем избыточные .Activate; делаем Freeze Top Row
+' 26.10.13 - Public RepName заменен на локальный DocName
     
     Dim NewRep As String    ' имя файла с новым отчетом
+    Dim DocName As String   ' имя Документа
     Dim i As Long
     Dim IsSF As Boolean     '=TRUE, если входной Документ из Salesforce
     Dim IsPartialUpdate     '=TRUE, если входной документ заменяет лишь часть отчета
@@ -45,8 +47,8 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
     
     IsPartialUpdate = False
     NewRep = ActiveWorkbook.Name
-    RepName = ActiveSheet.Name
-    Lines = EOL(RepName, Workbooks(NewRep))
+    DocName = ActiveSheet.Name
+    Lines = EOL(DocName, Workbooks(NewRep))
     
     LocalTOC = GetRep(TOC)
     
@@ -78,10 +80,10 @@ RepNameHandle:
             MS "Это файл базы данных match! Его не надо загружать."
             End
         End If
-        RepName = .Cells(i, TOC_REPNAME_COL)
+        DocName = .Cells(i, TOC_REPNAME_COL)
         RepFile = .Cells(i, TOC_REPFILE_COL)
          'Lines = EOL - пятка
-        Lines = Lines - GetReslines(RepName, True, .Cells(i, TOC_RESLINES_COL))
+        Lines = Lines - GetReslines(DocName, True, .Cells(i, TOC_RESLINES_COL))
         LinesOld = .Cells(i, TOC_EOL_COL)           'EOL старого отчета
         DirDBs = .Cells(1, TOC_F_DIR_COL)
         TabColor = .Cells(i, TOC_SHEETN_COL).Interior.Color
@@ -108,7 +110,7 @@ RepNameHandle:
             Dim tst As String
             tst = .Cells(Lines + 5, 1)
             Created = GetDate(Right(.Cells(Lines + 5, 1), 16))
-        ElseIf RepName = PAY_SHEET Or RepName = DOG_SHEET Then
+        ElseIf DocName = PAY_SHEET Or DocName = DOG_SHEET Then
             .Activate
             .Rows("1:" & Lines).AutoFilter
             DateCol InSheetN, NewToDate_Col
@@ -127,7 +129,7 @@ RepNameHandle:
             NewFrDate = GetDate(DateCell)
             Do
                 Doc = True
-                If RepName = PAY_SHEET Then
+                If DocName = PAY_SHEET Then
             '-- платежный док. !! только для Платежа
                     PayDoc = Trim(.Cells(NewToDate_Row, 1))
                     If PayDoc = "" Or InStr(PayDoc, "авт нал") <> 0 Then Doc = False
@@ -145,7 +147,7 @@ RepNameHandle:
             If NewFrDate <> FrDateTOC Or NewToDate < ToDateTOC Then
                 IsPartialUpdate = True
             End If
-        ElseIf RepName = Acc1C Then
+        ElseIf DocName = Acc1C Then
             Created = GetDate(Right$(.Cells(1, 1), 8))
         ElseIf RepFile = F_STOCK Then
             Created = GetDate(MyDB.BuiltinDocumentProperties(12))   'дата последнего Save
@@ -155,7 +157,7 @@ RepNameHandle:
         End If
         .UsedRange.Rows.RowHeight = 15
         .Name = "TMP"
-        .Move Before:=MyDB.Sheets(RepName)
+        .Move Before:=MyDB.Sheets(DocName)
     End With
     
     With MyDB
@@ -164,17 +166,17 @@ RepNameHandle:
   '-- .. если _OLD уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
         If IsPartialUpdate Then
             Dim OldRepName As String, sht As Worksheet
-            OldRepName = RepName & "_OLD"
+            OldRepName = DocName & "_OLD"
             If SheetExists(OldRepName) Then GoTo DelRep
-            .Sheets(RepName).Name = OldRepName
+            .Sheets(DocName).Name = OldRepName
         End If
-DelRep: If SheetExists(RepName) Then
+DelRep: If SheetExists(DocName) Then
             Application.DisplayAlerts = False
-            .Sheets(RepName).Delete
+            .Sheets(DocName).Delete
             Application.DisplayAlerts = True
         End If
-        .Sheets("TMP").Name = RepName
-        .Sheets(RepName).Tab.Color = TabColor
+        .Sheets("TMP").Name = DocName
+        .Sheets(DocName).Tab.Color = TabColor
     End With
     
 '------------- match TOC и Log write и Save --------------
@@ -203,17 +205,7 @@ DelRep: If SheetExists(RepName) Then
         Next i
     End With
 '---------- Сброс всех Процессов, работающих с загружаемым Документом
-    With DB_MATCH.Sheets(Process)
-        For i = 6 To EOL(Process, DB_MATCH)
-            If .Cells(i, PROC_REP1_COL) = RepName _
-                    Or .Cells(i, PROC_REP1_COL + 1) = RepName _
-                    Or .Cells(i, PROC_REP1_COL + 2) = RepName _
-                    Or .Cells(i, PROC_REP1_COL + 3) = RepName _
-                    Or .Cells(i, PROC_REP1_COL + 4) = RepName Then
-                StepReset i
-            End If
-        Next i
-    End With
+    DocReset DocName
     Dim PartStatus As String
     PartStatus = vbCrLf & "Это "
     If IsPartialUpdate Then
@@ -222,19 +214,22 @@ DelRep: If SheetExists(RepName) Then
         PartStatus = PartStatus & "ПОЛНЫЙ документ."
     End If
     LogWr "MoveToMatch: В файл '" & RepFile & "' загружен новый отчет '" _
-        & RepName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld _
+        & DocName & "'; EOL=" & Lines & " строк, в прежнем " & LinesOld _
         & PartStatus
         
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
         ProcStart RepLoader
     End If
-    MyDB.Sheets(RepName).Activate
+    With MyDB.Sheets(DocName)
+        .Activate
+        .Cells(2, 1).Select
+    End With
     With ActiveWindow
         .SplitColumn = 0
         .SplitRow = 1
-        .FreezePanes = True
     End With
+    ActiveWindow.FreezePanes = True
     MyDB.Save
     Exit Sub
     Dim msg As String
@@ -245,45 +240,4 @@ FatErMsg:       msg = " не дата в ячейке " & msg & "='" & DateCell & "'": GoTo F
 FatalFrToDate:  msg = " странные даты входного документа '" & NewRep _
                     & "': NewFrDate=" & NewFrDate & " < " & "NewToDate=" & NewToDate
 FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & msg & vbCrLf & "Входной документ " & NewRep
-End Sub
-Sub StepReset(iStep)
-'
-' - StepReset(iStep) - сброс Шага в таблице Процессов - РЕКУРСИЯ!
-' 28.8.12
-'  9.9.12 - bug fix в сбосе выполненного Шага при загрузке нового Документа
-' 13.9.12 - bug fix - не сбрасываем Шаги <*>ProcStart
-' 22.10.13 - bug fix - Range колонок 1..3 переписан
-' 23.10.13 - сбрасываем не только Шаг iStep, а весь остаток процедуры и ссылки
-'            и все Шаги, для которых iStep является "предыдущим" - PrevStep
-
-    Dim i As Integer, iProc As Integer
-    Dim ThisProc As String, PrevSteps() As String
-    Dim PrevS, PrS() As String
-    
-    With DB_MATCH.Sheets(Process)
-        If .Cells(iStep, PROC_STEPDONE_COL) = "" Then GoTo L
-'---- сброс Шагов от iStep до <*>ProcEnd и окраски старта Процедуры "<*>ProcStart"
-        For i = 6 To EOL(Process, DB_MATCH)
-            If .Cells(i, PROC_STEP_COL) = PROC_START Then iProc = i
-            If i >= iStep Then
-                .Cells(i, PROC_STEPDONE_COL) = ""
-                .Range("A" & i & ":C" & i).Interior.ColorIndex = 0
-            End If
-            If .Cells(i, PROC_STEP_COL) = PROC_END And i > iStep Then Exit For
-        Next i
-        .Range("A" & iProc & ":C" & iProc).Interior.ColorIndex = 0
-'---- сброс всех Шагов, в которых в PrevStep ссылаются на невыполненные Шаги
-L:      For i = 6 To EOL(Process, DB_MATCH)
-            If .Cells(i, PROC_STEP_COL) = PROC_START Then ThisProc = .Cells(i, PROC_NAME_COL)
-            PrevSteps = Split(.Cells(i, PROC_PREVSTEP_COL), ",")
-            For Each PrevS In PrevSteps
-                If InStr(PrevS, "/") = 0 Then
-                   If Not IsStepDone(ThisProc, PrevS) Then StepReset i  ' РЕКУРСИЯ!
-                Else
-                   PrS = Split(PrevS, "/")
-                   If Not IsStepDone(PrS(0), PrS(1)) Then StepReset i   ' РЕКУРСИЯ!
-                End If
-            Next PrevS
-        Next i
-    End With
 End Sub
