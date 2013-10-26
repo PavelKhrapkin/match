@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 26.10.13 П.Л.Храпкин, А.Пасс
+' 27.10.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -31,6 +31,8 @@ Const TRACE_STEP = "Trace"  ' специальный Шаг Trace для трассирования и отладки
 Public TraceStep As Boolean
 Public TraceStop As Boolean
 Public TraceWidth As Boolean
+'========== Стек Процессов ==================
+Dim ProcStack As Collection
 
 Sub ProcStart(Proc As String)
 '
@@ -40,6 +42,7 @@ Sub ProcStart(Proc As String)
 '  24.8.13 - по завершению Процесса записываем <*>ProcEnd в ТОС Документа
 '  30.8.13 - выход по PROC_END без Документа
 '  26.10.13 - по <*>ProcEnd сбрасываем все Шаги, которые используют выходные Документы
+'  27.10.13 - понадобилась коллекция запущенных Процессов, организованных в виде стека
 
     Dim Step As String, PrevStep As String
     Dim i As Integer, Doc As String, К As TOCmatch
@@ -47,6 +50,10 @@ Sub ProcStart(Proc As String)
     TraceStep = False:    TraceStop = False:    TraceWidth = False
     
     Proc = Trim(Proc)
+    
+    On Error GoTo ProcStackInit
+ProcAdd:  ProcStack.Add Proc
+    On Error GoTo 0
     
     i = ToStep(Proc)
     
@@ -80,6 +87,7 @@ Sub ProcStart(Proc As String)
         For i = 0 To 5
             DocReset .Cells(ProcEndLine, i + PROC_REP1_COL)
         Next i
+        ProcStack.Remove ProcStack.Count
         .Activate
         .Cells(1, PROCESS_NAME_COL) = "": .Cells(1, STEP_NAME_COL) = ""
         .Range(Cells(ProcEndLine, 1), Cells(ProcEndLine, 2)).Interior.ColorIndex = 35
@@ -95,6 +103,8 @@ Ex: Exit Sub
 Err:
     ErrMsg FATAL_ERR, "Нарушена последовательность шагов процедуры " & Proc
     End
+ProcStackInit:  Set ProcStack = New Collection
+    GoTo ProcAdd
 End Sub
 Function IsDone(ByVal Proc As String, ByVal Step As String) As Boolean
 '
@@ -489,18 +499,32 @@ Sub DocReset(DocName As String)
 ' -DocReset(DocName)    - сброс всех шагов, работающих с DocName
 '
 ' 26.10.13
+' 27.10.13 - работаем со Стеком Процессов
 
-    Dim i As Long
+    Dim i As Long, Proc As String, P
+    If DocName = "" Then Exit Sub
+    
+    Dim ChkStack As Boolean: ChkStack = True
+    If ProcStack Is Nothing Then ChkStack = False
+    
     With DB_MATCH.Sheets(Process)
         For i = 6 To EOL(Process, DB_MATCH)
+            If .Cells(i, PROC_COMMENT_COL) <> "" Then GoTo NxtI
+            If .Cells(i, PROC_STEP_COL) = PROC_START Then Proc = .Cells(i, PROC_NAME_COL)
             If .Cells(i, PROC_REP1_COL) = DocName _
                     Or .Cells(i, PROC_REP1_COL + 1) = DocName _
                     Or .Cells(i, PROC_REP1_COL + 2) = DocName _
                     Or .Cells(i, PROC_REP1_COL + 3) = DocName _
                     Or .Cells(i, PROC_REP1_COL + 4) = DocName Then
+                    
+                If ChkStack Then
+                    For Each P In ProcStack
+                        If P = Proc Then GoTo NxtI
+                    Next P
+                End If
                 StepReset i
             End If
-        Next i
+NxtI:   Next i
     End With
 End Sub
 Sub StepReset(iStep)
@@ -548,4 +572,17 @@ Sub StepReset(iStep)
         Next i
     End With
 End Sub
-
+Sub Exercise()
+    Dim Employees  As Collection
+    
+    Set Employees = New Collection
+    
+    Employees.Add "Patricia Katts"
+    Employees.Add "Patricia Katts"
+    Employees.Add "James Wiley"
+    Employees.Add "Gertrude Monay"
+    Employees.Add "Helene Mukoko"
+    
+    Employees.Remove "James Wiley"
+    
+End Sub
