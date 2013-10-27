@@ -108,6 +108,7 @@ Function GetTOC(ByVal iTOC As Long) As TOCmatch
 '  - GetTOC(iTOC)   - возвращает заполненную структуру TOCmatch по строке iTOC в TOC
 '
 ' 27.8.13
+' 27.10.13 - в структуру добавлен ChkSum=DocCheckSum
 
     Dim LocalTOC As TOCmatch
     Dim LoadMode As Boolean
@@ -115,6 +116,7 @@ Function GetTOC(ByVal iTOC As Long) As TOCmatch
     
     With DB_MATCH.Sheets(TOC)
         LocalTOC.iTOC = iTOC                ' номер строки в TOC - Read Only!
+        LocalTOC.ChkSum = .Cells(iTOC, TOC_DOCCHECKSUM_COL)
         LocalTOC.Dat = .Cells(iTOC, TOC_DATE_COL)
         LocalTOC.Name = .Cells(iTOC, TOC_REPNAME_COL)
         LocalTOC.MyCol = .Cells(iTOC, TOC_MYCOL_COL)

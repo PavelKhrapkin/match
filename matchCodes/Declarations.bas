@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  24.10.13
+'  27.10.13
 
 Option Explicit
 
@@ -134,6 +134,7 @@ Public Const TOC_TODATEROW_COL = 23     ' строка отчета где ToDate
 Public Const TOC_DATECOL_COL = 24       ' колонка отчета где даты
 Public Const TOC_NEW_FRDATE_COL = 25    ' FrDate нового отчета
 Public Const TOC_NEW_TODATE_COL = 26    ' ToDate нового отчета
+Public Const TOC_DOCCHECKSUM_COL = 27   ' DocCheckSum - контрольная сумма документа
 
 Public Const TOC_PARCHECK_COL = TOC_PAR_1_COL   ' строка доп.Штампа
 Public Const TOC_INSHEETN = TOC_PAR_2_COL       ' колонка - InSheetN
@@ -148,6 +149,7 @@ Public Const TOCrepLines = 8    ' первая стока Документов. после служебных строк
     
 Type TOCmatch
     iTOC As Long        '=номер строки в таблице TOCmatch - Read ONLY!
+    ChkSum As Long      '=контрольная сумма Документа - Read ONLY!
     Dat As Date         '=Now   - дата и время загрузки отчета
     Name As String      'не изм.- имя отчета в базе данных
     EOL  As Long        '=изм.только MoveToMatch - EOL отчета без пятки

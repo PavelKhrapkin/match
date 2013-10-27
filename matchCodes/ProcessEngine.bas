@@ -93,7 +93,7 @@ ProcAdd:  ProcStack.Add Proc
         .Range(Cells(ProcEndLine, 1), Cells(ProcEndLine, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
         Doc = .Cells(i, PROC_REP1_COL)
-        If Doc = "" Then GoTo Ex
+        If Doc = "" Then GoTo Ex    'если Процесс не обрабатывал никакой Документ -> выход
         RepTOC = GetRep(Doc)
         RepTOC.Made = PROC_END
         WrTOC
@@ -499,10 +499,16 @@ Sub DocReset(DocName As String)
 ' -DocReset(DocName)    - сброс всех шагов, работающих с DocName
 '
 ' 26.10.13
-' 27.10.13 - работаем со Стеком Процессов
+' 27.10.13 - работаем со Стеком Процессов и с контрольной суммой Документа
 
     Dim i As Long, Proc As String, P
-    If DocName = "" Then Exit Sub
+    If DocName = "" Then GoTo Ex
+    
+    Dim LocalTOC As TOCmatch
+    LocalTOC = GetRep(DocName)
+    
+    If SheetExists(DocName & "_OLD") Then GoTo Ex
+    If LocalTOC.ChkSum = DocCheckSum(DocName) Then GoTo Ex
     
     Dim ChkStack As Boolean: ChkStack = True
     If ProcStack Is Nothing Then ChkStack = False
@@ -526,6 +532,7 @@ Sub DocReset(DocName As String)
             End If
 NxtI:   Next i
     End With
+Ex: Exit Sub
 End Sub
 Sub StepReset(iStep)
 '
@@ -571,18 +578,4 @@ Sub StepReset(iStep)
             End If
         Next i
     End With
-End Sub
-Sub Exercise()
-    Dim Employees  As Collection
-    
-    Set Employees = New Collection
-    
-    Employees.Add "Patricia Katts"
-    Employees.Add "Patricia Katts"
-    Employees.Add "James Wiley"
-    Employees.Add "Gertrude Monay"
-    Employees.Add "Helene Mukoko"
-    
-    Employees.Remove "James Wiley"
-    
 End Sub
