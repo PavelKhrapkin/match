@@ -204,8 +204,6 @@ DelRep: If SheetExists(DocName) Then
             End If
         Next i
     End With
-'---------- Сброс всех Процессов, работающих с загружаемым Документом
-    DocReset DocName
     Dim PartStatus As String
     PartStatus = vbCrLf & "Это "
     If IsPartialUpdate Then
@@ -219,7 +217,7 @@ DelRep: If SheetExists(DocName) Then
         
 '--- Запускаем Loader - процедуру обработки нового отчета ---
     If RepLoader <> "" Then
-        ProcStart RepLoader
+        ProcReset RepLoader
     End If
     With MyDB.Sheets(DocName)
         .Activate
