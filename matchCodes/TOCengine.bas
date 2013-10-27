@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content Документов в match.xlsx
 '
-' 16.10.2013
+' 27.10.2013
 '=========================== Описания ================================
 '       * TOC храниться в листе TOC. Данные о Документе хранятся в виде строки этого листа
 '       * при работе отдельных Шагов, параметры и константы передаются в структуре TOCmatch,
@@ -21,6 +21,9 @@ Attribute VB_Name = "TOCengine"
 ' - FileOpen(RepFile)           - проверяет, открыт ли RepFile, если нет - открывает
 ' - GetReslines(x,LoadMode)     - извлечение размера пятки из х с учетом контекста LoadMode
 ' - WrTOC([Name])               - записывает Public RepTOC в TOCmatch для Документа Name
+' - DocCheckSum(DocName)        - подсчет контрольной суммы DocName
+
+Option Explicit
 
 Function GetRep(RepName, Optional ChkStamp As Boolean = True) As TOCmatch
 '
@@ -355,4 +358,34 @@ FoundRep:
 Err: ErrMsg FATAL_ERR, "WrTOC> На Шаге '" & RepTOC.Made _
         & "' Документ '" & Name & "' странно изменил EOL=" & RepTOC.EOL
 End Sub
+Sub testDocCheckSum()
+    Dim S As Long
+    S = DocCheckSum("SFcont")
+    S = DocCheckSum("Склад")
+    S = DocCheckSum(PAY_SHEET)
+End Sub
 
+Function DocCheckSum(DocName) As Long
+'
+' - DocCheckSum(DocName)    - подсчет контрольной суммы DocName
+' 27.10.13
+
+    Dim LocalTOC As TOCmatch, iLine As Long, Col As Long, iEOL As Long
+    Dim X As String, i As Long
+    
+    DocCheckSum = 0
+    LocalTOC = GetRep(DocName)
+    
+    With Workbooks(LocalTOC.RepFile).Sheets(LocalTOC.SheetN)
+        iEOL = EOL(DocName, Workbooks(LocalTOC.RepFile))
+        For iLine = 2 To iEOL
+            Progress iLine / iEOL
+            For Col = 1 To .UsedRange.Columns.Count
+                X = .Cells(iLine, Col)
+                For i = 1 To Len(X)
+                    DocCheckSum = DocCheckSum + Asc(Mid(X, i, 1))
+                Next i
+            Next Col
+        Next iLine
+    End With
+End Function
