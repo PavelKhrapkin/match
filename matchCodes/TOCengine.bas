@@ -2,7 +2,7 @@ Attribute VB_Name = "TOCengine"
 '---------------------------------------------------------------------------------------
 ' TOCengine - процессор TOC - Table Of Content Документов в match.xlsx
 '
-' 27.10.2013
+' 28.10.2013
 '=========================== Описания ================================
 '       * TOC храниться в листе TOC. Данные о Документе хранятся в виде строки этого листа
 '       * при работе отдельных Шагов, параметры и константы передаются в структуре TOCmatch,
@@ -371,6 +371,7 @@ Function DocCheckSum(DocName) As Long
 '
 ' - DocCheckSum(DocName)    - подсчет контрольной суммы DocName
 ' 27.10.13
+' 28.10.13 - Trim по каждой ячейке для суммирования
 
     Dim LocalTOC As TOCmatch, iLine As Long, Col As Long, iEOL As Long
     Dim X As String, i As Long
@@ -383,7 +384,7 @@ Function DocCheckSum(DocName) As Long
         For iLine = 2 To iEOL
             Progress iLine / iEOL
             For Col = 1 To .UsedRange.Columns.Count
-                X = .Cells(iLine, Col)
+                X = Trim(.Cells(iLine, Col))
                 For i = 1 To Len(X)
                     DocCheckSum = DocCheckSum + Asc(Mid(X, i, 1))
                 Next i

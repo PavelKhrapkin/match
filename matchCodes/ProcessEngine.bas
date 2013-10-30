@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 27.10.13 П.Л.Храпкин, А.Пасс
+' 29.10.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -43,9 +43,11 @@ Sub ProcStart(Proc As String)
 '  30.8.13 - выход по PROC_END без Документа
 '  26.10.13 - по <*>ProcEnd сбрасываем все Шаги, которые используют выходные Документы
 '  27.10.13 - понадобилась коллекция запущенных Процессов, организованных в виде стека
+'  28.10.13 - LogWr Proc по началу и концу процессов
+'  29.10.13 - обход закомментированных Шагов в Процессе
 
     Dim Step As String, PrevStep As String
-    Dim i As Integer, Doc As String, К As TOCmatch
+    Dim i As Integer, Doc As String, DocCS As Long
 '---- инициализируем флаги Trace
     TraceStep = False:    TraceStop = False:    TraceWidth = False
     
@@ -59,27 +61,34 @@ ProcAdd:  ProcStack.Add Proc
     
     With DB_MATCH.Sheets(Process)
         .Activate
+'--------------
+        Doc = .Cells(i, PROC_REP1_COL)
+        Dim LocTOC As TOCmatch
+        LocTOC = GetRep(Doc)
+        DocCS = LocTOC.ChkSum
+        LogWr "<*>ProcStart " & Proc & " Doc='" & Doc & "' DocCS=" & DocCS
+'--------------
         .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
         Do While .Cells(i + 1, PROC_STEP_COL) <> PROC_END
             i = i + 1
-            Step = .Cells(i, PROC_STEP_COL)
-            If TraceStep Then
-                .Activate
-                .Rows(i).Select
-            End If
-            
-            If .Cells(i, PROC_STEPDONE_COL) <> "1" Then
-                PrevStep = .Cells(i, PROC_PREVSTEP_COL)
-                If PrevStep <> "" Then _
-                    If Not IsDone(Proc, PrevStep) Then GoTo Err
-                    
-                .Cells(1, PROCESS_NAME_COL) = Proc      'имя Процесса
-                .Cells(1, STEP_NAME_COL) = Step         'имя Шага
+            If .Cells(i, PROC_COMMENT_COL) = "" Then
+                Step = .Cells(i, PROC_STEP_COL)
+                If TraceStep Then
+                    .Activate
+                    .Rows(i).Select
+                End If
                 
-'*************************************
-                Exec Step, i        '*  выполняем Шаг
-'*************************************
-            
+                If .Cells(i, PROC_STEPDONE_COL) <> "1" Then
+                    PrevStep = .Cells(i, PROC_PREVSTEP_COL)
+                    If PrevStep <> "" Then _
+                        If Not IsDone(Proc, PrevStep) Then GoTo Err
+                        
+                    .Cells(1, PROCESS_NAME_COL) = Proc      'имя Процесса
+                    .Cells(1, STEP_NAME_COL) = Step         'имя Шага
+    '*************************************
+                    Exec Step, i        '*  выполняем Шаг
+    '*************************************
+                End If
             End If
         Loop
         
@@ -93,11 +102,15 @@ ProcAdd:  ProcStack.Add Proc
         .Range(Cells(ProcEndLine, 1), Cells(ProcEndLine, 2)).Interior.ColorIndex = 35
         i = ToStep(Proc)
         Doc = .Cells(i, PROC_REP1_COL)
+'--------------
+        LocTOC = GetRep(Doc)
+        DocCS = LocTOC.ChkSum
+        LogWr "<*>ProcEnd " & Proc & "  Doc='" & Doc & "' DocCS=" & DocCS
+'--------------
         If Doc = "" Then GoTo Ex    'если Процесс не обрабатывал никакой Документ -> выход
         RepTOC = GetRep(Doc)
         RepTOC.Made = PROC_END
         WrTOC
-''        MS "<*> Процесс " & Proc & " завершен!"
     End With
 Ex: Exit Sub
 Err:
@@ -382,6 +395,7 @@ Sub ProcReset(Proc As String, _
 ' 1.10.12
 ' 11.11.12 - очистка ячейки в Шаге StepToReset в колонке Col
 ' 15.09.13 - исключаем зацикливание при ProcReset самого себя
+' 27.10.13 - bug fix - обращение к Range(.Cells)
 
     Dim i As Long, IsMe As Boolean
     IsMe = False
@@ -393,12 +407,12 @@ Sub ProcReset(Proc As String, _
             .Cells(i, Col) = ""
         End If
         i = ToStep(Proc)
-        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+        .Range(.Cells(i, 1), .Cells(i, 3)).Interior.ColorIndex = 0
         Do While .Cells(i, PROC_STEP_COL) <> PROC_END
             i = i + 1
             .Cells(i, PROC_STEPDONE_COL) = ""
             .Cells(i, PROC_TIME_COL) = ""
-            .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 0
+            .Range(.Cells(i, 1), .Cells(i, 3)).Interior.ColorIndex = 0
             If .Cells(i, PROC_STEP_COL) = "ProcReset" _
                     And .Cells(i, PROC_PAR1_COL) = Proc Then IsMe = True
         Loop
@@ -501,14 +515,16 @@ Sub DocReset(DocName As String)
 ' 26.10.13
 ' 27.10.13 - работаем со Стеком Процессов и с контрольной суммой Документа
 
-    Dim i As Long, Proc As String, P
+    Dim i As Long, Proc As String, P, DocCS As Long
     If DocName = "" Then GoTo Ex
     
     Dim LocalTOC As TOCmatch
     LocalTOC = GetRep(DocName)
     
     If SheetExists(DocName & "_OLD") Then GoTo Ex
-    If LocalTOC.ChkSum = DocCheckSum(DocName) Then GoTo Ex
+    DocCS = DocCheckSum(DocName)
+    If LocalTOC.ChkSum = DocCS Then GoTo Ex
+    DB_MATCH.Sheets(TOC).Cells(LocalTOC.iTOC, TOC_DOCCHECKSUM_COL) = DocCS
     
     Dim ChkStack As Boolean: ChkStack = True
     If ProcStack Is Nothing Then ChkStack = False
