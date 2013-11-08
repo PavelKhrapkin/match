@@ -9,7 +9,7 @@ Attribute VB_Name = "PaidAnalitics"
 '                                     соответствует типу номер JobType
 ' - IsSubscription(Good, GT)    - возвращает True, если товар - подписка
 '
-'   22.10.2013
+'   8.11.2013
 
 Option Explicit
 
@@ -58,7 +58,7 @@ Sub Paid1C(Optional ByVal iPayLine As Long = 2)
         NewSheet NEW_PAYMENT
         NewSheet NEW_ACC
         NewSheet NEW_OPP
-        NewSheet NEW_CONTRACT
+'        NewSheet NEW_CONTRACT
         NewSheet DOG_UPDATE
         SheetSort PAY_SHEET, PAYRUB_COL, "Descending"
         SheetSort PAY_SHEET, PAYINSF_COL, "Descending"
@@ -143,12 +143,15 @@ Function NonDialogPass() As Long
 '
 ' 21.09.13
 ' 26.09.13 - bug fix Balky OppId
+'  8.11.13 - NewContr проход
 
     Dim LocalTOC As TOCmatch
     Dim ContrK As String, OppId As String, ThisOppN As Long
     Dim i As Long, IsErr As Boolean, sLine As String
     Dim SFoppEOL As Long: SFoppEOL = EOL(SFopp, DB_SFDC)
-    
+   
+    NewContr NEW_CONTACT
+   
     LocalTOC = GetRep(PAY_SHEET)
     With DB_1C.Sheets(PAY_SHEET)
         For i = 2 To LocalTOC.EOL
@@ -218,7 +221,7 @@ ToSF:       If Not IsErr Then WrNewSheet NEW_PAYMENT, PAY_SHEET, i, OppId   '>>>
 NextRow:
         Next i
     End With
-    
+        
     NonDialogPass = EOL(NEW_PAYMENT, DB_TMP) - 1 _
         + EOL(NEW_CONTRACT, DB_TMP) - 1 _
         + EOL(NEW_OPP, DB_TMP) - 1 _
