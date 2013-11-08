@@ -2,7 +2,7 @@ Attribute VB_Name = "Declarations"
 '-------------------------------------------------------------------
 ' Declarations - декларация структур, используемых в match 2.1
 '
-'  27.10.13
+'  8.11.13
 
 Option Explicit
 
@@ -457,7 +457,7 @@ Public Const NEWPAY_DATE_COL = 2        ' Date - Дата платежа
 Public Const NEWPAY_INV_COL = 3         ' Invoice - Счет
 
 '................ Лист новых Договоров NewContract ..........................
-Public Const NEW_CONTRACT = "NewPayment" ' лист новых Договоров
+Public Const NEW_CONTRACT = "NewContract" ' лист новых Договоров
 
 Public Const NEWDOG_DOGOVOR_COL = 1     ' Dogovor - Имя Договора
 Public Const NEWDOG_DATE_COL = 2        ' Date - Дата подписания
