@@ -13,11 +13,6 @@ Attribute VB_Name = "PaidAnalitics"
 
 Option Explicit
 
-'       --- Выходные листы ---           ---Шаблоны---
-Const NEW_PAYMENT = "NewPayment":   Const HDR_WP = "HDR_WP"
-Const NEW_ACC = "NewAcc":           Const HDR_WPacc = "HDR_WPacc"
-Const NEW_CONTRACT = "NewContract": Const HDR_WPcontract = "HDR_WPcontract"
-
 '       --- для извлечения значений из Документов -  Fetch ---
 Const FETCH_ACC1C = Acc1C & "/" & A1C_NAME_COL & ":№/0"
 Const FETCH_SFD = "SFD/" & SFD_COD_COL & ":№/0"
@@ -150,7 +145,7 @@ Function NonDialogPass() As Long
     Dim i As Long, IsErr As Boolean, sLine As String
     Dim SFoppEOL As Long: SFoppEOL = EOL(SFopp, DB_SFDC)
    
-    NewContr NEW_CONTACT
+    NewContr NEW_CONTRACT
    
     LocalTOC = GetRep(PAY_SHEET)
     With DB_1C.Sheets(PAY_SHEET)
