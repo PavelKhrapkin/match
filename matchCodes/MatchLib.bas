@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 6.10.13
+' П.Л.Храпкин, А.Пасс 8.11.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -266,13 +266,13 @@ Function AutoFilterReset(SheetN) As Integer
     R = GetRep(SheetN)
     
     With Workbooks(R.RepFile).Sheets(R.SheetN)
-        .Activate
+''''        .Activate
         .AutoFilterMode = False
         .Rows("1:" & R.EOL).AutoFilter
-        .Rows("1:1").Select
+''''        .Rows("1:1").Select
         On Error Resume Next
-        ActiveWindow.FreezePanes = True
-        Application.GoTo .Cells(R.EOL - 3, 1), True
+''''        ActiveWindow.FreezePanes = True
+        Application.Goto .Cells(R.EOL - 3, 1), True
         On Error GoTo 0
     End With
 End Function
@@ -611,6 +611,7 @@ Sub SheetDedup(SheetN, Col)
 ' Удаляем строки - дубликаты в лист SheetN по колонке Col,
 '                  выполнив сортировку по этой колонке
 '   19.4.2012
+'   8.11.13 bug fix - не обрабатывалась последняя пара строк
 
     Dim i, prev, X, EOL_SheetN As Integer
     
@@ -627,7 +628,7 @@ Sub SheetDedup(SheetN, Col)
             i = i + 1
             prev = X
         End If
-    Loop While i < EOL_SheetN
+    Loop While i <= EOL_SheetN
 End Sub
 Sub SheetDedup2(SheetN, ColSort, СolAcc, ColIdSF)
 '
@@ -989,7 +990,7 @@ nextComp:
         Else
             pat = Replace(pat, "~", ",")
             .Pattern = pat
-            patTest = .Test(longTxt)
+            patTest = .test(longTxt)
     '        If .test(longTxt) Then
     '            patTest = "found: '" & pat & "' in: '" & longTxt & "'"
     '        Else
