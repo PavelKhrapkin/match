@@ -106,9 +106,11 @@ Sub AdskSN()
 ' 9.11.13 П.Храпкин
 
     Dim PrevRep As Workbook, SFrep As Range
+    Dim NewRepName As String
     Dim EOLrep As Long, EOLprev As Long
         
     With ActiveWorkbook
+        
         .Sheets.Add After:=.Sheets(1)
         ActiveSheet.Name = "SF"
         Set PrevRep = GetPrevRep()
@@ -152,7 +154,7 @@ Sub AdskSN()
     End With
 
     ActiveWorkbook.SaveAs Filename:= _
-        "C:\Users\Pavel_Khrapkin\Desktop\WeeklySubsReport-03-Nov-2013.xlsx", _
+        ActiveWorkbook.Path & "\WeeklySubsReport-03-Nov-2013.xlsx", _
         FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
 End Sub
 Function GetPrevRep() As Workbook
@@ -162,13 +164,15 @@ Function GetPrevRep() As Workbook
 ' 9.11.13
 
     Dim PrevRepName As String
-'        Set NewRep = .Sheets(1)
-''        Dir = .Path
     
-    PrevRepName = "WeeklySubsReport-27-Oct-2013.xlsx"
+    PrevRepName = Dir(ActiveWorkbook.Path & "\" & "WeeklySubsReport-*")
+    If PrevRepName = ActiveWorkbook.Name Then
+        PrevRepName = Dir()
+    End If
+    MsgBox "Прежний отчет = '" & PrevRepName & "'" _
+        & vbCrLf & "  Новый отчет = '" & ActiveWorkbook.Name & "'"
     
-    Set GetPrevRep = Workbooks.Open(PrevRepName, , True)
-
+    Set GetPrevRep = Workbooks.Open(ActiveWorkbook.Path & "\" & PrevRepName, , True)
 End Function
 
 
