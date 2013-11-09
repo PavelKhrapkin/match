@@ -5,7 +5,7 @@ Attribute VB_Name = "For_PERSONAL"
 ' * MoveToMatch    - перенос Листа на первое место Match1SF    (Ctrl/Shift/M)
 ' * TriggerOptionsFormulaStyle  - переключение моды A1/R1C1    (Ctrl/Shift/R)
 '
-' П.Л.Храпкин 2.1.2012
+' П.Л.Храпкин 9.11.2013
 '   28.1.2012 - работы по параметризации имен и позиций листов
 '    5.2.2012 - в MoveToMatch - распознавание входного отчета по штампу
 '   16.5.2012 - добавлен отчет SF_PA
@@ -13,6 +13,7 @@ Attribute VB_Name = "For_PERSONAL"
 '   26.7.2012 - match 2.0 - MoveToMatch с использованием TOCmatch
 '   17.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
 '    8.9.2012 - этот модуль помещен под названием ForPERSONAL.bas, чтобы не путать
+'   9.11.2013 - добавлены макросы для обработки отчетов SN из PartnerCenter.Autodesk
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -97,3 +98,77 @@ Attribute TriggerOptionsFormulaStyle.VB_ProcData.VB_Invoke_Func = "R\n14"
         Application.ReferenceStyle = xlR1C1
     End If
 End Sub
+Sub AdskSN()
+'
+' AdskSN Macro
+' Обновление еженедельного отчета по SN из PartnerCenter.Autodesk.com
+'
+' 9.11.13 П.Храпкин
+
+    Dim PrevRep As Workbook, SFrep As Range
+    Dim EOLrep As Long, EOLprev As Long
+        
+    With ActiveWorkbook
+        .Sheets.Add After:=.Sheets(1)
+        ActiveSheet.Name = "SF"
+        Set PrevRep = GetPrevRep()
+        Set SFrep = PrevRep.Sheets("SF").UsedRange
+        With .Sheets("SF")
+            .Tab.Color = vbMagenta
+            SFrep.Copy .Cells(1, 1)
+            .Activate
+            Rows("2:2257").Select
+            Selection.RowHeight = 15
+            Columns("A:A").ColumnWidth = 12
+            Columns("H:H").ColumnWidth = 11
+            Columns("I:I").ColumnWidth = 20
+            Columns("K:K").ColumnWidth = 11
+            Columns("L:L").ColumnWidth = 11
+        End With
+        With .Sheets(1)
+            .Activate
+            EOLrep = .UsedRange.Rows.Count
+            Do While .Cells(EOLrep, 6) = ""
+                EOLrep = EOLrep - 1
+            Loop
+            EOLprev = PrevRep.Sheets(1).UsedRange.Rows.Count
+            .Columns("A:A").Insert
+            .Columns("A:A").Insert
+            .Columns("A:A").Insert
+            .Columns("A:A").Insert
+            PrevRep.Sheets(1).Columns("A:D").Copy .Cells(1, 1)
+            .Columns("A:D").ColumnWidth = 4
+            .Cells(6, 4).FormulaR1C1 = "=IF(ISERROR(VLOOKUP(RC[1],SF!C,1,FALSE)),"""",1)"
+            .Cells(6, 3).FormulaR1C1 = "=IF(ISERROR(VLOOKUP(RC[18],SF!C[5],1,FALSE)),"""",1)"
+            .Cells(6, 2).FormulaR1C1 = _
+                "=IF(ISERROR(VLOOKUP(RC[51],SF!C[17],1,FALSE)),"""",1)"
+            .Cells(6, 1).FormulaR1C1 = _
+                "=IF(RC[1]<>1,"""",IF(RC[54]=VLOOKUP(RC[52],SF!C:C[11],12,FALSE),1,""""))"
+            Range("A6:D" & EOLrep).FillDown
+            
+            PrevRep.Sheets(1).Rows(EOLprev - 2 & ":" & EOLprev).Copy .Cells(EOLrep + 1, 1)
+
+        End With
+    End With
+
+    ActiveWorkbook.SaveAs Filename:= _
+        "C:\Users\Pavel_Khrapkin\Desktop\WeeklySubsReport-03-Nov-2013.xlsx", _
+        FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+End Sub
+Function GetPrevRep() As Workbook
+'
+' - GetPrevRep() - открывает в каталоге Dir файл с предыдущим отчетом по SN
+'
+' 9.11.13
+
+    Dim PrevRepName As String
+'        Set NewRep = .Sheets(1)
+''        Dir = .Path
+    
+    PrevRepName = "WeeklySubsReport-27-Oct-2013.xlsx"
+    
+    Set GetPrevRep = Workbooks.Open(PrevRepName, , True)
+
+End Function
+
+
