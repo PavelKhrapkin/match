@@ -1,0 +1,19 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=export charts.chm
+Default Window=main
+Default topic=exportcharts1.htm
+Display compile progress=No
+Language=0x409 English (United States)
+
+[WINDOWS]
+main="Export Charts Add-In Help",,,"exportcharts1.htm","exportcharts1.htm",,,,,0x2020,,0x204e,[271,372,911,852],,,,,,,0
+
+
+[FILES]
+exportcharts3.htm
+exportcharts1.htm
+exportcharts2.htm
+
+[INFOTYPES]
+

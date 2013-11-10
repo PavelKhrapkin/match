@@ -1,0 +1,2149 @@
+MIME-Version: 1.0
+X-Document-Type: Workbook
+Content-Type: multipart/related; boundary="----=_NextPart_01CB7ECC.801A0C50"
+
+Данный документ является веб-страницей в одном файле, также называемой файлом веб-архива. Если вы видите это сообщение, значит, данный браузер или редактор не поддерживает файлы веб-архива. Загрузите браузер, поддерживающий веб-архивы, например Windows® Internet Explorer®.
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta name=3D"Excel Workbook Frameset">
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link rel=3DFile-List href=3D"help.files/filelist.xml">
+<![if !supportTabStrip]>
+<link id=3D"shLink" href=3D"help.files/sheet001.htm">
+<link id=3D"shLink" href=3D"help.files/sheet002.htm">
+<link id=3D"shLink" href=3D"help.files/sheet003.htm">
+<link id=3D"shLink" href=3D"help.files/sheet004.htm">
+<link id=3D"shLink" href=3D"help.files/sheet005.htm">
+
+<link id=3D"shLink">
+
+<script language=3D"JavaScript">
+<!--
+ var c_lTabs=3D5;
+
+ var c_rgszSh=3Dnew Array(c_lTabs);
+ c_rgszSh[0] =3D "Main";
+ c_rgszSh[1] =3D "What&nbsp;To&nbsp;Print";
+ c_rgszSh[2] =3D "Printing";
+ c_rgszSh[3] =3D "Editing&nbsp;Data";
+ c_rgszSh[4] =3D "Viewing&nbsp;A&nbsp;Record";
+
+
+
+ var c_rgszClr=3Dnew Array(8);
+ c_rgszClr[0]=3D"window";
+ c_rgszClr[1]=3D"buttonface";
+ c_rgszClr[2]=3D"windowframe";
+ c_rgszClr[3]=3D"windowtext";
+ c_rgszClr[4]=3D"threedlightshadow";
+ c_rgszClr[5]=3D"threedhighlight";
+ c_rgszClr[6]=3D"threeddarkshadow";
+ c_rgszClr[7]=3D"threedshadow";
+
+ var g_iShCur;
+ var g_rglTabX=3Dnew Array(c_lTabs);
+
+function fnGetIEVer()
+{
+ var ua=3Dwindow.navigator.userAgent
+ var msie=3Dua.indexOf("MSIE")
+ if (msie>0 && window.navigator.platform=3D=3D"Win32")
+  return parseInt(ua.substring(msie+5,ua.indexOf(".", msie)));
+ else
+  return 0;
+}
+
+function fnBuildFrameset()
+{
+ var szHTML=3D"<frameset rows=3D\"*,18\" border=3D0 width=3D0 frameborder=
+=3Dno framespacing=3D0>"+
+  "<frame src=3D\""+document.all.item("shLink")[4].href+"\" name=3D\"frShee=
+t\" noresize>"+
+  "<frameset cols=3D\"54,*\" border=3D0 width=3D0 frameborder=3Dno framespa=
+cing=3D0>"+
+  "<frame src=3D\"\" name=3D\"frScroll\" marginwidth=3D0 marginheight=3D0 s=
+crolling=3Dno>"+
+  "<frame src=3D\"\" name=3D\"frTabs\" marginwidth=3D0 marginheight=3D0 scr=
+olling=3Dno>"+
+  "</frameset></frameset><plaintext>";
+
+ with (document) {
+  open("text/html","replace");
+  write(szHTML);
+  close();
+ }
+
+ fnBuildTabStrip();
+}
+
+function fnBuildTabStrip()
+{
+ var szHTML=3D
+  "<html><head><style>.clScroll {font:8pt Courier New;color:"+c_rgszClr[6]+=
+";cursor:default;line-height:10pt;}"+
+  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-h=
+eight:11pt;}</style></head>"+
+  "<body onclick=3D\"event.returnValue=3Dfalse;\" ondragstart=3D\"event.ret=
+urnValue=3Dfalse;\" onselectstart=3D\"event.returnValue=3Dfalse;\" bgcolor=
+=3D"+c_rgszClr[4]+" topmargin=3D0 leftmargin=3D0><table cellpadding=3D0 cel=
+lspacing=3D0 width=3D100%>"+
+  "<tr><td colspan=3D6 height=3D1 bgcolor=3D"+c_rgszClr[2]+"></td></tr>"+
+  "<tr><td style=3D\"font:1pt\">&nbsp;<td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll\" onclick=3D\"parent.f=
+nFastScrollTabs(0);\" onmouseover=3D\"parent.fnMouseOverScroll(0);\" onmous=
+eout=3D\"parent.fnMouseOutScroll(0);\"><a>&#171;</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll2\" onclick=3D\"parent.=
+fnScrollTabs(0);\" ondblclick=3D\"parent.fnScrollTabs(0);\" onmouseover=3D\=
+"parent.fnMouseOverScroll(1);\" onmouseout=3D\"parent.fnMouseOutScroll(1);\=
+"><a>&lt</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll2\" onclick=3D\"parent.=
+fnScrollTabs(1);\" ondblclick=3D\"parent.fnScrollTabs(1);\" onmouseover=3D\=
+"parent.fnMouseOverScroll(2);\" onmouseout=3D\"parent.fnMouseOutScroll(2);\=
+"><a>&gt</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll\" onclick=3D\"parent.f=
+nFastScrollTabs(1);\" onmouseover=3D\"parent.fnMouseOverScroll(3);\" onmous=
+eout=3D\"parent.fnMouseOutScroll(3);\"><a>&#187;</a></td>"+
+  "<td style=3D\"font:1pt\">&nbsp;<td></tr></table></body></html>";
+
+ with (frames['frScroll'].document) {
+  open("text/html","replace");
+  write(szHTML);
+  close();
+ }
+
+ szHTML =3D
+  "<html><head>"+
+  "<style>A:link,A:visited,A:active {text-decoration:none;"+"color:"+c_rgsz=
+Clr[3]+";}"+
+  ".clTab {cursor:hand;background:"+c_rgszClr[1]+";font:9pt Arial;padding-l=
+eft:3px;padding-right:3px;text-align:center;}"+
+  ".clBorder {background:"+c_rgszClr[2]+";font:1pt;}"+
+  "</style></head><body onload=3D\"parent.fnInit();\" onselectstart=3D\"eve=
+nt.returnValue=3Dfalse;\" ondragstart=3D\"event.returnValue=3Dfalse;\" bgco=
+lor=3D"+c_rgszClr[4]+
+  " topmargin=3D0 leftmargin=3D0><table id=3DtbTabs cellpadding=3D0 cellspa=
+cing=3D0>";
+
+ var iCellCount=3D(c_lTabs+1)*2;
+
+ var i;
+ for (i=3D0;i<iCellCount;i+=3D2)
+  szHTML+=3D"<col width=3D1><col>";
+
+ var iRow;
+ for (iRow=3D0;iRow<6;iRow++) {
+
+  szHTML+=3D"<tr>";
+
+  if (iRow=3D=3D5)
+   szHTML+=3D"<td colspan=3D"+iCellCount+"></td>";
+  else {
+   if (iRow=3D=3D0) {
+    for(i=3D0;i<iCellCount;i++)
+     szHTML+=3D"<td height=3D1 class=3D\"clBorder\"></td>";
+   } else if (iRow=3D=3D1) {
+    for(i=3D0;i<c_lTabs;i++) {
+     szHTML+=3D"<td height=3D1 nowrap class=3D\"clBorder\">&nbsp;</td>";
+     szHTML+=3D
+      "<td id=3DtdTab height=3D1 nowrap class=3D\"clTab\" onmouseover=3D\"p=
+arent.fnMouseOverTab("+i+");\" onmouseout=3D\"parent.fnMouseOutTab("+i+");\=
+">"+
+      "<a href=3D\""+document.all.item("shLink")[i].href+"\" target=3D\"frS=
+heet\" id=3DaTab>&nbsp;"+c_rgszSh[i]+"&nbsp;</a></td>";
+    }
+    szHTML+=3D"<td id=3DtdTab height=3D1 nowrap class=3D\"clBorder\"><a id=
+=3DaTab>&nbsp;</a></td><td width=3D100%></td>";
+   } else if (iRow=3D=3D2) {
+    for (i=3D0;i<c_lTabs;i++)
+     szHTML+=3D"<td height=3D1></td><td height=3D1 class=3D\"clBorder\"></t=
+d>";
+    szHTML+=3D"<td height=3D1></td><td height=3D1></td>";
+   } else if (iRow=3D=3D3) {
+    for (i=3D0;i<iCellCount;i++)
+     szHTML+=3D"<td height=3D1></td>";
+   } else if (iRow=3D=3D4) {
+    for (i=3D0;i<c_lTabs;i++)
+     szHTML+=3D"<td height=3D1 width=3D1></td><td height=3D1></td>";
+    szHTML+=3D"<td height=3D1 width=3D1></td><td></td>";
+   }
+  }
+  szHTML+=3D"</tr>";
+ }
+
+ szHTML+=3D"</table></body></html>";
+ with (frames['frTabs'].document) {
+  open("text/html","replace");
+  charset=3Ddocument.charset;
+  write(szHTML);
+  close();
+ }
+}
+
+function fnInit()
+{
+ g_rglTabX[0]=3D0;
+ var i;
+ for (i=3D1;i<=3Dc_lTabs;i++)
+  with (frames['frTabs'].document.all.tbTabs.rows[1].cells[fnTabToCol(i-1)])
+   g_rglTabX[i]=3DoffsetLeft+offsetWidth-6;
+}
+
+function fnTabToCol(iTab)
+{
+ return 2*iTab+1;
+}
+
+function fnNextTab(fDir)
+{
+ var iNextTab=3D-1;
+ var i;
+
+ with (frames['frTabs'].document.body) {
+  if (fDir=3D=3D0) {
+   if (scrollLeft>0) {
+    for (i=3D0;i<c_lTabs&&g_rglTabX[i]<scrollLeft;i++);
+    if (i<c_lTabs)
+     iNextTab=3Di-1;
+   }
+  } else {
+   if (g_rglTabX[c_lTabs]+6>offsetWidth+scrollLeft) {
+    for (i=3D0;i<c_lTabs&&g_rglTabX[i]<=3DscrollLeft;i++);
+    if (i<c_lTabs)
+     iNextTab=3Di;
+   }
+  }
+ }
+ return iNextTab;
+}
+
+function fnScrollTabs(fDir)
+{
+ var iNextTab=3DfnNextTab(fDir);
+
+ if (iNextTab>=3D0) {
+  frames['frTabs'].scroll(g_rglTabX[iNextTab],0);
+  return true;
+ } else
+  return false;
+}
+
+function fnFastScrollTabs(fDir)
+{
+ if (c_lTabs>16)
+  frames['frTabs'].scroll(g_rglTabX[fDir?c_lTabs-1:0],0);
+ else
+  if (fnScrollTabs(fDir)>0) window.setTimeout("fnFastScrollTabs("+fDir+");"=
+,5);
+}
+
+function fnSetTabProps(iTab,fActive)
+{
+ var iCol=3DfnTabToCol(iTab);
+ var i;
+
+ if (iTab>=3D0) {
+  with (frames['frTabs'].document.all) {
+   with (tbTabs) {
+    for (i=3D0;i<=3D4;i++) {
+     with (rows[i]) {
+      if (i=3D=3D0)
+       cells[iCol].style.background=3Dc_rgszClr[fActive?0:2];
+      else if (i>0 && i<4) {
+       if (fActive) {
+        cells[iCol-1].style.background=3Dc_rgszClr[2];
+        cells[iCol].style.background=3Dc_rgszClr[0];
+        cells[iCol+1].style.background=3Dc_rgszClr[2];
+       } else {
+        if (i=3D=3D1) {
+         cells[iCol-1].style.background=3Dc_rgszClr[2];
+         cells[iCol].style.background=3Dc_rgszClr[1];
+         cells[iCol+1].style.background=3Dc_rgszClr[2];
+        } else {
+         cells[iCol-1].style.background=3Dc_rgszClr[4];
+         cells[iCol].style.background=3Dc_rgszClr[(i=3D=3D2)?2:4];
+         cells[iCol+1].style.background=3Dc_rgszClr[4];
+        }
+       }
+      } else
+       cells[iCol].style.background=3Dc_rgszClr[fActive?2:4];
+     }
+    }
+   }
+   with (aTab[iTab].style) {
+    cursor=3D(fActive?"default":"hand");
+    color=3Dc_rgszClr[3];
+   }
+  }
+ }
+}
+
+function fnMouseOverScroll(iCtl)
+{
+ frames['frScroll'].document.all.tdScroll[iCtl].style.color=3Dc_rgszClr[7];
+}
+
+function fnMouseOutScroll(iCtl)
+{
+ frames['frScroll'].document.all.tdScroll[iCtl].style.color=3Dc_rgszClr[6];
+}
+
+function fnMouseOverTab(iTab)
+{
+ if (iTab!=3Dg_iShCur) {
+  var iCol=3DfnTabToCol(iTab);
+  with (frames['frTabs'].document.all) {
+   tdTab[iTab].style.background=3Dc_rgszClr[5];
+  }
+ }
+}
+
+function fnMouseOutTab(iTab)
+{
+ if (iTab>=3D0) {
+  var elFrom=3Dframes['frTabs'].event.srcElement;
+  var elTo=3Dframes['frTabs'].event.toElement;
+
+  if ((!elTo) ||
+   (elFrom.tagName=3D=3DelTo.tagName) ||
+   (elTo.tagName=3D=3D"A" && elTo.parentElement!=3DelFrom) ||
+   (elFrom.tagName=3D=3D"A" && elFrom.parentElement!=3DelTo)) {
+
+   if (iTab!=3Dg_iShCur) {
+    with (frames['frTabs'].document.all) {
+     tdTab[iTab].style.background=3Dc_rgszClr[1];
+    }
+   }
+  }
+ }
+}
+
+function fnSetActiveSheet(iSh)
+{
+ if (iSh!=3Dg_iShCur) {
+  fnSetTabProps(g_iShCur,false);
+  fnSetTabProps(iSh,true);
+  g_iShCur=3DiSh;
+ }
+}
+
+ window.g_iIEVer=3DfnGetIEVer();
+ if (window.g_iIEVer>=3D4)
+  fnBuildFrameset();
+//-->
+</script>
+<![endif]><!--[if gte mso 9]><xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>Main</x:Name>
+    <x:WorksheetSource HRef=3D"help.files/sheet001.htm"/>
+   </x:ExcelWorksheet>
+   <x:ExcelWorksheet>
+    <x:Name>What To Print</x:Name>
+    <x:WorksheetSource HRef=3D"help.files/sheet002.htm"/>
+   </x:ExcelWorksheet>
+   <x:ExcelWorksheet>
+    <x:Name>Printing</x:Name>
+    <x:WorksheetSource HRef=3D"help.files/sheet003.htm"/>
+   </x:ExcelWorksheet>
+   <x:ExcelWorksheet>
+    <x:Name>Editing Data</x:Name>
+    <x:WorksheetSource HRef=3D"help.files/sheet004.htm"/>
+   </x:ExcelWorksheet>
+   <x:ExcelWorksheet>
+    <x:Name>Viewing A Record</x:Name>
+    <x:WorksheetSource HRef=3D"help.files/sheet005.htm"/>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+  <x:Stylesheet HRef=3D"help.files/stylesheet.css"/>
+  <x:WindowHeight>12015</x:WindowHeight>
+  <x:WindowWidth>11940</x:WindowWidth>
+  <x:WindowTopX>945</x:WindowTopX>
+  <x:WindowTopY>555</x:WindowTopY>
+  <x:ActiveSheet>4</x:ActiveSheet>
+  <x:ProtectStructure>False</x:ProtectStructure>
+  <x:ProtectWindows>False</x:ProtectWindows>
+ </x:ExcelWorkbook>
+</xml><![endif]-->
+</head>
+
+<frameset rows=3D"*,39" border=3D0 width=3D0 frameborder=3Dno framespacing=
+=3D0>
+ <frame src=3D"help.files/sheet005.htm" name=3D"frSheet">
+ <frame src=3D"help.files/tabstrip.htm" name=3D"frTabs" marginwidth=3D0 mar=
+ginheight=3D0>
+ <noframes>
+  <body>
+   <p>&#1069;&#1090;&#1072; &#1089;&#1090;&#1088;&#1072;&#1085;&#1080;&#109=
+4;&#1072; &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1080;&#1090; &#1092;&=
+#1088;&#1077;&#1081;&#1084;&#1099;, &#1086;&#1076;&#1085;&#1072;&#1082;&#10=
+86; &#1090;&#1077;&#1082;&#1091;&#1097;&#1080;&#1081; &#1073;&#1088;&#1072;=
+&#1091;&#1079;&#1077;&#1088; &#1080;&#1093; &#1085;&#1077; &#1087;&#1086;&#=
+1076;&#1076;&#1077;&#1088;&#1078;&#1080;&#1074;&#1072;&#1077;&#1090;.</p>
+  </body>
+ </noframes>
+</frameset>
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/stylesheet.css
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/css; charset="us-ascii"
+
+tr
+	{mso-height-source:auto;}
+col
+	{mso-width-source:auto;}
+br
+	{mso-data-placement:same-cell;}
+.style64
+	{mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;
+	border:none;
+	mso-protection:locked visible;
+	mso-style-name:"Normal 2";}
+.style62
+	{color:blue;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;
+	mso-style-name:\0413\0438\043F\0435\0440\0441\0441\044B\043B\043A\0430;
+	mso-style-id:8;}
+a:link
+	{color:blue;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;}
+a:visited
+	{color:purple;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;}
+.style0
+	{mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;
+	border:none;
+	mso-protection:locked visible;
+	mso-style-name:\041E\0431\044B\0447\043D\044B\0439;
+	mso-style-id:0;}
+td
+	{mso-style-parent:style0;
+	padding:0px;
+	mso-ignore:padding;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri, sans-serif;
+	mso-font-charset:0;
+	mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	border:none;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	mso-protection:locked visible;
+	white-space:nowrap;
+	mso-rotate:0;}
+.xl66
+	{mso-style-parent:style0;
+	color:black;}
+.xl67
+	{mso-style-parent:style64;
+	color:windowtext;
+	font-size:28.0pt;
+	font-weight:700;
+	font-style:italic;
+	font-family:Cambria, serif;
+	mso-font-charset:0;
+	text-align:center;}
+.xl68
+	{mso-style-parent:style0;
+	color:#1F497D;
+	font-size:20.0pt;
+	font-weight:700;
+	text-align:center;
+	vertical-align:middle;}
+.xl69
+	{mso-style-parent:style0;
+	color:#953735;
+	font-size:12.0pt;
+	font-weight:700;
+	text-align:center;}
+.xl70
+	{mso-style-parent:style0;
+	color:black;
+	text-align:center;}
+.xl71
+	{mso-style-parent:style62;
+	color:blue;
+	text-decoration:underline;
+	text-underline-style:single;
+	text-align:center;}
+.xl72
+	{mso-style-parent:style0;
+	color:gray;
+	font-weight:700;
+	font-style:italic;
+	text-align:center;}
+.xl73
+	{mso-style-parent:style0;
+	color:#1F497D;
+	font-weight:700;
+	font-style:italic;
+	text-align:center;}
+.xl74
+	{mso-style-parent:style0;
+	color:windowtext;
+	font-size:10.0pt;
+	font-weight:700;
+	font-style:italic;
+	text-align:center;}
+.xl75
+	{mso-style-parent:style0;
+	color:#953735;
+	font-size:12.0pt;
+	font-weight:700;
+	vertical-align:middle;}
+.xl76
+	{mso-style-parent:style0;
+	color:black;
+	vertical-align:middle;}
+.xl77
+	{mso-style-parent:style62;
+	color:blue;
+	text-decoration:underline;
+	text-underline-style:single;
+	text-align:left;}
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/tabstrip.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html>
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\tabstrip.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<script language=3D"JavaScript">
+<!--
+if (window.name!=3D"frTabs")
+ window.location.replace(document.all.item("Main-File").href);
+//-->
+</script>
+<style>
+<!--
+A {
+    text-decoration:none;
+    color:#000000;
+    font-size:9pt;
+}
+-->
+</style>
+</head>
+<body topmargin=3D0 leftmargin=3D0 bgcolor=3D"#808080">
+<table border=3D0 cellspacing=3D1>
+ <tr>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet001.=
+htm" target=3D"frSheet"><font face=3D"Arial" color=3D"#000000">Main</font><=
+/a>&nbsp;</small></small></b></td>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet002.=
+htm" target=3D"frSheet"><font face=3D"Arial" color=3D"#000000">What To Prin=
+t</font></a>&nbsp;</small></small></b></td>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet003.=
+htm" target=3D"frSheet"><font face=3D"Arial" color=3D"#000000">Printing</fo=
+nt></a>&nbsp;</small></small></b></td>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet004.=
+htm" target=3D"frSheet"><font face=3D"Arial" color=3D"#000000">Editing Data=
+</font></a>&nbsp;</small></small></b></td>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet005.=
+htm" target=3D"frSheet"><font face=3D"Arial" color=3D"#000000">Viewing A Re=
+cord</font></a>&nbsp;</small></small></b></td>
+
+ </tr>
+</table>
+</body>
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/sheet001.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+x\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]--><![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\sheet001.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{mso-header-data:&A;
+	mso-footer-data:"Page &P";
+	margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(0);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../help.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D482 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:362pt'>
+ <col width=3D12 style=3D'mso-width-source:userset;mso-width-alt:438;width:=
+9pt'>
+ <col width=3D470 style=3D'mso-width-source:userset;mso-width-alt:17188;wid=
+th:353pt'>
+ <col width=3D19 style=3D'mso-width-source:userset;mso-width-alt:694;width:=
+14pt'>
+ <col width=3D99 style=3D'mso-width-source:userset;mso-width-alt:3620;width=
+:74pt'>
+ <tr height=3D46 style=3D'height:34.5pt'>
+  <td height=3D46 class=3Dxl66 width=3D12 style=3D'height:34.5pt;width:9pt'=
+><a
+  name=3D"RANGE!A1"></a></td>
+  <td class=3Dxl67 width=3D470 style=3D'width:353pt'>Elephants 4U</td>
+ </tr>
+ <tr height=3D44 style=3D'mso-height-source:userset;height:33.0pt'>
+  <td height=3D44 class=3Dxl66 style=3D'height:33.0pt'></td>
+  <td class=3Dxl68><a name=3DHelpRange>&#1057;&#1087;&#1088;&#1072;&#1074;&=
+#1082;&#1072;
+  &#1087;&#1086;
+  &#1087;&#1088;&#1080;&#1083;&#1086;&#1078;&#1077;&#1085;&#1080;&#1102; Fo=
+rm
+  Letter Application</a></td>
+ </tr>
+ <tr height=3D21 style=3D'height:15.75pt'>
+  <td height=3D21 class=3Dxl66 style=3D'height:15.75pt'></td>
+  <td class=3Dxl69></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl70>&#1069;&#1090;&#1086;
+  &#1087;&#1088;&#1080;&#1083;&#1086;&#1078;&#1077;&#1085;&#1080;&#1077;
+  &#1086;&#1073;&#1083;&#1077;&#1075;&#1095;&#1072;&#1077;&#1090;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1100;<span
+  style=3D'mso-spacerun:yes'>&nbsp;</span></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl70>&#1092;&#1086;&#1088;&#1084;
+  &#1087;&#1080;&#1089;&#1077;&#1084; &#1076;&#1083;&#1103;
+  &#1092;&#1080;&#1088;&#1084;&#1099; Elephants 4U.</td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td rowspan=3D5 height=3D100 class=3Dxl66 width=3D470 style=3D'mso-ignore=
+:colspan-rowspan;
+  height:75.0pt;width:353pt'><!--[if gte vml 1]><v:shapetype id=3D"_x0000_t=
+75"
+   coordsize=3D"21600,21600" o:spt=3D"75" o:preferrelative=3D"t" path=3D"m@=
+4@5l@4@11@9@11@9@5xe"
+   filled=3D"f" stroked=3D"f">
+   <v:stroke joinstyle=3D"miter"/>
+   <v:formulas>
+    <v:f eqn=3D"if lineDrawn pixelLineWidth 0"/>
+    <v:f eqn=3D"sum @0 1 0"/>
+    <v:f eqn=3D"sum 0 0 @1"/>
+    <v:f eqn=3D"prod @2 1 2"/>
+    <v:f eqn=3D"prod @3 21600 pixelWidth"/>
+    <v:f eqn=3D"prod @3 21600 pixelHeight"/>
+    <v:f eqn=3D"sum @0 0 1"/>
+    <v:f eqn=3D"prod @6 1 2"/>
+    <v:f eqn=3D"prod @7 21600 pixelWidth"/>
+    <v:f eqn=3D"sum @8 21600 0"/>
+    <v:f eqn=3D"prod @7 21600 pixelHeight"/>
+    <v:f eqn=3D"sum @10 21600 0"/>
+   </v:formulas>
+   <v:path o:extrusionok=3D"f" gradientshapeok=3D"t" o:connecttype=3D"rect"=
+/>
+   <o:lock v:ext=3D"edit" aspectratio=3D"t"/>
+  </v:shapetype><v:shape id=3D"Picture_x0020_51" o:spid=3D"_x0000_s1030" ty=
+pe=3D"#_x0000_t75"
+   style=3D'position:absolute;margin-left:99.75pt;margin-top:3pt;width:117p=
+t;
+   height:67.5pt;z-index:1;visibility:visible' o:gfxdata=3D"UEsDBBQABgAIAAA=
+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3D
+">
+   <v:imagedata src=3D"image001.png" o:title=3D""/>
+   <x:ClientData ObjectType=3D"Pict">
+    <x:SizeWithCells/>
+    <x:CF>Bitmap</x:CF>
+    <x:AutoPict/>
+   </x:ClientData>
+  </v:shape><![endif]--><![if !vml]><span style=3D'mso-ignore:vglayout'>
+  <table cellpadding=3D0 cellspacing=3D0>
+   <tr>
+    <td width=3D133 height=3D4></td>
+   </tr>
+   <tr>
+    <td></td>
+    <td><img width=3D156 height=3D90 src=3Dimage002.gif v:shapes=3D"Picture=
+_x0020_51"></td>
+    <td width=3D181></td>
+   </tr>
+   <tr>
+    <td height=3D6></td>
+   </tr>
+  </table>
+  </span><![endif]><!--[if !mso & vml]><span style=3D'width:352.5pt;height:=
+75.0pt'></span><![endif]--></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl71><![if !mso]><a href=3D"sheet002.htm">&#1063;&#1090;&#108=
+6;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1072;&#1090;&#1100;</a><![endif]><!-=
+-[if mso]><a
+  href=3D"sheet002.htm#RANGE!A1">&#1063;&#1090;&#1086;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1072;&#1090;&#1100;</a><![endif]--><=
+/td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl71><![if !mso]><a href=3D"sheet003.htm">&#1055;&#1077;&#109=
+5;&#1072;&#1090;&#1100;</a><![endif]><!--[if mso]><a
+  href=3D"sheet003.htm#RANGE!A1">&#1055;&#1077;&#1095;&#1072;&#1090;&#1100;=
+</a><![endif]--></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl71><![if !mso]><a href=3D"sheet004.htm">&#1056;&#1077;&#107=
+6;&#1072;&#1082;&#1090;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1=
+077;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;</a><![endif]><!--[if mso]><a
+  href=3D"sheet004.htm#RANGE!A1">&#1056;&#1077;&#1076;&#1072;&#1082;&#1090;=
+&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;</a><![endif]--></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl71><![if !mso]><a href=3D"sheet005.htm">&#1055;&#1088;&#108=
+6;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;</a><![endif]><!--[if mso]><a
+  href=3D"sheet005.htm#RANGE!A1">&#1055;&#1088;&#1086;&#1089;&#1084;&#1086;=
+&#1090;&#1088;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;</a><![endif]--></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl72>(&#1051;&#1080;&#1073;&#1086;
+  &#1080;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1091;&#1081;&#1090;&#1=
+077;
+  &#1074;&#1082;&#1083;&#1072;&#1076;&#1082;&#1080; &#1074;
+  &#1085;&#1080;&#1078;&#1085;&#1077;&#1081;
+  &#1095;&#1072;&#1089;&#1090;&#1080; &#1076;&#1083;&#1103;
+  &#1085;&#1072;&#1074;&#1080;&#1075;&#1072;&#1094;&#1080;&#1080;)</td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl73></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl74></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl74></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D12 style=3D'width:9pt'></td>
+  <td width=3D470 style=3D'width:353pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/image002.gif
+Content-Transfer-Encoding: base64
+Content-Type: image/gif
+
+R0lGODlhnABaAHcAMSH+GlNvZnR3YXJlOiBNaWNyb3NvZnQgT2ZmaWNlACH5BAEAAAAALAAAAACc
+AFoAhwAAAAAAAAAAMwAAZgAAmQAAzAAA/wAzAAAzMwAzZgAzmQAzzAAz/wBmAABmMwBmZgBmmQBm
+zABm/wCZAACZMwCZZgCZmQCZzACZ/wDMAADMMwDMZgDMmQDMzADM/wD/AAD/MwD/ZgD/mQD/zAD/
+/zMAADMAMzMAZjMAmTMAzDMA/zMzADMzMzMzZjMzmTMzzDMz/zNmADNmMzNmZjNmmTNmzDNm/zOZ
+ADOZMzOZZjOZmTOZzDOZ/zPMADPMMzPMZjPMmTPMzDPM/zP/ADP/MzP/ZjP/mTP/zDP//2YAAGYA
+M2YAZmYAmWYAzGYA/2YzAGYzM2YzZmYzmWYzzGYz/2ZmAGZmM2ZmZmZmmWZmzGZm/2aZAGaZM2aZ
+ZmaZmWaZzGaZ/2bMAGbMM2bMZmbMmWbMzGbM/2b/AGb/M2b/Zmb/mWb/zGb//5kAAJkAM5kAZpkA
+mZkAzJkA/5kzAJkzM5kzZpkzmZkzzJkz/5lmAJlmM5lmZplmmZlmzJlm/5mZAJmZM5mZZpmZmZmZ
+zJmZ/5nMAJnMM5nMZpnMmZnMzJnM/5n/AJn/M5n/Zpn/mZn/zJn//8wAAMwAM8wAZswAmcwAzMwA
+/8wzAMwzM8wzZswzmcwzzMwz/8xmAMxmM8xmZsxmmcxmzMxm/8yZAMyZM8yZZsyZmcyZzMyZ/8zM
+AMzMM8zMZszMmczMzMzM/8z/AMz/M8z/Zsz/mcz/zMz///8AAP8AM/8AZv8Amf8AzP8A//8zAP8z
+M/8zZv8zmf8zzP8z//9mAP9mM/9mZv9mmf9mzP9m//+ZAP+ZM/+ZZv+Zmf+ZzP+Z///MAP/MM//M
+Zv/Mmf/MzP/M////AP//M///Zv//mf//zP///wECAwECAwECAwECAwECAwECAwECAwECAwECAwEC
+AwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwEC
+AwECAwECAwECAwECAwECAwECAwECAwECAwECAwECAwj/AAEIHEiwoMGDCBMqXEiDxsKHECNKnEix
+osWJDhsqaEgjgcAvF0OKHEmy5EGOKF2gXGmypcuXLmlsTNCxJs2bMnNuVAngi0OYP2EKfdlQIMqN
+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
+baiJe7GHf6iHRQEznkOKYvcTK/gRrviEAQEAOw==
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/sheet002.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\sheet002.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(1);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../help.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D593 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:445pt'>
+ <col width=3D17 style=3D'mso-width-source:userset;mso-width-alt:621;width:=
+13pt'>
+ <col width=3D64 span=3D9 style=3D'width:48pt'>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 width=3D17 style=3D'height:15.0pt;width:13pt=
+'><a
+  name=3D"RANGE!A1"></a></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <tr height=3D32 style=3D'mso-height-source:userset;height:24.0pt'>
+  <td height=3D32 class=3Dxl66 style=3D'height:24.0pt'></td>
+  <td class=3Dxl75 colspan=3D4 style=3D'mso-ignore:colspan'>&#1054;&#1087;&=
+#1088;&#1077;&#1076;&#1077;&#1083;&#1077;&#1085;&#1080;&#1077;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1072;&#1077;&#1084;&#1099;&#1093;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D9 style=3D'mso-ignore:colspan'>&#1042;&#1074;&=
+#1077;&#1076;&#1080;&#1090;&#1077;
+  &#1087;&#1077;&#1088;&#1074;&#1091;&#1102;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1072;&#1077;&#1084;&#1091;&#1102;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1100; &#1074;
+  &#1103;&#1095;&#1077;&#1081;&#1082;&#1091; C4, &#1072;
+  &#1087;&#1086;&#1089;&#1083;&#1077;&#1076;&#1085;&#1102;&#1102;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1100; - &#1074;
+  &#1103;&#1095;&#1077;&#1081;&#1082;&#1091; C5.</td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D7 style=3D'mso-ignore:colspan'>&#1044;&#1083;&=
+#1103;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1080;
+  &#1077;&#1076;&#1080;&#1085;&#1089;&#1090;&#1074;&#1077;&#1085;&#1085;&#1=
+086;&#1081;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;
+  &#1074;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077; &#1086;&#1076;&#1085;&#=
+1080;
+  &#1080; &#1090;&#1077; &#1078;&#1077;
+  &#1085;&#1086;&#1084;&#1077;&#1088;&#1072; &#1074;</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D2 style=3D'mso-ignore:colspan'>&#1103;&#1095;&=
+#1077;&#1081;&#1082;&#1080;
+  C4 &#1080; C5.</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td colspan=3D3 class=3Dxl77><![if !mso]><a href=3D"sheet001.htm">&#1042;=
+&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]><!--[if mso]><a
+  href=3D"sheet001.htm#RANGE!A1">&#1042;&#1086;&#1079;&#1074;&#1088;&#1072;=
+&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]--></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl76></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D17 style=3D'width:13pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/sheet003.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\sheet003.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(2);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../help.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D593 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:445pt'>
+ <col width=3D17 style=3D'mso-width-source:userset;mso-width-alt:621;width:=
+13pt'>
+ <col width=3D64 span=3D9 style=3D'width:48pt'>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 width=3D17 style=3D'height:15.0pt;width:13pt=
+'><a
+  name=3D"RANGE!A1"></a></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <tr height=3D32 style=3D'mso-height-source:userset;height:24.0pt'>
+  <td height=3D32 class=3Dxl66 style=3D'height:24.0pt'></td>
+  <td class=3Dxl75 colspan=3D3 style=3D'mso-ignore:colspan'>&#1055;&#1077;&=
+#1095;&#1072;&#1090;&#1100;
+  &#1092;&#1086;&#1088;&#1084; &#1087;&#1080;&#1089;&#1077;&#1084;</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D8 style=3D'mso-ignore:colspan'>&#1044;&#1083;&=
+#1103;
+  &#1087;&#1077;&#1095;&#1072;&#1090;&#1080; &#1092;&#1086;&#1088;&#1084;
+  &#1087;&#1080;&#1089;&#1077;&#1084;
+  &#1089;&#1085;&#1072;&#1095;&#1072;&#1083;&#1072;
+  &#1091;&#1073;&#1077;&#1076;&#1080;&#1090;&#1077;&#1089;&#1100; &#1074; &=
+#1090;&#1086;&#1084;,
+  &#1095;&#1090;&#1086; &#1074;&#1099;&#1073;&#1088;&#1072;&#1085;&#1072;
+  &#1087;&#1077;&#1088;&#1074;&#1072;&#1103; &#1080;</td>
+  <td></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D9 style=3D'mso-ignore:colspan'>&#1087;&#1086;&=
+#1089;&#1083;&#1077;&#1076;&#1085;&#1103;&#1103;
+  &#1087;&#1077;&#1095;&#1090;&#1072;&#1077;&#1084;&#1099;&#1077;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;.
+  &#1047;&#1072;&#1090;&#1077;&#1084;
+  &#1097;&#1077;&#1083;&#1082;&#1085;&#1080;&#1090;&#1077; &#1085;&#1072;
+  &#1082;&#1085;&#1086;&#1087;&#1082;&#1077;
+  &#1055;&#1077;&#1095;&#1072;&#1090;&#1100;
+  &#1092;&#1086;&#1088;&#1084;&#1099;
+  &#1087;&#1080;&#1089;&#1100;&#1084;&#1072;.</td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td colspan=3D3 class=3Dxl77><![if !mso]><a href=3D"sheet001.htm">&#1042;=
+&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]><!--[if mso]><a
+  href=3D"sheet001.htm#RANGE!A1">&#1042;&#1086;&#1079;&#1074;&#1088;&#1072;=
+&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]--></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl76></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D17 style=3D'width:13pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/sheet004.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\sheet004.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(3);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../help.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D721 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:541pt'>
+ <col width=3D17 style=3D'mso-width-source:userset;mso-width-alt:621;width:=
+13pt'>
+ <col width=3D64 span=3D11 style=3D'width:48pt'>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 width=3D17 style=3D'height:15.0pt;width:13pt=
+'><a
+  name=3D"RANGE!A1"></a></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <tr height=3D32 style=3D'mso-height-source:userset;height:24.0pt'>
+  <td height=3D32 class=3Dxl66 style=3D'height:24.0pt'></td>
+  <td class=3Dxl75 colspan=3D5 style=3D'mso-ignore:colspan'>&#1055;&#1088;&=
+#1086;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1080;&#1083;&#1080;
+  &#1088;&#1077;&#1076;&#1072;&#1082;&#1090;&#1080;&#1088;&#1086;&#1074;&#1=
+072;&#1085;&#1080;&#1077;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D11 style=3D'mso-ignore:colspan'>&#1055;&#1088;=
+&#1086;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1080;&#1083;&#1080;
+  &#1088;&#1077;&#1076;&#1072;&#1082;&#1090;&#1080;&#1088;&#1086;&#1074;&#1=
+072;&#1085;&#1080;&#1077;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;: &#1065;&#1077;&#1083;&#1082;&=
+#1085;&#1080;&#1090;&#1077;
+  &#1085;&#1072; &#1082;&#1085;&#1086;&#1087;&#1082;&#1077;
+  &#1055;&#1088;&#1086;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1080;&#1083;&#1080;
+  &#1088;&#1077;&#1076;&#1072;&#1082;&#1090;&#1080;&#1088;&#1086;&#1074;&#1=
+072;&#1085;&#1080;&#1077;
+  &#1076;&#1072;&#1085;&#1085;&#1099;&#1093;.</td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D9 style=3D'mso-ignore:colspan'>&#1042;
+  &#1088;&#1077;&#1079;&#1091;&#1083;&#1100;&#1090;&#1072;&#1090;&#1077;
+  &#1072;&#1082;&#1090;&#1080;&#1074;&#1080;&#1079;&#1080;&#1088;&#1091;&#1=
+077;&#1090;&#1089;&#1103;
+  &#1088;&#1072;&#1073;&#1086;&#1095;&#1080;&#1081; &#1083;&#1080;&#1089;&#=
+1090;
+  Data, &#1085;&#1072; &#1082;&#1086;&#1090;&#1086;&#1088;&#1086;&#1084;
+  &#1084;&#1086;&#1078;&#1085;&#1086;
+  &#1087;&#1088;&#1086;&#1089;&#1084;&#1072;&#1090;&#1088;&#1080;&#1074;&#1=
+072;&#1090;&#1100;
+  &#1080;&#1083;&#1080;</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D3 style=3D'mso-ignore:colspan'>&#1088;&#1077;&=
+#1076;&#1072;&#1082;&#1090;&#1080;&#1088;&#1086;&#1074;&#1072;&#1090;&#1100;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;.</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td colspan=3D3 class=3Dxl77><![if !mso]><a href=3D"sheet001.htm">&#1042;=
+&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]><!--[if mso]><a
+  href=3D"sheet001.htm#RANGE!A1">&#1042;&#1086;&#1079;&#1074;&#1088;&#1072;=
+&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]--></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl76></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D17 style=3D'width:13pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/sheet005.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="us-ascii"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 14">
+<link id=3DMain-File rel=3DMain-File href=3D"../help.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base href=3D"file:///C:\2685A1F0\help.files\sheet005.htm"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(4);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../help.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D593 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:445pt'>
+ <col width=3D17 style=3D'mso-width-source:userset;mso-width-alt:621;width:=
+13pt'>
+ <col width=3D64 span=3D9 style=3D'width:48pt'>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 width=3D17 style=3D'height:15.0pt;width:13pt=
+'><a
+  name=3D"RANGE!A1"></a></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td class=3Dxl66 width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <tr height=3D32 style=3D'mso-height-source:userset;height:24.0pt'>
+  <td height=3D32 class=3Dxl66 style=3D'height:24.0pt'></td>
+  <td class=3Dxl75 colspan=3D5 style=3D'mso-ignore:colspan'>&#1055;&#1088;&=
+#1086;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1086;&#1081;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;
+  &#1092;&#1086;&#1088;&#1084;&#1099;</td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D7 style=3D'mso-ignore:colspan'>&#1055;&#1088;&=
+#1086;&#1089;&#1084;&#1086;&#1090;&#1088;
+  &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1086;&#1081;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080;
+  &#1092;&#1086;&#1088;&#1084;&#1099;:
+  &#1044;&#1072;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1086;&#1073;&#=
+1088;&#1072;&#1078;&#1072;&#1102;&#1090;&#1089;&#1103;
+  &#1074; &#1092;&#1086;&#1088;&#1084;&#1077;</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D9 style=3D'mso-ignore:colspan'>&#1087;&#1080;&=
+#1089;&#1100;&#1084;&#1072;
+  &#1074;
+  &#1089;&#1086;&#1086;&#1090;&#1074;&#1077;&#1090;&#1089;&#1090;&#1074;&#1=
+080;&#1080;
+  &#1089; &#1079;&#1072;&#1087;&#1080;&#1089;&#1100;&#1102;,
+  &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1086;&#1081; &#1074;
+  &#1103;&#1095;&#1077;&#1081;&#1082;&#1077;<span
+  style=3D'mso-spacerun:yes'>&nbsp; </span>C3. &#1045;&#1089;&#1083;&#1080;
+  &#1085;&#1091;&#1078;&#1085;&#1086;
+  &#1087;&#1088;&#1086;&#1089;&#1084;&#1086;&#1090;&#1088;&#1077;&#1090;&#1=
+100;<span
+  style=3D'mso-spacerun:yes'>&nbsp;</span></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66 colspan=3D6 style=3D'mso-ignore:colspan'>&#1082;&#1086;&=
+#1085;&#1082;&#1088;&#1077;&#1090;&#1085;&#1091;&#1102;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1100;,
+  &#1074;&#1074;&#1077;&#1076;&#1080;&#1090;&#1077;
+  &#1085;&#1086;&#1084;&#1077;&#1088;
+  &#1079;&#1072;&#1087;&#1080;&#1089;&#1080; &#1074; &#1103;&#1095;&#1077;&=
+#1081;&#1082;&#1091;
+  C3.</td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td colspan=3D3 class=3Dxl77><![if !mso]><a href=3D"sheet001.htm">&#1042;=
+&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]><!--[if mso]><a
+  href=3D"sheet001.htm#RANGE!A1">&#1042;&#1086;&#1079;&#1074;&#1088;&#1072;=
+&#1090;
+  &#1082;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1102;</a=
+><![endif]--></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D20 style=3D'height:15.0pt'>
+  <td height=3D20 class=3Dxl66 style=3D'height:15.0pt'></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl76></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td class=3Dxl66></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D17 style=3D'width:13pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+  <td width=3D64 style=3D'width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/image001.png
+Content-Transfer-Encoding: base64
+Content-Type: image/png
+
+iVBORw0KGgoAAAANSUhEUgAAAPMAAACMCAYAAACpgp8rAAAAAXNSR0IArs4c6QAAAARnQU1BAACx
+jwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAlwSFlz
+AAAXEQAAFxEByibzPwAAIUNJREFUeF7tnVvQZUV1x80bD3nIY96Sp8SMVRE1IeaBm5allVghl4qg
+IheDOiBBilgQJBXESxkxoIwDTLjNGIFR7reZYRiGYRSYT8CQCDIzMJiHVJmYlBIqCQiKJ+f3mTXp
+adbq2969zz7ntFVfIZzdvXuvXv9e99W/8Lr2v9FS4OKNu375h//949cf9ouH/dtFpx67b7QLbQtr
+FGgU0CnwiSvue+sfnHvDxl97z2UT9+/YM6/d9cfnb77y1M/cfvZ5X952zMaNuw5rNGwUaBQYGQUA
+5hkX33nKER+8cq8P4tC/v+XUy//5HWdt2vb+C2/+5Me+uOUPL9y46/Uj+7S2nEaB5aDA5zbu+lWk
+7Zr3rn8+B8SxZ5sUXw7+aV85AgqcdcndJyBRY6Ds83dfijdVfQSM0JYwnxTAoXXyp2/7S0DVJ0i7
+zrXm+C+9hCR/59mbbkddR90H6FOV/Zfmk9Kve90nrtp+ON/AHzTnu8QUmddvauueEQUAAoz04c/f
+sRYmAixdQTer8Ueefu0escvF+YZ5MDRpcQwKQAWcf3rB5i9CW/5SD0m+h3mGXn9738gpgAT4+Pp7
+3wVz4YGGqZB0fQJvzXvXTd74gcsP8Wz3OX+Xud764Q1P8M0n/PXXPocEBCTQJHXbBJw47wSg+BAE
+oG888Yp/7bK+0Fje0UCdulML9hweZyQtUgomrsVkMu+bTrpictrn7phsuP3Ryc7Hn5tcuvnh1X//
+rVOvHCWwfXogKQEM0lMOutXDrmdnX9d9wLzIOYAWjK2X73NQL2tKiUPiyR+9bvKxL26dXHPX46t/
+d+x+evLA49875O/vtz0xOevSLZMj114zF8DuCrghxjdQLziucQal2mJdGe64c2+YfOq6XQdBDJCv
+vfvbk3v3PPMzH8zuv9/8wFOTCzbcP3nX2V9pwPYSbUr2BC1iFj6BBYfS7D4PG24IVfo3T1w/ed+F
+N6+q0CKJ3X/evPOp10jlELCR4p/d9ODkPRd8ffKG9305Gdw8y9gb7/vOZP3NK5NzLts2OfnTt07e
+/RdfzZqnBDy1x5QecoCaCMTsuLC9uRMFcIjg7azNYL/9wQ2TMy+5Z3L5Ld9SQSyA3r6y/6ch8IZ+
+u+9bByYXX//NVVAeflLcgXb6F+42Dw6Aju2OBoB6D8hnabvzfv44tDh4+PvkNQ+srpE/3zRBe5k6
+2JIPN9l/nJnY/A3UnWA17GAcILlJHL/7oatWHVIw1RFTcKYcAG//842T8y7fHgSwABkpWQpkbRxM
+/kfn3WiuU6Rz7juZl0MDQDH/287cmEQLl168WwAK6ASgaBkC0C0P7+9Mj89u2j35/el+peyV+wyg
+xmM/z7H3YRE1g7dhG+H4yNlcJBISCsknjH/PlNEAIUx94dU7J6dffNfk1M/ctmrHAuA/OX/zVP3d
+nQRiAfN0zv/KBVbseSRWSP0GSLE5Un93VXYBJ//EpBCAujRMnbfLc0JbfBPsS86+8yyeeEJoDdQz
+AKv1StQmrTIptLmoqjCjxYBf3faPWWDVbGT5b3iruzBtaCzqdOg7a7671jelzuvTnIO3FNREOFrl
+2gxBDYixgXISO5BkACCm5t278mxvYL7rm/u+n8qguc8hnUNgxg7NnXNent+05R/UPcL0KQnzEa5s
+oJ4RoHNLDLGJtTivxbxf2/FkZ0Bv3Prtl3c++tzLNQECYJdROm/a8kRwfwA1zslc9RtQE8acEVsv
+32vxVKduEsyOBzQXUDsePbAaGw6p0DH1esfKgR/nvjf3eVTpEC2OO+/6Yi967lqGfD4GZtkbknZK
+QE1OQgP1AGfLu8/56uYYmPHGdrUZb9313SIw37j9nyb3f+vZV4di7ph0vuymPdmH2VBrL31PKpgF
+1DgySauN8Y3/OzkK5CoMwNbL9wps5ZCdjNcZD2spk7jj7n/suYllm1lSefOO70zuWwlnevWxNneO
+mHSGJjdMD5jtKwde6fvds5ovF8zsF3wBqEnwKQE1hTjLh7iKX4yTIrQRfcd0735oX7J0vmnnk70c
+IiUAicWEsSEBwNaV/S+VzD+2MSVglgOYBB/CjSWgbhVaPYI7lJpZy3uL5IvZzqjks2R4Yr6hQw4P
+L99w3dQPcNfufXMvobuA2QX1SRfdOo05r8uW1IC6VWh1ADZF7SGGJRe5BqBioao7v7G3yntzvyVF
+Ogsj3/bgU3PtGNu255nJV7bGD9nYIczv+BTIqy8BNf6bDiy9vENDySEwci7z5zyP+q4xxjSOXPW9
+OWtMlc7yHdj39z/27NyCmtrw26ex9i5RB3dPATUZfrn2dOukmnkmkXYXcnyRnJ/D+LnP7lh55lWN
+aQhh5c5V83nyzEPM6OeTY0JMQ2hVY+E1v5e5t0+TfHDwpUjhlGc4FCljTQU1nVky2Xm5H6cziEVc
+cqyHyA0mXu0zQ21GzZ2fXPMU29n9Djz29zyyr3pMPPdbcp9HS8InkALYlGdSizmwn5cbnZlfH3J8
+UcqXu/ElzxNyckNVOGFK5qk5hkMtVtJIyabPzGgdd+7eO/eOMcKJfWTvufQB1KG8bzTGVrCRCGi8
+hpa0KS33KwUUp79sNKpd6Tw1x8WkM8kTxFw16RTLW6+57j7n5jv6cpAJnUgJtviQ/umJ7Lzcj9Hl
+0SJirXBUiLEkVIUDqU8G7GsupHOsiQHJExqYczui9LXmGvPgIMM06stBRnza8njjnF1ulCZ8PaVp
+IcdX15TNEiba+tD+lwFCSc53yftKxsTKIy3pPAt6lnxfzhgcZH2VtVrebgo0Eth5uR8h2d2SyrXD
+USGGIVR1666n/yeHqYZ8Nta8AJpa0nn7wOmoQ9GlDwcZddMWP5IHsdxojXx9qI8XIYShGMF/z317
+Dry85eG9z8/q/bH3xuxmGNKSznRbic0/r78TSsQ8SvFmW89YVVh0LikFM36hhS7oCDm+hgpHzSPT
+xpJHXMni9vUW5l0ku9naPxxkpSmh5HVr0hnBUwJmiocouVzoWzlCKjaSZx6BVnvNOHtSW/MeO23S
+r3m1F9Fu1uguDrJcKU2mmKVq54ao8AmJ9rnQmWQhMOd0DUkB0CKEZLDjY15sYUJUxVB74EW1mzVe
+IPc+10Fm9fBOaWiAOo0UpgmlW5u/0G2AQ2BOAaj/DMwu/ZkpyiAFlC6WpEDWKtIoWWfJGA63WCqn
+AJnSP6tZv0ipRbabLSmdI6E/vu5eVTqnFF4AZk2yl6joczOmbzBb8dd5V9n5rljFlDAPcVL/6pxF
+jzenHI45devS6OBNJ63/mQ9KWvimAMzPaEwdlzL3KJ/pG8xsqt9ih5a7KZs95mdCDfF9Zktt3E/2
+1Ji/ue+1lXi4KZvUJGyKI8sv5yWXItgdFJ0c45qqjnm8QKsGmN2Qzbnrt889w3JlTWp1jxVXttTL
+IYpX+gZlyXw4wkqyxMjZ1mjPjRkp0lG7tEGV0K6XTF5IdQfVR7ket5SF1XimBpilXxbXpZRs/JjG
+oFWkAhkpkmMT8uyYarVr0j1XxRY6EtbT6I8KnYIHrdmGanPTID600Qwae3J4DTDDFH01/KvJYLG5
+OYxSgcydTLlA5nmqj2LrWITfc1RsaQoY6/QZ0oS1CxyQyKon3PKWaZvPJBQyjDEVzQIzXttFYKLS
+b8Dz3jWWnALuMZZ4ltLMGpeqYksTwBiIBWNowL50RiMmS8yvNcAUVmPMnAgA1AduyuaThcLLxmJf
+jx3MxKaHtisxE1L2kv2PxZJTAD22Tip9gzlVxQ7lZGtCEntYwHwQxAoug/Y1drE2Oac5sUjsrFjx
+OuM5LVK8cim2QekzYwYzFVN4kftmrtB8vDNl79i/lFhyCMx07LjzoafnvvtIbH9SVexcMCN9UadX
+JbECYqqsgtowAzUga/2xsLliN9F3SRwvBbA7bqxgRjoCqiHDWmgBqReipcaSLTDTdGGIq3ViQKv9
+e6qKDZ1ywQwOrdJd/FVBJ7R1/xIqGSEYSx3EJW+FN1Jd7H0AV5tjjGDGASIpk3033LeYl73jAvNU
+hxfZSSkqtPbMvLfgzTkAUlVs6GSFoVL3ZBXclpPLZ36cXti81uSc6gDX+lgtFXDW3RPGBmYuYBd7
+FXrmME7ps7wzVbVm72ltUwLk1dsuHtr3Yuk653FcqooNPUOVaESOYreSmk6ukCQEAKHmd0hhrahg
+nsA8i6YEfiiotoqNBpCaoikHONltJUAmBHX/nLfbzT1MclTsGJjFaYwd3CWJxMQ1ktpyhnHS+1Ja
+A/M7ztq0rZYKnTKvJZlROXM3r8vzWteOWio2Tq7YrY4aw+D/yAXyqpNr99657plduq85KnYMzBKG
+ov7etZOjTq4UELjPWID2M6A0MM+6H3BfYKbErcsVMn6mVQ0VG20p1rcrZEJZ3TYtgFPyd+/K/qVS
+q13gx64c8ukWUrPdZA9uimSfok6uXCDzfBcwp6allawrZUwfYMZ5hD1YKkm1PtR9qtjMj4MytQ7Z
+BzSxZIrlc6Qy0v++x577SalUW5RxfdnMfrufak0GUsGshalwqKWArtYzXcFMQ3TpnVxaBaT10io9
+GHwQ4NxKrUHWpDJpmrG6ZBfkP7+5Yu9CXOnax4FCQkxqgUVIMg+Wj5EKZi30Mev2oV3AjINDukdI
+Rw3AncsEvhOqDxUbBorF+EMhD8YSKsmRxjcu2GXruftoPU+/sxQ6hloFDQZmnFgaY/g2sxXHrCV1
+U+btAmaYVzaJiiHK/7Y+ktd1UjuNu6jYpc4t2T+uSCF5IYX55BkOjlsefGrhM7lKwc2h7145FKKt
+dcAOlv5sXYM6z2Cm1U9o827a+eRBhscxRGojf7mN6rSi/xIVW5xbqTnVPtOgDaQ2FXCZEdNimZ1c
+qQAnWpFyQM49mAc7dRRRbUnm3zvHDk3duuu7h2wMElk24fi/+nqymi11z+4G5qrYOLewubs4t0pA
+DGNyoM3z3cupQOzjOaSzXDlUIpnpHZCiaXZ+JlUyW7HNMYIZgGnNBWhC52+GX7IWyoJzGUNLcc1R
+sVHRS51brFnrZ50iPZalQKIPELtzaLzj09uSzJ1BmjpBKpit/OxZ1jmHmhNogPZPV6SavwEp2WPW
+1S7QCEDH/kqdW4AYTSI3ZixMtywFEn0DWeaLXdiugZkkkVQsdn6uK5gH89QpXxq6YF0IKxJaSwKw
+qoxi3ThLkzdyku7dZ7HnuSWhFMRoG9MCiRZymnaR6QL0WCKJtr+Dhm+7gnmW99+EcsxRYXGESXmn
+6/RCUtFO1gIXNqzVRD/lsvJS0PrjKFUExKFm9CHVmmSYWx54+kfbH31maTO5uoBXG+tGQVLU7LkC
+M+0/O6sHBRPwXp/533zyFau2sn+VKg4MbEWX+CRUhEBHdZG/mQA8p21tKagBMeGy3Mwt+T4Ybtps
+7/t9M3Kb73urfc+sA1S7MG7QlOeukhmbgHzTAjwWD6FDg1bYbTmv6CLpbkDqxWluqIpOLKVe5xxQ
+c79vTtaWGy++cfuTL05DTT9qoOumTofotxBgRtqFvK8pd+gUo9cb6N6/I0AJhaN8x4XVnFxzhhED
+zuk9nQNc3y4uAXFTpesBVwN1LpjdXl998b85j9VKSAvtxC4eo5l+7QVL1YkPmmPOuFZ1bmyfVkS5
+UhnVFTU2FXRDSGPWgkROCS01VXpY8PqABgOmmn3Khld9vhq0gYcFZjy22smE6hlicLoq1AI0wfdQ
+xwbNC41G4RLfTRJxCR/qwpIK/C7PpcSNsfubKj1bMFvhKSIN2v7TproWHl4zrwVmUgstj26snSun
+UY2sF2utQkT/gnU/rxaCW32N0SrkHtwuoLTGcliEDqKQswtVelpv/XzzSs8WyAg3C8xWdGTQppch
+gFjSmY+KNVqngKPPa25W+31PnW0xoLnS2c/asa7ZZE6cagA6Nr/8jpcS2hHrJtbu/llZcZoHnvmI
+d2uqG17pu7/x9A9SHVp87zJ0zUylR43nLDBbGp/W7L6apA4xcEg6pwCaOHBfgNYu0XKBx1qp7HKL
+LPyYoJUkIu2PKBoPgVnu4iq99Nr6hpMuuvUgmEWVnsazX8hhRuLfjO37kvmcNSzDs1aO9nHn3qCq
+2bQKqgZef2KkSIiBYzchUkAfGo962TV/W7tO59ePvyzYHYTCclfaaU0EZN3unVq+7dwVwC69rYZu
+lC12VaVFYlCu1woo6qnj7JOmRb31tKtegwM0yRrmZvBwCEk93w7VTt/YJWWrjcsKTyiIYYEgVNjg
+V0dZSSL0KnYJTi/wPgEshLcOTTzrt+966t+7SDX/W+/Y/dRPu8zXxtqHgQZmMvQ0gTaTtlpWg3xZ
+YCxXmc0nbTIkoQFNSR434ArNi+2uMZ9L9FCD8qFCB9ZlfVSjdQHPtj3PvKa1Db4BDjocfkPfddXl
+W+ZhrAZm6zaLQT3ZrrgO5TmnSGc2InYfMGoHUk/7S3U8+c8RJvPTN33H10mfsi8cLzlgSmwg6wrd
+lIPSYnK89dLDTFQ/Ek/8ODpVWjgz+a3Z1N1UcK0nGKm/Gv8O6vxymTJWTpjKdDFAl4JWxr3llCtX
+HV2uMwtmFQn083DU/9s1qEAwN0klvl0zZBK81WutpDOJgFvLRqJ1UIzGZPKR1YY21eX98yBJ+16j
+Zi9bJlypaVkiLA4ZE7JNYY5U6QzxapYI+q19kMqok3ILh9+AzQ8ZHPvR66ax5st/yDcNGQPUwmpd
+7pHWiuVJPIkBWfsd7QZ1H2fnIlw03zeA3fk0MGsFFjNxfrmIjtmnOZ00auQzI2FDG6XVmx51+rUq
+gx+z9upvdvWyp56gnNAaiKBRCePhqfebzJF0Qt1zCZi1MWg/Z126ZTWfQLuuqGTdpWPQujhk5I81
+uQ0gWCfrRXusbUb4YB6V88tlSKsayd1sOnGknt41AB1iLK2TiKV2DlmaZiWLYMOWMLiWuFDavSQV
+/Ow7tqFWYpryDdiaLiD9biyA0f1LXZd1ELHOvg8hP9wJsLVuNaxpZs4vF9BaRZJFsFRQp2x26BlO
+Yrnp0Cpz1DooYlcjzbUY4JBVXlaZaQmzad+pZbaRRIM9jF1c2mssBCj2gwQdASV13i4YSzuNdgGx
+NhbzgVyIPrz6RA58yUzziFE5v1wwWyqhRWSIlduitgTcUorIxvjjtZsH3FxZnF/u+oe2Z7Sc7JLL
+7agA872pqNdavrmfivu3Nz6UfBl734Aaw3wcLmiKpdoQPKf5KUbn/PJtP6RWbhURoPZDRCWgjY3R
+TlitLM0nsiudh4otQ1fSWTVmzvE/QBMtDIWU0NIItbZH7I0lRcYAtiHXAH0wGXI1Sy4XjHV35TuG
+FhZJvhtAbWVfWcTn9BsC1AJ67epNLUnkyDOu/qmseajYMkS26q9TW/rKd2rXpFgpqloYkQPPapdM
+Qg/56SmFLEOCboh3YYKgxaRol345rdWxZiaZXymIJmSFAycX1BCotmeRu6EALjYjUgcnkBYmEKY4
+4pQN+4aMLUNfrSoNyRDTQNzfMTE0L6qmXlshRGLvVjGA2w0DM4v95r/l7nlf4MMEQbPCecm+8meV
+rgIcnE3QWf5CpabWGlP2xI/rj9r5FQI3oIZYnOKpm4adAqhLHD0+s3NychKiniJhrAqo0NqOXHv1
+ypCxZeip3eUVuz7H/XYtDAWwLSmrSWUOPcZYnn1CktbeU0lGJhOmSa7pFeMT17vt7/ftzpUwVjou
+moRVwYb2lerMlXXG+NSPIlDtNlrnV4qkxgZcBXVCbbF8KKceIIwRiw1FlZE4Ikzfd8jlC9c//Csp
+39nXM9rhp7VksiS15g+wcoEJH2k+BfHCal599sitGot9N7F5v35b/t3KeEIQ+EwfS5hx01QtJxNg
+ja0XsHNYpWgZsWw4Py/b4s2ZZX7FiGH9DpHIN84FNZIDhkMF52QG5NjZ1i2TsdM953fUr9LvLRln
+1Uen+hQ0hws0s0wJy1Mr4SxLVa3NfFqEJHRziNu3LVQkk+v7wAcU6iZjFe3IQetHErQknVE6v1KZ
+F1BbcdQcoA3x7NAqtpbvnnL9DcyzbeXZn2hJ/VZn0dC8cgGARuMhrk/RKsZCoTm3pNP63i5OJusa
+Y7kwQdOSxFQR34VVx99lXamYq/4c6leujVITwNh30toHUOWe4n0QTKuUCrVicpnort37XvGdXqFb
+OELxUy6Vty4DH4L5tG42oVRWUbFDnVS7XL5gVbCFwoV+qrBl6gyZWdgHjwbnQKWKtfjpE8RjAK1F
+EK2sNKbKCaD9xv2o15bNG6uJRsJbkiTF7uzKNJrmZh1qbpaVJZXRJrq0o7LuKAsdMH5EYSnALBvP
+7ZBW2V8JmMcMWo3Zcfr4/gS8+6lphX73kFDbo1CMVOxPi/m6SLhUkGt2qiUFJZYbkspdk36sLMeQ
+6p96K8pCSWZ/g1Fvc1rYzhtoLYbWurfg/UyNL/tJIlYBPDnRoTklBdHqTDrE1UKaJ9ny6IvHOJSt
+1vUaYQ5atCb37+i1V7/ARQQWLX3JbFVLLTSYhdlxgrhq56KA1gKzVimVk4/tJyhY4ZmYii2S7sxL
+7lFjoqWdRlOlspXOqtn4omKH+psf89HrHkh9d+g5LbEEzckC89ZHXpu4o2mYSwFmV/3uYzPGPoeW
++ZVTv+y3CbbsZZJnQpJZ4tSapCMGXpuOSFGN6bW8aFFlqU/GO/+2M6/7j6M+cs3DCIE171/3n8zT
+Vysey69jhQ0xj1LyspcKzLWZZyzza2DWrom1gIgHWpjHUukEJCE7XNRWLWNM+oXXpBkJKRqYNdCI
+9LPSTlHX+2pda13+YBVfaLXM2gE7dC5Dzb1rc/8fBbTwR06llJttFApJAZRQ5pIcCBpAat4LJoxg
+9ZYLgRnbVTsA+swTsLqlhrLzfMmspccOnfvfADcABbRwTGpTRKS1mzBiXX0iDB+KMQsDaozXl8oa
+ImeOBBRVVgNzKA+7ZDut7Dz6qFnaEjeGuIDW/BgNzCW7MfIxGphTc7K5kcJlGktSCZhDt45IrzBN
+JaydxskWlYD5I5+/c3LEB6/6iSuda4DEDx1yxzfFExaY/dxsbV9qrHPkrL74y9McLKkJI9tW9r/k
+gjlWIRaqwpJsKrqS+qprX/ZnaDetJpEWLfhunHW/ccKXfnbUGVc/KGuuARIJmeJcO3LtVY/xrlD4
+0PVjyDp9mtZY5+KjZeRfqCXMpHa22LZn34sCZsbELocP5WVL2Z7mABtCMlt5+5aWgnnhet4BGWCr
+ARLqoPGUv/EDX/6BgJJ6cEsy+yWQWuy/xjpHzuqLvzwNzLESO2Giex7Ze1Ayh6qG3BJTiwE37/jO
+qp2n2d1DZH/lghlV1g+jAbYanvfT/uaOD2mONis64Mf+tT7lQxSuLD56RvaFWl52aumjmzpoJXv4
+TGh1dZGKKS0d1O0wUot8VvGNZedjFljf3PcarZZO1qHrg9lKse17nW2+GVNA68qRmsrpttO1ig18
+MFs2qOR4a1VTxG1rk8nKz0ft1w4gVFnrZo6+12plp8VoKSaQFTLse51tvhlTwAdzKFXQB7lbZKE5
+rjTV0Ap7uQfDG05cd7CpocxR+1aPWLGNH1Yj820oMMMiWt64RUu3lRGAthr6zZj12uv7poAf9oi1
+yXEB7apzvvPL6uxiZZe5KvvRZ1z7in8Q1L4MIHS7KGuhUMRtJ8W3DwlmrVGBVZ7pV05ZmXl981Kb
+b8YU8EGT2mEEUIvTSqtBtrpkWNVTboGA5tGufY1KThNAaPTOaWWZ1XiwhhahZepZxStaE3xNS5ox
+67XX900Bf5NzKqYkBKKVLVr3VhFS0WxQt0OG5tGu3WkkB8yxOvcaYNYaFVgHr1Y5pfVj69I4oW8+
+bPN1pABlhT5j5rTXlUQPrZUrHthQX2i/Msut9rG8rzWZL6fh4yzArFV1WT203UaD4gTTMutqHDod
+WbINL6UAm+kzZk75o6Rgaq1cmdtSteWdbucRrrURxrP6gFF0UPqtsXExgOb8Tj517H25v1sebWjv
+O+e0MkjNJGhgzt2FET+vgTmnYkrA57dylYQE7NwQCHC2yY2McmGAVQ/NPKEm+F3JnAPW2LO1mjLG
+aOmaL37llFaN1sDclWtGNF5T3ULFEIfcYLFy4McwjCZFxb7Vul1aDPk7f/Z3B3Oy/dswZUztgnpy
+wK3G+fx3ap7d62X8/0/iCWuslX4as+vdm0f99sdasUUD84jA2HUpWv+v1PJHKbLQ7jGSTppWwb8G
+aBfMSOc1x6971X9urhu3d92s6fgYmN1QlVROkWZLk8QG5h42YMxTaGAGQCn3bklettbmR9RhqxWP
+BubDT7nyBfe/H336NQe052qpsGPeJ1lbLBYeU//932tpEPNAy4VbY0hy4ikN5WhL83ut8F3uhNK8
+5RbDvfnkK/7F/Y2iBc3DPETRxVg3OpallgvmZT4Yx7rHxeuyWuUIU4Q6g0iWkRa/dFvMwoB4tUO2
+JmGs89ZvP8q3V8+/YtuRNTzDxQSb8cAG5hlvwJhfHwNzyBlGXraVJlgzHjxmetZeW193pXEo1HTU
+1aZDm1+hQI63OVWFG6LCaVk30wIztrQAlLRP0YJWNZ6pF56/Ibq1LOu+jOK7rb5XqcDVnqsdPhoF
+4Wa0CEwOAWftSwFm9InttaUUqAHm2gURpd/axjUKLDQFYhlaJRJ6mb3NC80s7ePGTQFsZrG1+vpn
+18vSxk2xtrpGgUaBRoFGgUaBRoFGgUaBRoFGgUaBRoFGgUaBRoFGgUaBRoFGgUaBbhRoXuRu9Guj
+GwVmSgFS9Gj05ta5EmKiBJEWO634fKbb017eKBCnACAmOUNrjO4nevAM17sQU162HF3pHMKBF6ra
+WtbfoAs80SrT4pjr/QmqkWC8Ne9d/3xJdpaMITGf7C82cxEK1MlThik5sCg0QDvpSqMu9B3LWGgA
+Lej8At808PYOyfwJYVZU51oMShMANp0NRz0faxK/FBqwTiqIVkE7XftYwDP0OgSsaF7QBG2NQ20R
+Duh8lIx8BKBC0syCYbHDOdFFPR+SVDjzOFRgUBhVLhsfGiyzfl8D65BcV+ldOK76KkTvkyEBFYcL
+TQ262llizzIXoEXKhprm9/kdY5lLNCLpxCIHZ4tMVALWkNOiHo0RxBbzIzmEESmE1zqMiD2LCij2
+bIrjbiyA67KOBtYh0TOidwHkRXDeIF2lAmsW5kEX8JWMlW8Vj7g0DxgRa7WlzJoCrodWnD0lzNbG
+XHawuX4JLRpYZ42EBX4/tioqrTiHls3OLAFkaAx+AEm0gabSN2uBWah92tgpgNPEdSYti10aAqp4
+gyXs5oK1NbgbO0e39R1CAfEYu86nRbFjNaASzsJmbWmsDQhLQwGxx5FUxJLHFsdtQF0aVmwfWosC
+eNQlWYOQUw17vAG11u61eRsFEiiA6oo9TkppKO+5ATWBmEv0yP8C4Eo8RLOW+BQAAAAASUVORK5C
+YIJ=
+
+------=_NextPart_01CB7ECC.801A0C50
+Content-Location: file:///C:/2685A1F0/help.files/filelist.xml
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/xml; charset="utf-8"
+
+<xml xmlns:o=3D"urn:schemas-microsoft-com:office:office">
+ <o:MainFile HRef=3D"../help.htm"/>
+ <o:File HRef=3D"stylesheet.css"/>
+ <o:File HRef=3D"tabstrip.htm"/>
+ <o:File HRef=3D"sheet001.htm"/>
+ <o:File HRef=3D"image001.png"/>
+ <o:File HRef=3D"image002.gif"/>
+ <o:File HRef=3D"sheet002.htm"/>
+ <o:File HRef=3D"sheet003.htm"/>
+ <o:File HRef=3D"sheet004.htm"/>
+ <o:File HRef=3D"sheet005.htm"/>
+ <o:File HRef=3D"filelist.xml"/>
+</xml>
+------=_NextPart_01CB7ECC.801A0C50--

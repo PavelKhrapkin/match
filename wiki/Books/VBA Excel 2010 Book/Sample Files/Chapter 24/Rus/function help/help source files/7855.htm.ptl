@@ -1,0 +1,222 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=us-ascii">
+<meta name=ProgId content=Excel.Sheet>
+<meta name=Generator content="Microsoft Excel 14">
+<link id=Main-File rel=Main-File href="../Topic2.htm">
+<link rel=File-List href=filelist.xml>
+<title>Specifying What to Print </title>
+<link rel=Stylesheet href=stylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+-->
+</style>
+<![if !supportTabStrip]><script language="JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(0);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../Topic2.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=blue vlink=purple class=xl65>
+
+<table border=0 cellpadding=0 cellspacing=0 width=590 style='border-collapse:
+ collapse;table-layout:fixed;width:443pt'>
+ <col class=xl65 width=14 style='mso-width-source:userset;mso-width-alt:512;
+ width:11pt'>
+ <col class=xl65 width=64 span=9 style='width:48pt'>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl66 colspan=3 width=142 style='height:15.0pt;mso-ignore:
+  colspan;width:107pt'>&#1060;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103;
+  Squared</td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+  <td class=xl65 width=64 style='width:48pt'></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=10 style='height:14.25pt;mso-ignore:colspan'>&#1069;&#1090;&#1072;
+  &#1092;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103;
+  &#1087;&#1088;&#1080;&#1085;&#1080;&#1084;&#1072;&#1077;&#1090;
+  &#1086;&#1076;&#1080;&#1085;
+  &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090; &#1080;
+  &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1096;&#1072;&#1077;&#1090;
+  &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090;,
+  &#1074;&#1086;&#1079;&#1074;&#1077;&#1076;&#1077;&#1085;&#1085;&#1099;&#1081;
+  &#1074; &#1082;&#1074;&#1072;&#1076;&#1088;&#1072;&#1090;.</td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl68 colspan=2 style='height:14.25pt;mso-ignore:colspan'>&#1055;&#1088;&#1080;&#1084;&#1077;&#1088;:</td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=6 style='height:14.25pt;mso-ignore:colspan'>&#1053;&#1072;&#1093;&#1086;&#1076;&#1103;&#1097;&#1072;&#1103;&#1089;&#1103;
+  &#1085;&#1080;&#1078;&#1077;
+  &#1092;&#1086;&#1088;&#1084;&#1091;&#1083;&#1072;
+  &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1097;&#1072;&#1077;&#1090; 16.</td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 align=center style='height:14.25pt'>#</td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=4 style='height:14.25pt;mso-ignore:colspan'>&#1044;&#1088;&#1091;&#1075;&#1080;&#1077;
+  &#1082;&#1083;&#1072;&#1089;&#1089;&#1085;&#1099;&#1077;
+  &#1092;&#1091;&#1085;&#1082;&#1094;&#1080;&#1080;:</td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 style='height:15.0pt'></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl69 colspan=2 style='height:15.0pt;mso-ignore:colspan'><a
+  href="../topic1.htm" target="_parent">AddTwo</a></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+  <td class=xl65></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=0 style='display:none'>
+  <td width=14 style='width:11pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>

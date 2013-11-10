@@ -1,0 +1,42 @@
+[OPTIONS]
+Binary Index=No
+Compatibility=1.1 or later
+Compiled file=formletter.chm
+Contents file=Table of Contents.hhc
+Default Window=main
+Default topic=Topic1.htm
+Display compile progress=Yes
+Language=0x409 English (United States)
+Title=Form Letter Help
+
+[WINDOWS]
+main="Form Letter Help","Table of Contents.hhc",,"Topic1.htm",,,,,,0x2120,200,0x300e,[223,147,812,494],0x400000,,,,,,0
+
+
+[FILES]
+Topic1.htm
+Topic2.htm
+Topic3.htm
+Topic4.htm
+Topic5.htm
+Topic6.htm
+
+[ALIAS]
+IDH_TOPIC1=Topic1.htm
+IDH_TOPIC2=Topic2.htm
+IDH_TOPIC3=Topic3.htm
+IDH_TOPIC4=Topic4.htm
+IDH_TOPIC5=Topic5.htm
+IDH_TOPIC6=Topic6.htm
+
+[MAP]
+#define IDH_TOPIC1 1000
+#define IDH_TOPIC2 1001
+#define IDH_TOPIC3 1002
+#define IDH_TOPIC4 1003
+#define IDH_TOPIC5 1004
+#define IDH_TOPIC6 1005
+
+
+[INFOTYPES]
+

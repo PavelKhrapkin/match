@@ -1,0 +1,472 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Excel.Sheet>
+<meta name=Generator content="Microsoft Excel 14">
+<link id=Main-File rel=Main-File href="../exportcharts2.htm">
+<link rel=File-List href=filelist.xml>
+<title>Text Tools Tips</title>
+<link rel=Stylesheet href=stylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\,";
+	mso-displayed-thousand-separator:" ";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+-->
+</style>
+<![if !supportTabStrip]><script language="JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(0);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../exportcharts2.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=blue vlink=blue class=xl65>
+
+<table border=0 cellpadding=0 cellspacing=0 width=1856 style='border-collapse:
+ collapse;table-layout:fixed;width:1392pt'>
+ <col class=xl65 width=64 span=29 style='width:48pt'>
+ <tr height=23 style='height:17.25pt'>
+  <td height=23 class=xl66 colspan=6 width=384 style='height:17.25pt;
+  mso-ignore:colspan;width:288pt'>&#1048;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077;
+  &#1091;&#1090;&#1080;&#1083;&#1080;&#1090;&#1099; Export Charts</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+  <td class=xl65 width=64 style='width:48pt'>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=22 style='height:14.25pt;mso-ignore:colspan'>1.
+  &#1040;&#1082;&#1090;&#1080;&#1074;&#1080;&#1079;&#1080;&#1088;&#1091;&#1081;&#1090;&#1077;
+  &#1088;&#1072;&#1073;&#1086;&#1095;&#1080;&#1081;
+  &#1083;&#1080;&#1089;&#1090;,
+  &#1082;&#1086;&#1090;&#1086;&#1088;&#1099;&#1081;
+  &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1080;&#1090;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1080;&#1088;&#1091;&#1077;&#1084;&#1099;&#1077;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;, &#1072;
+  &#1079;&#1072;&#1090;&#1077;&#1084; &#1074;&#1099;&#1076;&#1077;&#1083;&#1080;&#1090;&#1077;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1091;.
+  &#1051;&#1080;&#1073;&#1086;
+  &#1072;&#1082;&#1090;&#1080;&#1074;&#1080;&#1079;&#1080;&#1088;&#1091;&#1081;&#1090;&#1077;
+  &#1083;&#1080;&#1089;&#1090;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;
+  &#1076;&#1083;&#1103;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1072;
+  &#1089;&#1086;&#1093;&#1088;&#1072;&#1085;&#1077;&#1085;&#1085;&#1086;&#1081;
+  &#1079;&#1076;&#1077;&#1089;&#1100;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;.</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=14 style='height:14.25pt;mso-ignore:colspan'>2.
+  &#1065;&#1077;&#1083;&#1082;&#1085;&#1080;&#1090;&#1077; &#1085;&#1072;
+  &#1082;&#1085;&#1086;&#1087;&#1082;&#1077; <font class="font9">Export Charts,
+  &#1085;&#1072;&#1093;&#1086;&#1076;&#1103;&#1097;&#1077;&#1081;&#1089;&#1103;
+  &#1074; &#1084;&#1077;&#1085;&#1102;
+  &#1056;&#1072;&#1073;&#1086;&#1090;&#1072; &#1089;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1072;&#1084;&#1080;--&gt;&#1050;&#1086;&#1085;&#1089;&#1090;&#1088;&#1091;&#1082;&#1090;&#1086;&#1088;--&gt;
+  Export Charts</font><font class="font8">.</font></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=29 style='height:14.25pt;mso-ignore:colspan'>3.
+  &#1045;&#1089;&#1083;&#1080; &#1074;
+  &#1082;&#1072;&#1095;&#1077;&#1089;&#1090;&#1074;&#1077;
+  &#1072;&#1082;&#1090;&#1080;&#1074;&#1085;&#1086;&#1075;&#1086;
+  &#1083;&#1080;&#1089;&#1090;&#1072;
+  &#1080;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1091;&#1077;&#1090;&#1089;&#1103;
+  &#1088;&#1072;&#1073;&#1086;&#1095;&#1080;&#1081;
+  &#1083;&#1080;&#1089;&#1090;, &#1074;
+  &#1076;&#1080;&#1072;&#1083;&#1086;&#1075;&#1086;&#1074;&#1086;&#1084;
+  &#1086;&#1082;&#1085;&#1077; Export Charts &#1087;&#1077;&#1088;&#1077;&#1095;&#1080;&#1089;&#1083;&#1077;&#1085;&#1099;
+  &#1074;&#1085;&#1077;&#1076;&#1088;&#1077;&#1085;&#1085;&#1099;&#1077;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;,
+  &#1085;&#1072;&#1093;&#1086;&#1076;&#1103;&#1097;&#1080;&#1077;&#1089;&#1103;
+  &#1085;&#1072; &#1072;&#1082;&#1090;&#1080;&#1074;&#1085;&#1086;&#1084;
+  &#1083;&#1080;&#1089;&#1090;&#1077;. &#1045;&#1089;&#1083;&#1080;
+  &#1083;&#1080;&#1089;&#1090;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099; &#1103;&#1074;&#1083;&#1103;&#1077;&#1090;&#1089;&#1103;
+  &#1072;&#1082;&#1090;&#1080;&#1074;&#1085;&#1099;&#1084;, &#1074;
+  &#1076;&#1080;&#1072;&#1083;&#1086;&#1075;&#1086;&#1074;&#1086;&#1084;
+  &#1086;&#1082;&#1085;&#1077; &#1087;&#1077;&#1088;&#1077;&#1095;&#1080;&#1089;&#1083;&#1103;&#1102;&#1090;&#1089;&#1103;
+  &#1074;&#1089;&#1077; &#1083;&#1080;&#1089;&#1090;&#1099;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;<span style='display:none'>&#1084;&#1084;.</span></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=18 style='height:14.25pt;mso-ignore:colspan'>4.
+  &#1042;&#1099;&#1073;&#1077;&#1088;&#1080;&#1090;&#1077;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;,
+  &#1082;&#1086;&#1090;&#1086;&#1088;&#1099;&#1077;
+  &#1089;&#1086;&#1073;&#1080;&#1088;&#1072;&#1077;&#1090;&#1077;&#1089;&#1100;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1080;&#1088;&#1086;&#1074;&#1072;&#1090;&#1100;.
+  &#1044;&#1083;&#1103; &#1074;&#1099;&#1073;&#1086;&#1088;&#1072;
+  &#1085;&#1077;&#1089;&#1082;&#1086;&#1083;&#1100;&#1082;&#1080;&#1093;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;
+  &#1097;&#1077;&#1083;&#1082;&#1072;&#1081;&#1090;&#1077; &#1085;&#1072;
+  &#1082;&#1072;&#1078;&#1076;&#1086;&#1081; &#1080;&#1079;
+  &#1085;&#1080;&#1093;,
+  &#1091;&#1076;&#1077;&#1078;&#1080;&#1074;&#1072;&#1103; &#1082;&#1083;&#1072;&#1074;&#1080;&#1096;&#1091;
+  &lt; Ctrl&gt;.</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=38 style='mso-height-source:userset;height:28.5pt'>
+  <td colspan=29 height=38 class=xl70 width=1856 style='height:28.5pt;
+  width:1392pt'>5. &#1044;&#1083;&#1103;
+  &#1080;&#1076;&#1077;&#1085;&#1090;&#1080;&#1092;&#1080;&#1082;&#1072;&#1094;&#1080;&#1080;
+  &#1082;&#1086;&#1085;&#1082;&#1088;&#1077;&#1090;&#1085;&#1086;&#1081;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099; &#1074;
+  &#1089;&#1087;&#1080;&#1089;&#1082;&#1077;
+  &#1074;&#1099;&#1073;&#1077;&#1088;&#1080;&#1090;&#1077;
+  &#1080;&#1084;&#1103;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099; &#1080;
+  &#1097;&#1077;&#1083;&#1082;&#1085;&#1080;&#1090;&#1077; &#1085;&#1072;
+  &#1082;&#1085;&#1086;&#1087;&#1082;&#1077;
+  &#1055;&#1088;&#1086;&#1082;&#1088;&#1091;&#1090;&#1082;&#1072; (<font
+  class="font9">Scroll to)</font><font class="font8">. &#1042;
+  &#1088;&#1077;&#1079;&#1091;&#1083;&#1100;&#1090;&#1072;&#1090;&#1077;
+  &#1074;&#1099;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1090;&#1089;&#1103;
+  &#1087;&#1088;&#1086;&#1082;&#1088;&#1091;&#1090;&#1082;&#1072;
+  &#1088;&#1072;&#1073;&#1086;&#1095;&#1077;&#1075;&#1086;
+  &#1083;&#1080;&#1089;&#1090;&#1072;,
+  &#1087;&#1088;&#1080;&#1095;&#1077;&#1084;<span style='mso-spacerun:yes'> 
+  </span>&#1074;&#1099;&#1076;&#1077;&#1083;&#1077;&#1085;&#1085;&#1072;&#1103;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1072;
+  &#1086;&#1090;&#1086;&#1073;&#1088;&#1072;&#1078;&#1072;&#1077;&#1090;&#1089;&#1103;
+  &#1074; &#1074;&#1077;&#1088;&#1093;&#1085;&#1077;&#1084;
+  &#1083;&#1077;&#1074;&#1086;&#1084; &#1091;&#1075;&#1083;&#1091;
+  &#1086;&#1082;&#1085;&#1072;. . &#1055;&#1088;&#1080;
+  &#1088;&#1072;&#1073;&#1086;&#1090;&#1077; &#1089;
+  &#1083;&#1080;&#1089;&#1090;&#1072;&#1084;&#1080;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084; &#1085;&#1072;
+  &#1082;&#1085;&#1086;&#1087;&#1082;&#1077; &#1086;&#1090;&#1086;&#1073;&#1088;&#1072;&#1078;&#1072;&#1077;&#1090;&#1089;&#1103;
+  &#1085;&#1072;&#1076;&#1087;&#1080;&#1089;&#1100;
+  &#1055;&#1077;&#1088;&#1077;&#1081;&#1090;&#1080; (</font><font class="font9">Go
+  to)</font><font class="font8">, &#1087;&#1086;&#1089;&#1083;&#1077;
+  &#1097;&#1077;&#1083;&#1095;&#1082; &#1072;&#1085;&#1072;
+  &#1082;&#1086;&#1090;&#1086;&#1088;&#1086;&#1081;
+  &#1086;&#1089;&#1091;&#1097;&#1077;&#1089;&#1090;&#1074;&#1083;&#1103;&#1077;&#1090;&#1089;&#1103;
+  &#1072;&#1082;&#1090;&#1080;&#1074;&#1080;&#1079;&#1072;&#1094;&#1080;&#1103;
+  &#1074;&#1099;&#1076;&#1077;&#1083;&#1077;&#1085;&#1085;&#1099;&#1093;
+  &#1083;&#1080;&#1089;&#1090;&#1086;&#1074;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;.</font></td>
+ </tr>
+ <tr height=38 style='mso-height-source:userset;height:28.5pt'>
+  <td colspan=29 height=38 class=xl70 width=1856 style='height:28.5pt;
+  width:1392pt'>6. &#1048;&#1084;&#1103; &#1092;&#1072;&#1081;&#1083;&#1072;
+  &#1082;&#1072;&#1078;&#1076;&#1086;&#1081; &#1080;&#1079;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;
+  &#1089;&#1086;&#1079;&#1076;&#1072;&#1077;&#1090;&#1089;&#1103;
+  &#1085;&#1072; &#1086;&#1089;&#1085;&#1086;&#1074;&#1077;
+  &#1080;&#1084;&#1077;&#1085;&#1080;
+  &#1086;&#1073;&#1098;&#1077;&#1082;&#1090;&#1072;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;
+  (&#1080;&#1083;&#1080; &#1083;&#1080;&#1089;&#1090;&#1072; &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;).&nbsp;
+  &#1044;&#1083;&#1103;
+  &#1087;&#1077;&#1088;&#1077;&#1080;&#1084;&#1077;&#1085;&#1086;&#1074;&#1072;&#1085;&#1080;&#1103;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;
+  &#1080;&#1083;&#1080; &#1083;&#1080;&#1089;&#1090;&#1072;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;
+  &#1074;&#1099;&#1076;&#1077;&#1083;&#1080;&#1090;&#1077;
+  &#1080;&#1084;&#1103; &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;
+  &#1080; &#1097;&#1077;&#1083;&#1082;&#1085;&#1080;&#1090;&#1077;
+  &#1085;&#1072; &#1082;&#1085;&#1086;&#1087;&#1082;&#1077;
+  &#1055;&#1077;&#1088;&#1077;&#1080;&#1084;&#1077;&#1085;&#1086;&#1074;&#1072;&#1090;&#1100;
+  (<font class="font9">Rename)</font><font class="font8">. You will then be
+  prompted for a new name for the Chart object (or Chart sheet).
+  &#1069;&#1090;&#1086;&#1090;
+  &#1087;&#1072;&#1088;&#1072;&#1084;&#1077;&#1090;&#1088;
+  &#1076;&#1086;&#1089;&#1090;&#1091;&#1087;&#1077;&#1085; &#1074;
+  &#1090;&#1086;&#1084; &#1089;&#1083;&#1091;&#1095;&#1072;&#1077;,
+  &#1082;&#1086;&#1075;&#1076;&#1072; &#1074;
+  &#1089;&#1087;&#1080;&#1089;&#1082;&#1077;
+  &#1074;&#1099;&#1073;&#1088;&#1072;&#1085;&#1072;
+  &#1077;&#1076;&#1080;&#1085;&#1089;&#1090;&#1074;&#1077;&#1085;&#1072;&#1103;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1072;.</font></td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=8 style='height:14.25pt;mso-ignore:colspan'>7.
+  &#1042;&#1099;&#1073;&#1077;&#1088;&#1080;&#1090;&#1077;
+  &#1092;&#1086;&#1088;&#1084;&#1072;&#1090;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1072;
+  &#1076;&#1083;&#1103;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1080;&#1088;&#1091;&#1077;&#1084;&#1086;&#1081;
+  &#1076;&#1080;&#1072;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;<font
+  class="font8">s</font></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=17 style='height:14.25pt;mso-ignore:colspan'>8.&#1045;&#1089;&#1083;&#1080;
+  &#1074;&#1099; &#1093;&#1086;&#1090;&#1080;&#1090;&#1077;
+  &#1087;&#1086;&#1083;&#1091;&#1095;&#1072;&#1090;&#1100;
+  &#1087;&#1088;&#1077;&#1076;&#1091;&#1087;&#1088;&#1077;&#1078;&#1076;&#1077;&#1085;&#1080;&#1103;
+  o &#1085;&#1072;&#1083;&#1080;&#1095;&#1080;&#1080;
+  &#1076;&#1080;&#1075;&#1088;&#1072;&#1084;&#1084;&#1099;,
+  &#1074;&#1099;&#1073;&#1077;&#1088;&#1080;&#1090;&#1077;
+  &#1087;&#1072;&#1088;&#1072;&#1084;&#1077;&#1090;&#1088;
+  &#1055;&#1088;&#1077;&#1076;&#1091;&#1087;&#1088;&#1077;&#1078;&#1076;&#1072;&#1090;&#1100;
+  &#1087;&#1088;&#1080; &#1085;&#1072;&#1083;&#1080;&#1095;&#1080;&#1080;
+  &#1092;&#1072;&#1081;&#1083;&#1072; (<font class="font9">Warn if file exists)</font><font
+  class="font8">.</font></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=20 style='height:14.25pt;mso-ignore:colspan'>9.
+  &#1042;
+  &#1076;&#1080;&#1072;&#1083;&#1086;&#1075;&#1086;&#1074;&#1086;&#1084;
+  &#1086;&#1082;&#1085;&#1077;
+  &#1086;&#1090;&#1086;&#1073;&#1088;&#1072;&#1078;&#1072;&#1077;&#1090;&#1089;&#1103;
+  &#1080;&#1084;&#1103; &#1087;&#1072;&#1087;&#1082;&#1080;, &#1074;
+  &#1082;&#1086;&#1090;&#1086;&#1088;&#1086;&#1081;
+  &#1085;&#1072;&#1093;&#1086;&#1076;&#1103;&#1090;&#1089;&#1103;
+  &#1089;&#1086;&#1093;&#1088;&#1072;&#1085;&#1077;&#1085;&#1085;&#1099;&#1077;
+  &#1092;&#1072;&#1081;&#1083;&#1099;. &#1044;&#1083;&#1103;
+  &#1080;&#1079;&#1084;&#1077;&#1085;&#1077;&#1085;&#1080;&#1103;
+  &#1087;&#1072;&#1087;&#1082;&#1080;
+  &#1074;&#1086;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1091;&#1081;&#1090;&#1077;&#1089;&#1100;
+  &#1087;&#1072;&#1088;&#1072;&#1084;&#1077;&#1090;&#1088;&#1086;&#1084;
+  &#1048;&#1079;&#1084;&#1077;&#1085;&#1080;&#1090;&#1100;
+  &#1087;&#1072;&#1087;&#1082;&#1091; (<font class="font9">Change directory)</font><font
+  class="font8">.</font></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=19 style='height:14.25pt'>
+  <td height=19 class=xl67 colspan=7 style='height:14.25pt;mso-ignore:colspan'>10.
+  &#1065;&#1077;&#1083;&#1082;&#1085;&#1080;&#1090;&#1077; &#1085;&#1072;
+  &#1082;&#1085;&#1086;&#1087;&#1082;&#1077; <font class="font9">OK</font><font
+  class="font8"> &#1076;&#1083;&#1103;
+  &#1085;&#1072;&#1095;&#1072;&#1083;&#1072;
+  &#1101;&#1082;&#1089;&#1087;&#1086;&#1088;&#1090;&#1072;
+  &#1092;&#1072;&#1081;&#1083;&#1086;&#1074;.</font></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=14 style='height:10.5pt'>
+  <td height=14 class=xl68 colspan=2 style='height:10.5pt;mso-ignore:colspan'>&#1044;&#1086;&#1087;&#1086;&#1083;&#1085;&#1080;&#1090;&#1077;&#1083;&#1100;&#1085;&#1086;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl69 style='height:15.0pt'><a href="../exportcharts3.htm"
+  target="_parent">&#1057;&#1086;&#1074;&#1077;&#1090;&#1099;</a></td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+  <td class=xl65>&nbsp;</td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=0 style='display:none'>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+  <td width=64 style='width:48pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>

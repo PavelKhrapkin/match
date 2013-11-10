@@ -1,0 +1,39 @@
+Product:     J-Walk Enhanced Data Form
+Author:      J-Walk & Associates (John Walkenbach)
+E-mail:      john@j-walk.com
+WWW:         http://spreadsheetpage.com
+Cost:        Free 
+VBA Source:  Available for US $15.00
+Requires:    Microsoft Excel 97 or later
+Description: An add-in that provides an alternative to Excel's built-in Data Form. 
+             This add-in comes in two sub-versions, and both are included in 
+             the download:
+
+           * Version 3a - for Excel 97, 2000, 2002, and 2003 (dataform3.xla)
+           * Version 3b - for Excel 2007 and 2010 (dataform3.xlam)
+
+-------------
+Installation:
+-------------
+1. Copy the appropriate file to any directory.
+2. Start Excel
+3. Press Alat+TI to display the Add-Ins dialog box.
+4. Click Browse
+5. Locate the file from Step 1.
+
+---------------------------------
+To display the Enhanced Data Form:
+---------------------------------
+
+* Excel 97-2003: Activate any cell in a database table and 
+  choose Data - Enhanced Data Form
+
+* Excel 2007-2010: Activate any cell in a database table and 
+  choose Enhanced Data Form (which is on the Data tab)
+
+This add-in may be freely distributed. The VBA password is also available
+for a nominal fee. 
+
+For more information, including customization instructions:
+
+http://spreadsheetpage.com/index.php/dataform/

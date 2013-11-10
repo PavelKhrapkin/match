@@ -1,0 +1,1 @@
+This directory contains the source files used to create the Text Tools Help file.

@@ -1,0 +1,30 @@
+[OPTIONS]
+Binary Index=No
+Compatibility=1.1 or later
+Compiled file=myfuncs.chm
+Contents file=Table of Contents.hhc
+Default Window=main
+Default topic=Topic1.htm
+Display compile progress=Yes
+Language=0x409 English (United States)
+Title=My Functions Help
+
+[WINDOWS]
+main="My Functions Help","Table of Contents.hhc",,"Topic0.htm",,,,,,0x2120,200,0x300e,[223,147,812,494],0x400000,,,,,,0
+
+
+[FILES]
+Topic0.htm
+Topic1.htm
+Topic2.htm
+
+[ALIAS]
+TOPIC0=Topic0.htm
+TOPIC1=Topic1.htm
+TOPIC2=Topic2.htm
+
+[MAP]
+#include myfuncs.h
+
+[INFOTYPES]
+

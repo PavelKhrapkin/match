@@ -1,0 +1,24 @@
+/* Cascading Style Sheet */
+
+p {font-size:10pt;font-family:Verdana, Arial, sans-serif;margin-top:5px;margin-bottom:10px}
+h1{font-size:16pt;font-family:Verdana, Arial, sans-serif;font-weight:bold;margin-bottom:0em;color:Navy;text-align:left}
+h2{font-size:14pt;font-family:Verdana, Arial, sans-serif;font-weight:bold;margin-bottom:0em;color:Maroon;}
+h3{font-size:13pt;font-family:Verdana, Arial, sans-serif;font-weight:bold;margin-bottom:0em;color:Navy;}
+h4{font-size:11pt;font-family:Verdana, Arial, sans-serif;font-weight:bold;margin-bottom:0em;color:Navy;}
+
+ul{font-size:10pt;font-family:Verdana, Arial, sans-serif;margin-top:0px;margin-bottom:3px}
+ol{font-size:10pt;font-family:Verdana, Arial, sans-serif;margin-top:0px;margin-bottom:6px}
+li{font-size:10pt;font-family:Verdana, Arial, sans-serif;margin-top:0px;margin-bottom:6px}
+
+
+hr{height:3;color:Navy;}
+
+strong{color:Navy;font-size:10pt}
+
+a:link   {color:black; font-size:10pt;font-family:Verdana, Arial, sans-serif;font-weight:bold}
+a:active {color:black; font-size:10pt;font-family:Verdana, Arial, sans-serif;font-weight:bold}
+a:visited{color:black;font-size:10pt;font-family:Verdana, Arial, sans-serif;font-weight:bold}
+a:visited    {color:black}
+a:hover        {color:blue}
+a:visited:hover{color:blue;}
+a:b{color:ff3333;}
