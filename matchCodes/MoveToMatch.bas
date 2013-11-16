@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 26.10.2013
+' П.Л.Храпкин 16.11.2013
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -12,7 +12,7 @@ Sub MoveInMatch()
 Attribute MoveInMatch.VB_Description = "20.7.12 MoveToMatch of Application match2.0"
 Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 '
-' <*> MoveToMatch() - перемещение входного отчета в базу и запуск его обработки
+' <*> MoveInMatch() - перемещение входного отчета в базу и запуск его обработки
 '
 ' Получает управление по Application.Run из MoveToMatch запускаемого по Ctrl+ф
 ' Входной Документ (лист 1 активного файла) распознается по Штампу, соответствующего TOCmatch
@@ -33,6 +33,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 6.10.13 - bug fix - игнорируем строки Платежа "авт нал"
 ' 22.10.13 - убираем избыточные .Activate; делаем Freeze Top Row
 ' 26.10.13 - Public RepName заменен на локальный DocName
+' 16.11.13 - Обработка колонки дат и сброс фильтра дополняемого листа
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim DocName As String   ' имя Документа
@@ -115,6 +116,12 @@ RepNameHandle:
             .Rows("1:" & Lines).AutoFilter
             DateCol InSheetN, NewToDate_Col
             SheetSort InSheetN, NewToDate_Col
+            Dim OldDatCol As Long
+            OldDatCol = PAYDATE_COL
+            If DocName = DOG_SHEET Then OldDatCol = DOG1CDAT_COL
+            
+            DateCol DocName, OldDatCol
+            SheetSort DocName, OldDatCol
             Created = GetDate(Right$(.Name, 8))
             Dim DateCell As String, PayDoc As String, Doc As Boolean
             Do
@@ -175,9 +182,12 @@ DelRep: If SheetExists(DocName) Then
             .Sheets(DocName).Delete
             Application.DisplayAlerts = True
         End If
+        .Activate
         .Sheets("TMP").Name = DocName
         .Sheets(DocName).Tab.Color = TabColor
+        .Sheets(DocName).Cells(2, 1).Select
     End With
+    ActiveWindow.FreezePanes = True
     
 '------------- match TOC и Log write и Save --------------
     With DB_MATCH.Sheets(TOC)
@@ -219,15 +229,6 @@ DelRep: If SheetExists(DocName) Then
     If RepLoader <> "" Then
         ProcReset RepLoader
     End If
-    With MyDB.Sheets(DocName)
-        .Activate
-        .Cells(2, 1).Select
-    End With
-    With ActiveWindow
-        .SplitColumn = 0
-        .SplitRow = 1
-    End With
-    ActiveWindow.FreezePanes = True
     MyDB.Save
     Exit Sub
     Dim msg As String
