@@ -2,7 +2,7 @@ Attribute VB_Name = "MatchLib"
 '---------------------------------------------------------------------------
 ' Библиотека подпрограмм проекта "match 2.1"
 '
-' П.Л.Храпкин, А.Пасс 8.11.13
+' П.Л.Храпкин, А.Пасс 16.11.13
 '
 ' S setColWidth(file, sheet, col, range, width) - устанавливает ширину колонки листа
 ' S InsMyCol()                  - вставляем колонки MyCol в лист слева и пятку по шаблонам
@@ -683,6 +683,7 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
 '   2.1.13  - добавил 2000 к году, если он двузначный, и конвертировал к локальному формату
 '   3.1.13  - исправил расчет года
 '  21.8.13  - для MoveInMatch
+'  16.11.13 - прямое обращение к EOL, а не получение по TOC
 
     Dim i As Long, dd As Long, MM As Long, YY As Long
     Dim Dat As Date
@@ -692,11 +693,10 @@ Sub DateCol(ByVal SheetN As String, ByVal Col As Integer)
     If Not IsNumeric(SheetN) Then
         R = GetRep(SheetN)
         Workbooks(R.RepFile).Sheets(R.SheetN).Activate
-        Lines = R.EOL
     End If
     
     With ActiveSheet
-        For i = 2 To Lines
+        For i = 2 To EOL(R.SheetN, Workbooks(R.RepFile))
             D = Split(.Cells(i, Col), ".")
             If UBound(D) = 2 And IsNumeric(D(0)) And IsNumeric(D(1)) And IsNumeric(D(2)) Then
                 dd = D(0)
