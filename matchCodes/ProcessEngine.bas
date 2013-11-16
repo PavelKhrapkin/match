@@ -10,7 +10,7 @@ Attribute VB_Name = "ProcessEngine"
 '         * Перед выполнением Шага проверяется поле Done по шагу PrevStep.
 '           PrevStep может иметь вид <другой Процесс> / <Шаг>.
 '
-' 29.10.13 П.Л.Храпкин, А.Пасс
+' 15.11.13 П.Л.Храпкин, А.Пасс
 '
 ' S/- ProcStart(Proc)   - запуск Процесса Proc по таблице Process в match.xlsm
 ' - IsDone(Proc, Step)  - проверка, что шаг Step процесса Proc уже выполнен
@@ -68,7 +68,7 @@ ProcAdd:  ProcStack.Add Proc
         DocCS = LocTOC.ChkSum
         LogWr "<*>ProcStart " & Proc & " Doc='" & Doc & "' DocCS=" & DocCS
 '--------------
-        .Range(Cells(i, 1), Cells(i, 3)).Interior.ColorIndex = 35
+        .Range("A" & i & ":C" & i).Interior.ColorIndex = 35
         Do While .Cells(i + 1, PROC_STEP_COL) <> PROC_END
             i = i + 1
             If .Cells(i, PROC_COMMENT_COL) = "" Then
@@ -428,6 +428,7 @@ Sub MergeReps()
 ' 24.8.13
 '  7.9.13 - bug fix - всегда заменяем низ старого отчета до конца
 '  6.10.13 - записываем строки из прежнего документа в новый
+' 15.11.13 - подбираем имя документа RepName непосредственно из Process
 
     Dim RefSummary As String
     Dim R As TOCmatch
@@ -435,10 +436,17 @@ Sub MergeReps()
     Dim RoldEOL As Long, Col As Long, i As Long, FrRow As Long, ToRow As Long
     Dim FrDate As Date, ToDate As Date
     Dim FrDateRow, ToDateRow
+    Dim iStep As Long
     
     StepIn
     
-    RepName = ActiveSheet.Name
+    With DB_MATCH.Sheets(Process)
+        PublicProcName = .Cells(1, PROCESS_NAME_COL)
+        PublicStepName = .Cells(1, STEP_NAME_COL)
+        iStep = ToStep(PublicProcName, PublicStepName)
+        RepName = .Cells(iStep, PROC_REP1_COL)
+    End With
+    
     R = GetRep(RepName)
     OldRepName = RepName & "_OLD"
     If Not SheetExists(OldRepName) Then Exit Sub
