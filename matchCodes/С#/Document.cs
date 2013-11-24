@@ -1,11 +1,11 @@
-/*-----------------------------------------------------------------------
- * Document -- класс Документов проекта match 3.0
+п»ї/*-----------------------------------------------------------------------
+ * Document -- РєР»Р°СЃСЃ Р”РѕРєСѓРјРµРЅС‚РѕРІ РїСЂРѕРµРєС‚Р° match 3.0
  * 
- *  24.11.2013  П.Храпкин, А.Пасс
+ *  24.11.2013  Рџ.РҐСЂР°РїРєРёРЅ, Рђ.РџР°СЃСЃ
  *  
- * - 24.11.13 переписано с VBA TOCmatch на С#
+ * - 24.11.13 РїРµСЂРµРїРёСЃР°РЅРѕ СЃ VBA TOCmatch РЅР° РЎ#
  * -------------------------------------------
- * Document(Name)          - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем Name
+ * Document(Name)          - РљРћРќРЎРўР РЈРљРўРћР  РІРѕР·РІСЂР°С‰Р°РµС‚ РћР‘РЄР•РљРў Р”РѕРєСѓРјРµРЅС‚ СЃ РёРјРµРЅРµРј Name
  * 
  */
 using System;
@@ -34,11 +34,11 @@ namespace ExcelAddIn2
         }
         public const string F_MATCH = "match.xlsm";
             private const string TOC = "TOCmatch";
-                private const int TOC_DIRDBS_COL = 10;  //в первой строке в колонке TOC_DIRDBS_COL записан путь к dirDBs
-                private const int TOC_LINE = 4;         //строка номер TOL_LINE таблицы ТОС отностися к самому этому документу.
-                private static int EOL_toc;             //число строк в ТОС. Определяется при инициализации ТОС и хранится в TOC_LINE
-                private int iTOC;                       //номер строки в ТОС - атрибут Документа по имени name
-        private const string dirDBs  = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //временно!!!
+                private const int TOC_DIRDBS_COL = 10;  //РІ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРµ РІ РєРѕР»РѕРЅРєРµ TOC_DIRDBS_COL Р·Р°РїРёСЃР°РЅ РїСѓС‚СЊ Рє dirDBs
+                private const int TOC_LINE = 4;         //СЃС‚СЂРѕРєР° РЅРѕРјРµСЂ TOL_LINE С‚Р°Р±Р»РёС†С‹ РўРћРЎ РѕС‚РЅРѕСЃС‚РёСЃСЏ Рє СЃР°РјРѕРјСѓ СЌС‚РѕРјСѓ РґРѕРєСѓРјРµРЅС‚Сѓ.
+                private static int EOL_toc;             //С‡РёСЃР»Рѕ СЃС‚СЂРѕРє РІ РўРћРЎ. РћРїСЂРµРґРµР»СЏРµС‚СЃСЏ РїСЂРё РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РўРћРЎ Рё С…СЂР°РЅРёС‚СЃСЏ РІ TOC_LINE
+                private int iTOC;                       //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё РІ РўРћРЎ - Р°С‚СЂРёР±СѓС‚ Р”РѕРєСѓРјРµРЅС‚Р° РїРѕ РёРјРµРЅРё name
+        private const string dirDBs  = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //РІСЂРµРјРµРЅРЅРѕ!!!
 
         private const string F_1C = "1C.xlsx";
         private const string F_SFDC = "SFDC.xlsx";
@@ -46,7 +46,7 @@ namespace ExcelAddIn2
         private const string F_STOCK = "Stock.xlsx";
         private const string F_TMP   = "W_TMP.xlsm";
 
-        public Document[] OpenDocs;                     //коллекция Документов уже открытых в match
+        public Document[] OpenDocs;                     //РєРѕР»Р»РµРєС†РёСЏ Р”РѕРєСѓРјРµРЅС‚РѕРІ СѓР¶Рµ РѕС‚РєСЂС‹С‚С‹С… РІ match
 /*
         Stamp stamp;
  
@@ -58,10 +58,10 @@ namespace ExcelAddIn2
  */
         bool isTOCinitiated = false;
 /*
- * Конструктор Документа
+ * РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Р”РѕРєСѓРјРµРЅС‚Р°
  */
         public Document(string name) {
-/* вначале, если нужно, инициируем структуры ТОС - Содержания или таблицы Документов */
+/* РІРЅР°С‡Р°Р»Рµ, РµСЃР»Рё РЅСѓР¶РЅРѕ, РёРЅРёС†РёРёСЂСѓРµРј СЃС‚СЂСѓРєС‚СѓСЂС‹ РўРћРЎ - РЎРѕРґРµСЂР¶Р°РЅРёСЏ РёР»Рё С‚Р°Р±Р»РёС†С‹ Р”РѕРєСѓРјРµРЅС‚РѕРІ */
 //            if (!isTOCinitiated) {
             if (OpenDocs[1] == null) {
                 TOCrow toc = new TOCrow();
@@ -70,12 +70,12 @@ namespace ExcelAddIn2
                 toc.EOLinTOC = Lib.EOL(db_match.Worksheets[TOC]);
 
                 if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2) {
-                    Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
+                    Box.Show("Р¤Р°Р№Р» '" + F_MATCH + "' Р·Р°РіСЂСѓР¶РµРЅ РёР· РЅРµРѕР±С‹С‡РЅРѕРіРѕ РјРµСЃС‚Р°!");
                 }
 
-//                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */
+//                WrTOC(TOC);    /* WrTOC - РјРµС‚РѕРґ, Р·Р°РїРёСЃС‹РІР°СЋС‰РёР№ РґР°РЅРЅС‹Рµ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏ РІ Р»РёСЃС‚ TOCmatch - РЅР°РїРёС€РµРј РїРѕР·Р¶Рµ */
             }
-/* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
+/* РЅР°С…РѕРґРёРј Р”РѕРєСѓРјРµРЅС‚ name РІ РўРћРЎ РїСЂРѕРІРµСЂСЏСЏ РµРіРѕ СЃРёРіРЅР°С‚СѓСЂС‹ С‚Рѕ РµСЃС‚СЊ РЁС‚Р°РјРї */
             for (iTOC = TOC_LINE; iTOC <= EOL_toc; iTOC++) {
  //               if TOC.
             }
