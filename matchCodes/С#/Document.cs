@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  25.11.2013  П.Храпкин, А.Пасс
+ *  26.11.2013  П.Храпкин, А.Пасс
  *  
- * - 25.11.13 переписано с VBA TOCmatch на С#
+ * - 26.11.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(Name)          - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем Name
  * 
@@ -45,7 +45,8 @@ namespace ExcelAddIn2
         private const string F_STOCK = "Stock.xlsx";
         private const string F_TMP = "W_TMP.xlsm";
 
-        public static List<Document> OpenDocs = new List<Document>();   //коллекция Документов уже открытых в match
+//        public static List<Document> OpenDocs = new List<Document>();   //коллекция Документов уже открытых в match
+        public Dictionary<string, Document> OpenDocs = new Dictionary<string, Document>();   //коллекция Документов уже открытых в match
         /*
                 Stamp stamp;
  
@@ -77,8 +78,8 @@ namespace ExcelAddIn2
                 FileName = F_MATCH;
                 SheetN = TOC;
 
-                OpenDocs.Add(this);
-            }
+//              OpenDocs.Add(this);
+                OpenDocs.Add(TOC, this);            }
             //                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
 
             /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
@@ -92,20 +93,26 @@ namespace ExcelAddIn2
 
         public static Document getDoc(string name)
         {
+/*
             foreach (Document Doc in OpenDocs)
             {
                 if (Doc.Name == name) return Doc;
             }
             return new Document(name);
+ */
+            return (OpenDocs.ContainsKey(name)) ? OpenDocs[name] : new Document(name);
         }
 
         public static bool isDocOpen(string name)
         {
+/*
             foreach (Document Doc in OpenDocs)
             {
                 if (Doc.Name == name) return true;
             }
             return false;
+ */
+            return (OpenDocs.ContainsKey(name));
         }
         public string Name
         {
