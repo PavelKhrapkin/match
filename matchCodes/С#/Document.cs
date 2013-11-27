@@ -80,6 +80,8 @@ namespace ExcelAddIn2
             }
 //                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
             /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
+            foreach (KeyValuePair<string, Document> entry in OpenDocs) {
+            }
 
         }
 
