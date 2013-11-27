@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  26.11.2013  П.Храпкин, А.Пасс
+ *  27.11.2013  П.Храпкин, А.Пасс
  *  
- * - 26.11.13 переписано с VBA TOCmatch на С#
+ * - 27.11.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(Name)          - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем Name
  * 
@@ -45,8 +45,8 @@ namespace ExcelAddIn2
         private const string F_STOCK = "Stock.xlsx";
         private const string F_TMP = "W_TMP.xlsm";
 
-//        public static List<Document> OpenDocs = new List<Document>();   //коллекция Документов уже открытых в match
-        public Dictionary<string, Document> OpenDocs = new Dictionary<string, Document>();   //коллекция Документов уже открытых в match
+        //        public static List<Document> OpenDocs = new List<Document>();   //коллекция Документов уже открытых в match
+        public static Dictionary<string, Document> OpenDocs = new Dictionary<string, Document>();   //коллекция Документов уже открытых в match
         /*
                 Stamp stamp;
  
@@ -68,74 +68,60 @@ namespace ExcelAddIn2
                 Excel.Workbook db_match = fileOpen(F_MATCH);
                 Excel.Worksheet wholeSheet = db_match.Worksheets[TOC];
                 EOLinTOC = Lib.EOL(wholeSheet);
-                Body = db_match.Worksheets[TOC].get_Range("A4:ZZ" + EOLinTOC);
-                if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
-                {
+                Body = wholeSheet.Range["4:" + EOLinTOC];
+                if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2) {
                     Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
                     // переустановка match -- будем делать потом
                 }
                 name = TOC;
                 FileName = F_MATCH;
                 SheetN = TOC;
-
-//              OpenDocs.Add(this);
-                OpenDocs.Add(TOC, this);            }
-            //                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
-
-            /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
-            for (iTOC = 1; iTOC <= OpenDocs[1].Body.Rows.Count; iTOC++)
-            {
-                //                   if (nameIn == Body
-                //               if TOC.
+                OpenDocs.Add(TOC, this);
             }
+//                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
+            /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
 
         }
 
-        public static Document getDoc(string name)
-        {
-/*
-            foreach (Document Doc in OpenDocs)
-            {
-                if (Doc.Name == name) return Doc;
-            }
-            return new Document(name);
- */
+        public static Document getDoc(string name) {
             return (OpenDocs.ContainsKey(name)) ? OpenDocs[name] : new Document(name);
         }
 
-        public static bool isDocOpen(string name)
-        {
-/*
-            foreach (Document Doc in OpenDocs)
-            {
-                if (Doc.Name == name) return true;
+        public static Document loadDoc(Excel.Workbook wb) {
+// загрузка в match нового документа
+// 27.11.13 -- еще не написано
+            string name = null;
+//            string name = recognizeDoc(wb);
+            bool found = false;
+            for (int i = 1; i <= OpenDocs.Count; i++) {
+                //                if (CheckStamp(OpenDocs[i].Stamp)) {
             }
-            return false;
- */
-            return (OpenDocs.ContainsKey(name));
+            return OpenDocs[name];
         }
-        public string Name
-        {
+
+        public static bool isDocOpen(string name) {return (OpenDocs.ContainsKey(name));}
+ 
+        public string Name {
             get { return name; }
             set { name = value; }
         }
+
         public bool CheckStamp()
         {
             return false;
         }
 
-        private static Excel.Workbook fileOpen(string name)
-        {
+        private static Excel.Workbook fileOpen(string name) {
 
             Excel.Application app = new Excel.Application();
-            Microsoft.Office.Interop.Excel.Workbook wb;
-            try
-            {
+//            Microsoft.Office.Interop.Excel.Workbook wb;
+            Excel.Workbook wb;
+            try {
                 wb = app.Workbooks.Open(dirDBs + name);
                 return wb;
-            }
-            catch
-            {
+            } catch (Exception ex) {
+                System.Windows.Forms.MessageBox.Show("Ошибка> " + ex.Message
+                    + "\n не открыт файл '" + dirDBs+name+"'");
                 return null;
             }
         }    // конец класса Document
