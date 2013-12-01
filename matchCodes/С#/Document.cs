@@ -1,9 +1,9 @@
-﻿/*-----------------------------------------------------------------------
+﻿//*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  27.11.2013  П.Храпкин, А.Пасс
+ *  1.12.2013  П.Храпкин, А.Пасс
  *  
- * - 27.11.13 переписано с VBA TOCmatch на С#
+ * - 1.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(Name)          - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем Name
  * 
@@ -21,9 +21,7 @@ namespace ExcelAddIn2
     public class Document
     {
         private static bool initializedTOC = false;
-        public static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
-
-        //        public static List<Document> Documents = new List<Document>();   //коллекция Документов уже открытых в match
+        private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
  
         private string name;
         private bool isOpen = false;
@@ -40,8 +38,6 @@ namespace ExcelAddIn2
         private const string TOC = "TOCmatch";
         private const int TOC_DIRDBS_COL = 10;  //в первой строке в колонке TOC_DIRDBS_COL записан путь к dirDBs
         private const int TOC_LINE = 4;         //строка номер TOL_LINE таблицы ТОС отностися к самому этому документу.
-//        private static int EOL_toc;             //число строк в ТОС. Определяется при инициализации ТОС и хранится в TOC_LINE
-//        private int iTOC;                       //номер строки в ТОС - атрибут Документа по имени name
         private const string dirDBs = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //временно!!!
 
         private const string F_1C = "1C.xlsx";
@@ -49,29 +45,6 @@ namespace ExcelAddIn2
         private const string F_ADSK = "ADSK.xlsm";
         private const string F_STOCK = "Stock.xlsx";
         private const string F_TMP = "W_TMP.xlsm";
-
-/*
-        protected struct tocRow {
-            private  DateTime stepTime;
-            string nameDoc;
-
-            public tocRow(DateTime time) {
-                stepTime = time;
-                nameDoc = "";
-            }
-        };
-*/
- //       private Dictionary<string, List<Stamp>> toc = 
-
-//        private List<tocRow> tocBody = new List<tocRow>();
-
-        /*
-                Body body;
-                Header hdr;
-                Summary smr;
-                LeftCols lft;
-                RightCols rght;
-         */
 
         public Document(string nameIn)
         {
@@ -83,11 +56,11 @@ namespace ExcelAddIn2
                 Excel.Workbook db_match = fileOpen(F_MATCH);
                 Excel.Worksheet wholeSheet = db_match.Worksheets[TOC];
                 Excel.Range tocRng = wholeSheet.Range["5:" + Lib.EOL(wholeSheet)];
-                bool insideTOCrw = true;
                 foreach (Excel.ListRow rw in tocRng) {
-                    if (insideTOCrw) {
-                        MadeTime    = rw.Range["A1"];
-                        name        = rw.Range["B1"];
+                    string docName = rw.Range["B1"];
+                    if (!String.IsNullOrEmpty(docName)) {
+                        MadeTime = rw.Range["A1"];
+                        name = docName;
                         EOLinTOC    = rw.Range["C1"];
     //                    MyCol        = rw.Range["D1"];
     //                    ResLines     = rw.Range["E1"];
@@ -96,9 +69,7 @@ namespace ExcelAddIn2
                         FileName    = rw.Range["H1"];
                         SheetN      = rw.Range["I1"];
                     }
-                    //insideTOCrw = Stamp.initStamp(rw.Range["J1:M1,O1]");
-                    stampList.Add(Stamp.initStamp(rw.Range["J1:M1"]));
-                    insideTOCrw = String.IsNullOrEmpty(rw.Range["O1"]);
+                    stampList.Add(new Stamp(rw.Range["J1:M1"]));
                 }
 
                 if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
@@ -106,10 +77,6 @@ namespace ExcelAddIn2
                     Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
                     // переустановка match -- будем делать потом
                 }
-//                name = TOC;
-//                FileName = F_MATCH;
-//                SheetN = TOC;
-//                Documents.Add(TOC, this);
                 initializedTOC = true;
             }
             //                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
@@ -118,19 +85,8 @@ namespace ExcelAddIn2
 
             /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
 
-<<<<<<< .mine
-            Document doc = getDoc(nameIn);
+ //         Document doc = getDoc(nameIn);
             // не дописано
-=======
-            Document doc = null;
-            foreach (KeyValuePair<string, Document> entry in OpenDocs) {
-                if (entry.Value.Name == nameIn) {
-                    doc = entry.Value;          // найден документ с именем nameIn
-                    break;
-                }
-            }
-
->>>>>>> .r642
         }
 
         public static Document getDoc(string name)
@@ -154,18 +110,23 @@ namespace ExcelAddIn2
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
 
         public static string recognizeDoc(Excel.Workbook wb) {
-//            foreach (tocRow  rw in tocBody) {
-//                if (tocRow.checkStamp(wb, tocBody.Stamp)) { return tocBody.name; }
-//            }
+            Document emp = new Document("");
+            Excel.Worksheet wholeSheet = wb.Worksheets[1];
+            Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet)];
+
+            foreach (var doc in Documents)
+            {
+                foreach (Stamp stmp in doc.Value.stampList)
+                {
+                    foreach (int[] pos in stmp.stampPosition)
+                    {
+                        if (rng.Cells[pos[0], pos[1]].Value2 != stmp.signature) break;
+                    }
+                    return doc.Value.name;
+                }
+            }
             return null;
         }
-
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-
 
         private static Excel.Workbook fileOpen(string name) {
             Excel.Application app = new Excel.Application();
@@ -182,19 +143,26 @@ namespace ExcelAddIn2
         }
 
         protected class Stamp {
-            protected string signature; // проверяемый текст Штампа - сигнатура
+            public string signature; // проверяемый текст Штампа - сигнатура
             protected char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
-            protected int rw, col;      // позиция сигнатуры в проверяемом Документе
-            protected int or_rw, or_col;  // альтернативные позиции Штампа
 
-            protected Stamp() {
-            }
+            // альтернативная позиция Штампа, если есть, сохраняется во второй компоненте массива
+            public List<int[]> stampPosition;      // позиция сигнатуры в проверяемом Документе
 
-            public static Stamp initStamp(Excel.Range rng) {
-                //
-                return new Stamp(); 
-            }
+            public Stamp(Excel.Range rng)
+            {
+                signature = rng.Cells[1, 1].value;                          // {[1, "1, 6"]} --> [1,1] или [1,6]
+                typeStamp = rng.Cells[1, 2].value;
+                List<int> rw = Lib.ToIntList(rng.Cells[1, 3].value, ',');
+                List<int> col = Lib.ToIntList(rng.Cells[1, 4].value, ',');
 
+                for (int j = col.Count + 1; j <= rw.Count; j++) col.Add(rw[j]);
+                for (int j = rw.Count + 1; j <= col.Count; j++) rw.Add(col[j]);
+                for (int j = rw.Count + 1; j <= col.Count; j++) {
+                    int[] x = {rw[j],col[j]};
+                    stampPosition.Add(x);        
+                }
+           }
             public bool checkStamp(Excel.Workbook wb, Stamp stamp) {
                 return false;
             }
