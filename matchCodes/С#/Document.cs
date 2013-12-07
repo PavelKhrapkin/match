@@ -1,12 +1,15 @@
-﻿//*-----------------------------------------------------------------------
+﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  1.12.2013  П.Храпкин, А.Пасс
+ *  8.12.2013  П.Храпкин, А.Пасс
  *  
- * - 1.12.13 переписано с VBA TOCmatch на С#
+ * - 8.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
- * Document(Name)          - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем Name
- * 
+ * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name, при необходимости - открывает его
+ * getDoc(name)         - ????
+ * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
+ * isDocOpen(name)      - проверяет, что Документ name открыт
+ * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
  */
 using System;
 using Box = System.Windows.Forms.MessageBox;
@@ -20,7 +23,6 @@ namespace ExcelAddIn2
 {
     public class Document
     {
-        private static bool initializedTOC = false;
         private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
  
         private string name;
@@ -46,52 +48,41 @@ namespace ExcelAddIn2
         private const string F_STOCK = "Stock.xlsx";
         private const string F_TMP = "W_TMP.xlsm";
 
-        public Document(string nameIn)
+        static Document()
         {
-            // конструктор Документа
+            Document doc = null;
+            Excel.Workbook db_match = fileOpen(F_MATCH);
+            Excel.Worksheet wholeSheet = db_match.Worksheets[TOC];
+            Excel.Range tocRng = wholeSheet.Range["5:" + Lib.EOL(wholeSheet)];
 
-            /* вначале, если нужно, инициируем структуры ТОС - Содержания или таблицы Документов */
-            if (!initializedTOC)
+            for (int i = 1; i <= tocRng.Rows.Count; i++)
             {
-                Excel.Workbook db_match = fileOpen(F_MATCH);
-                Excel.Worksheet wholeSheet = db_match.Worksheets[TOC];
-                Excel.Range tocRng = wholeSheet.Range["5:" + Lib.EOL(wholeSheet)];
-                foreach (Excel.ListRow rw in tocRng) {
-                    string docName = rw.Range["B1"];
-                    if (!String.IsNullOrEmpty(docName)) {
-                        MadeTime = rw.Range["A1"];
-                        name = docName;
-                        EOLinTOC    = rw.Range["C1"];
-    //                    MyCol        = rw.Range["D1"];
-    //                    ResLines     = rw.Range["E1"];
-                        MadeStep    = rw.Range["F1"];
-    //                    Period    = rw.Range["G1"];
-                        FileName    = rw.Range["H1"];
-                        SheetN      = rw.Range["I1"];
-                    }
-                    stampList.Add(new Stamp(rw.Range["J1:M1"]));
-                }
-
-                if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
+                Excel.Range rw = tocRng.Rows[i];
+ 
+                string docName = rw.Range["B1"].Value2;
+                if (!String.IsNullOrEmpty(docName))
                 {
-                    Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
-                    // переустановка match -- будем делать потом
+                    doc = new Document();
+                    doc.MadeTime = DateTime.FromOADate(rw.Range["A1"].Value2);
+                    doc.name = docName;
+                    string tx = rw.Range["C1"].Value2.ToString();
+                    doc.EOLinTOC = String.IsNullOrEmpty(tx) ? 0 : Convert.ToInt32(tx);
+                    //                    MyCol        = rw.Range["D1"].Value2;
+                    //                    ResLines     = rw.Range["E1"].Value2;
+                    doc.MadeStep = rw.Range["F1"].Value2;
+                    //                    Period    = rw.Range["G1"].Value2;
+                    doc.FileName = rw.Range["H1"].Value2;
+                    doc.SheetN = rw.Range["I1"].Value2;
+                    Documents.Add(docName,doc);
+                    doc.stampList = new List<Stamp>();  //каждый документ ссыылается на цепочку сигнатор-Штамп
                 }
-                initializedTOC = true;
+                doc.stampList.Add(new Stamp(rw.Range["J1:M1"]));
             }
-            //                WrTOC(TOC);    /* WrTOC - метод, записывающий данные из приложения в лист TOCmatch - напишем позже */             }
-
-            stampList = new List<Stamp>();  //каждый документ ссыылается на цепочку сигнатор-Штамп
-
-            /* находим Документ name в ТОС проверяя его сигнатуры то есть Штамп */
-
- //         Document doc = getDoc(nameIn);
-            // не дописано
-        }
-
-        public static Document getDoc(string name)
-        {
-            return (Documents.ContainsKey(name)) ? Documents[name] : new Document(name);
+            if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
+            {
+                Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
+                // переустановка match -- будем делать потом
+            }
         }
 
         public static Document loadDoc(string name, Excel.Workbook wb)
@@ -110,9 +101,10 @@ namespace ExcelAddIn2
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
 
         public static string recognizeDoc(Excel.Workbook wb) {
-            Document emp = new Document("");
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
             Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet)];
+
+
 
             foreach (var doc in Documents)
             {
@@ -130,7 +122,16 @@ namespace ExcelAddIn2
 
         private static Excel.Workbook fileOpen(string name) {
             Excel.Application app = new Excel.Application();
+            app.Visible = true;
             //            Microsoft.Office.Interop.Excel.Workbook wb;
+            foreach (Excel.Workbook W in app.Workbooks)
+            {
+                if (W.Name == name)
+                {
+                    if (W.ActiveSheet.IsNullOrEmpty()) continue;
+                    return W;
+                }
+            }
             Excel.Workbook wb;
             try {
                 wb = app.Workbooks.Open(dirDBs + name);
@@ -144,22 +145,26 @@ namespace ExcelAddIn2
 
         protected class Stamp {
             public string signature; // проверяемый текст Штампа - сигнатура
-            protected char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
+            private char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
 
             // альтернативная позиция Штампа, если есть, сохраняется во второй компоненте массива
-            public List<int[]> stampPosition;      // позиция сигнатуры в проверяемом Документе
+            public List<int[]> stampPosition = new List<int[]>();      // позиция сигнатуры в проверяемом Документе
 
             public Stamp(Excel.Range rng)
             {
                 signature = rng.Cells[1, 1].value;                          // {[1, "1, 6"]} --> [1,1] или [1,6]
-                typeStamp = rng.Cells[1, 2].value;
-                List<int> rw = Lib.ToIntList(rng.Cells[1, 3].value, ',');
-                List<int> col = Lib.ToIntList(rng.Cells[1, 4].value, ',');
+                string str = rng.Cells[1, 2].value;
+                typeStamp = str[0];
+                List<int> rw = Lib.ToIntList(rng.Cells[1, 3].value.ToString(), ',');
+                List<int> col = Lib.ToIntList(rng.Cells[1, 4].value.ToString(), ',');
 
-                for (int j = col.Count + 1; j <= rw.Count; j++) col.Add(rw[j]);
-                for (int j = rw.Count + 1; j <= col.Count; j++) rw.Add(col[j]);
-                for (int j = rw.Count + 1; j <= col.Count; j++) {
-                    int[] x = {rw[j],col[j]};
+                // привести массивы rw и col к наибольшей длине  
+                for (int i = col.Count; i < rw.Count; i++) col.Add(rw[i]);
+                for (int i = rw.Count; i < col.Count; i++) rw.Add(col[i]);
+
+                // перенести результат в коллекцию пар stampPosition
+                for (int i = 0; i < col.Count; i++) {
+                    int[] x = {rw[i],col[i]};
                     stampPosition.Add(x);        
                 }
            }
