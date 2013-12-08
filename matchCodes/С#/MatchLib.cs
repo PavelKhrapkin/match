@@ -52,6 +52,12 @@ namespace match
             }
             return ints;
         }
-        
+        /*
+         * Log & Dump System
+         */
+        public void DumpDocuments()
+        {
+ //           for ()
+        }
     }
 }
