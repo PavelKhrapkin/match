@@ -10,8 +10,18 @@ namespace ExcelAddIn2
 {
     class Beginning
     {
-        public void test(Excel.Workbook Wb) {
-            Document newDoc = Document.loadDoc(Wb);
+        public void ActiveStart()
+        {
+            Box.Show("ActiveStart");
+            //            Excel.Application app = new Excel.Application();
+            //            Document contracts = new Document("Платежи");
+        }
+        
+        public void test(Excel.Workbook Wb)
+        {
+            string name = Document.recognizeDoc(Wb);
+            if (name == null) { return; }
+            Document newDoc = Document.loadDoc(name, Wb);
 //            Document contracts = new Document("Договоры");
             System.Windows.Forms.MessageBox.Show("Opening WB='"+Wb.Name+"' лист[1]='"+
                 Wb.Sheets[1].Name+"'  строк="+ Lib.EOL(Wb.Sheets[1]));
@@ -19,11 +29,5 @@ namespace ExcelAddIn2
   //              Wb.Sheets["Договоры"].Name + "'  строк=" + Lib.EOL(Wb.Sheets["Договоры"]));
             ActiveStart();
         }
-        public void ActiveStart() {
-            Box.Show("ActiveStart");
-//            Excel.Application app = new Excel.Application();
-//            Document contracts = new Document("Платежи");
-        }
-
-    }
+     }
 }
