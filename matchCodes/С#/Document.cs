@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  9.12.2013  П.Храпкин, А.Пасс
+ *  10.12.2013  П.Храпкин, А.Пасс
  *  
- * - 9.12.13 переписано с VBA TOCmatch на С#
+ * - 10.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
@@ -38,7 +38,7 @@ namespace ExcelAddIn2
         private DateTime MadeTime;
         private ulong chkSum;
         private int EOLinTOC;
-        private List<Stamp> stampList;
+        private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
         public Excel.Range Body;
         public Excel.Range Summary;
 
@@ -79,15 +79,14 @@ namespace ExcelAddIn2
                     //                    Period    = rw.Range["G1"].Value2;
                     doc.FileName = rw.Range["H1"].Value2;
                     doc.SheetN = rw.Range["I1"].Value2;
-                    Documents.Add(docName,doc);
-                    doc.stampList = new List<Stamp>();  //каждый документ ссыылается на цепочку сигнатор-Штамп
-                }
-                Excel.Range rwStamp = rw.Range["J1:M1"];
-                if (rwStamp.Cells[1, 2].value.ToString()[0] != 'N') // тип Штампа 'N' - проверка Штампа не нужна
-                {
-                    doc.stampList.Add(new Stamp(rwStamp));
-                }
+                    Documents.Add(docName, doc);
 
+                    // построить Range, включающий все штампы документа
+                    int j;
+                    for (j = i + 1; j <= tocRng.Rows.Count
+                            && (String.IsNullOrEmpty(tocRng.Range["B" + j].Value2)); j++) ;
+                    doc.stamp = new Stamp(tocRng.Range["J" + i + ":M" + --j]);
+                }
             }
             if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
             {
@@ -100,7 +99,6 @@ namespace ExcelAddIn2
         {
             // загрузка в match нового документа
             // 27.11.13 -- еще не дописано
-
 //            bool found = false;
             for (int i = 1; i <= Documents.Count; i++)
             {
@@ -130,7 +128,7 @@ namespace ExcelAddIn2
                 return null;
             }
     // ДОПИСАТЬ!! Но вначале надо отладить recognizeDoc. При этом скорее всего внутреннюю часть цикла
-    // проверки Штампов для Документа надо будет перенести в метод checkStamp
+    // проверки Штампов для Документа надо будет перенести в метод checkStampdocFailed
         }
 
         private bool checkStamp(Excel.Range rng, List<Stamp> list)
@@ -146,21 +144,36 @@ namespace ExcelAddIn2
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
 
         public static string recognizeDoc(Excel.Workbook wb) {
+
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
             Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet)];
 
+            // ищем подходящий документ в TOCmatch
             foreach (var doc in Documents)
             {
-                foreach (Stamp stmp in doc.Value.stampList)
-                {
-                    foreach (int[] pos in stmp.stampPosition)
-                    {
-                        if (rng.Cells[pos[0], pos[1]].Value2 != stmp.signature) break;
+                // у F_SFDC штамп находится в конце документа
+                int shiftToEol = (doc.Value.FileName == F_SFDC) ? rng.Count - 4 : 0;
+
+                // цикл по штампам документа (сигнатурам) - все должны удовлетвориться
+                bool allStampsOK = true;
+                foreach (var stmp in doc.Value.stamp.stamps) {
+                    // цикл по позициям для сигнатуры - хотя бы одна должна удовлетвориться
+                    bool signOK = false;
+                    foreach (var pos in stmp.stampPosition) {
+                        // В ЭТОМ МЕСТЕ НЕ РАЗОБРАЛСЯ С ДОСТУПОМ К Cells
+                        if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature) {
+                            signOK = true;
+                            break;
+                        }
+                    }   // конец цикла по позициям
+                    if (!signOK) {
+                        allStampsOK = false;
+                        break;      // прерываем цикл по сигнатурам; к следующему документу
                     }
-                    return doc.Value.name;
-                }
-            }
-            return null;
+                }   // конец цикла по сигнатурам
+                if (allStampsOK) return doc.Value.name;
+            }       // конец цикла по документам
+            return null;        // ничего не нашли
         }
 
         private static Excel.Workbook fileOpen(string name) {
@@ -184,30 +197,64 @@ namespace ExcelAddIn2
                 return null;
             }
         }
+/*
+ * Класс, описывающий все штампы документа 
+ */
+        private class Stamp
+        {
+            public List<OneStamp> stamps = new List<OneStamp>();
+            /*
+             * Конструктор. 
+             *  rng - range, включающий колонки с J по М для всех строк, описывающих документ.
+             */
+            public Stamp(Excel.Range rng)
+            {       // цикл
+                if ((char)rng.Range["B1"].Value2[0] != 'N')
+                {
+                    for (int i = 1; i <= rng.Rows.Count; i++) stamps.Add(new OneStamp(rng.Rows[i]));
+                }
+            }
+        }
 
-        protected class Stamp {
+    //           struct oneStamp {
+    //               string signature
+/*
+* Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
+*/
+        public class OneStamp
+        {
             public string signature;  // проверяемый текст Штампа - сигнатура
             private char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
             public List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
-
-            public Stamp(Excel.Range rng)
+            /*
+            * Конструктор
+            *  rng - range, включающий одну строку штампа (т.е. сигнатуру)
+            *  
+            * примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
+            *  .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
+            */
+            public OneStamp(Excel.Range rng)
             {
-                signature = rng.Cells[1, 1].value;  // примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
-                string str = rng.Cells[1, 2].value; // .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
-                typeStamp = str[0];
+                signature = rng.Range["A1"].Value2; 
+                typeStamp = rng.Range["B1"].Value2[0];
 
-                List<int> rw = Lib.ToIntList(rng.Cells[1, 3].value.ToString(), ',');
-                List<int> col = Lib.ToIntList(rng.Cells[1, 4].value.ToString(), ',');
-
-                for (int i = 0; i < rw.Count; i++)
-                {
-                    for (int j = 0; j < col.Count; j++)
-                    {
-                        int[] x = { rw[i], col[j] };
-                        stampPosition.Add(x);
-                    }
-                }
+                List<int> rw = intListFrCell("C1", rng);
+                List<int> col = intListFrCell("D1", rng);
+                // декартово произведение множеств rw и col
+                rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
+                /*
+                                for (int i = 0; i < rw.Count; i++)
+                                {
+                                    for (int j = 0; j < col.Count; j++) stampPosition.Add(new int[] { rw[i], col[j] });
+                                }
+                 */
             }
-        }    // конец класса Stamp      
+
+            private List<int> intListFrCell(string coord, Excel.Range rng)
+            {
+                return Lib.ToIntList(rng.Range[coord].Value2.ToString(), ',');
+            }
+
+        }   // конец класса OneStamp
     }    // конец класса Document
 }
