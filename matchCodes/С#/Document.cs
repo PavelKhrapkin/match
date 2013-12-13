@@ -1,7 +1,7 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  10.12.2013  П.Храпкин, А.Пасс
+ *  14.12.2013  П.Храпкин, А.Пасс
  *  
  * - 10.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
@@ -39,6 +39,10 @@ namespace ExcelAddIn2
         private ulong chkSum;
         private int EOLinTOC;
         private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
+        private DateTime creationDate;  // дата создания Документа
+        private string Loader;
+        private string BodyPtrn;
+        private string SummPtrn;
         public Excel.Range Body;
         public Excel.Range Summary;
 
@@ -86,6 +90,12 @@ namespace ExcelAddIn2
                     for (j = i + 1; j <= tocRng.Rows.Count
                             && (String.IsNullOrEmpty(tocRng.Range["B" + j].Value2)); j++) ;
                     doc.stamp = new Stamp(tocRng.Range["J" + i + ":M" + --j]);
+
+                    doc.creationDate = DateTime.FromOADate(rw.Range["N1"].Value2);
+
+                    doc.BodyPtrn = rw.Range["P1"].Value2;
+                    doc.SummPtrn = rw.Range["Q1"].Value2;
+                    doc.Loader = rw.Range["T1"].Value2;
                 }
             }
             if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
@@ -99,12 +109,16 @@ namespace ExcelAddIn2
         {
             // загрузка в match нового документа
             // 27.11.13 -- еще не дописано
-//            bool found = false;
-            for (int i = 1; i <= Documents.Count; i++)
+
+            Document doc = Documents[name];
+            if (!doc.isOpen)
             {
-                //                if (CheckStamp(Documents[i].Stamp)) {
+                Excel.Worksheet Sh = fileOpen(doc.FileName).Worksheets[doc.SheetN];
+// дальше распознавание частичное или полное одновление старого файла
+// потом из wb переносим данные в старый файл
+// а в конце запускаем Loader 
             }
-            return Documents[name];
+            return doc;
         }
 
         public Document getDoc(string name)
@@ -146,13 +160,14 @@ namespace ExcelAddIn2
         public static string recognizeDoc(Excel.Workbook wb) {
 
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
-            Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet)];
+            int ee = Lib.EOL(wholeSheet);
+            Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet).ToString()];
 
             // ищем подходящий документ в TOCmatch
             foreach (var doc in Documents)
             {
                 // у F_SFDC штамп находится в конце документа
-                int shiftToEol = (doc.Value.FileName == F_SFDC) ? rng.Count - 4 : 0;
+                int shiftToEol = (doc.Value.FileName == F_SFDC) ? rng.Rows.Count - 4 : 0;
 
                 // цикл по штампам документа (сигнатурам) - все должны удовлетвориться
                 bool allStampsOK = true;
@@ -242,12 +257,6 @@ namespace ExcelAddIn2
                 List<int> col = intListFrCell("D1", rng);
                 // декартово произведение множеств rw и col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
-                /*
-                                for (int i = 0; i < rw.Count; i++)
-                                {
-                                    for (int j = 0; j < col.Count; j++) stampPosition.Add(new int[] { rw[i], col[j] });
-                                }
-                 */
             }
 
             private List<int> intListFrCell(string coord, Excel.Range rng)
