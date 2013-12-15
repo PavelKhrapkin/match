@@ -1,16 +1,16 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  14.12.2013  П.Храпкин, А.Пасс
+ *  15.12.2013  П.Храпкин, А.Пасс
  *  
- * - 10.12.13 переписано с VBA TOCmatch на С#
+ * - 15.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
  * isDocOpen(name)      - проверяет, что Документ name открыт
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
- * checkStamp(rng,stampList)       - проверка Штампов stampList в Range rng
+ * Check(rng,stampList)       - проверка Штампов stampList в Range rng
  * 
  * внутренний класс Stamp предназначен для заполнения списков Штампов
  * каждый Штамп содержит сигнатуру, то есть проверяемый текст, и пар координат - его положений
@@ -41,6 +41,7 @@ namespace ExcelAddIn2
         private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
         private DateTime creationDate;  // дата создания Документа
         private string Loader;
+        private bool isPartialLoadAllowed;
         private string BodyPtrn;
         private string SummPtrn;
         public Excel.Range Body;
@@ -96,6 +97,16 @@ namespace ExcelAddIn2
                     doc.BodyPtrn = rw.Range["P1"].Value2;
                     doc.SummPtrn = rw.Range["Q1"].Value2;
                     doc.Loader = rw.Range["T1"].Value2;
+
+                    // флаг, разрешающий частичное обновление Документа пока прописан хардкодом
+                    switch (docName)
+                    {
+                        case "Платежи":
+                        case "Договоры": doc.isPartialLoadAllowed = true;
+                            break;
+                        default: doc.isPartialLoadAllowed = false;
+                            break;
+                    }
                 }
             }
             if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
@@ -104,24 +115,40 @@ namespace ExcelAddIn2
                 // переустановка match -- будем делать потом
             }
         }
-
+/// <summary>
+/// loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
+/// </summary>
+/// <param name="name"></param>
+/// <param name="wb"></param>
+/// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
+/// </remarks>
+/// <journal> Не дописано
+/// 15.12.2013 - взаимодействие с getDoc(name)
+/// </journal>
         public static Document loadDoc(string name, Excel.Workbook wb)
         {
-            // загрузка в match нового документа
-            // 27.11.13 -- еще не дописано
-
-            Document doc = Documents[name];
-            if (!doc.isOpen)
+            Document doc = getDoc(name);
+            Excel.Worksheet Sh = fileOpen(doc.FileName).Worksheets[doc.SheetN];
+            if (doc.isPartialLoadAllowed)
             {
-                Excel.Worksheet Sh = fileOpen(doc.FileName).Worksheets[doc.SheetN];
-// дальше распознавание частичное или полное одновление старого файла
-// потом из wb переносим данные в старый файл
-// а в конце запускаем Loader 
+// дальше распознавание частичное или полное обновление прежнего Документа
+// здесь только если частичное, то есть потом будет выполняться Merge
             }
+            wb.Worksheets[1].Name = "TMP";
+            wb.Worksheets[1].Move(After: Sh);
+// потом из wb переносим данные в старый файл
+// а в конце запускаем Loader
             return doc;
         }
-
-        public Document getDoc(string name)
+/// <summary>
+/// getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
+/// </summary>
+/// <param name="name">имя извлекаемого документа</param>
+/// <returns>Document</returns>
+/// <journal> Не дописано
+/// 15.12.2013 - чтение из файла, формирование Range Body и Summary
+/// </journal>
+        public static Document getDoc(string name)
         {
             try
             {
@@ -129,40 +156,43 @@ namespace ExcelAddIn2
                 if (!doc.isOpen)
                 {
                     // загрузка Документа из файла
-                }
-                Excel.Range rng = (doc.FileName == F_SFDC) ? doc.Summary : doc.Body;
-//!!!!!                if (!checkStamp(rng, doc.stampList))
-                {
-                    // фатальная ошибка
+                    // надо проверить Штампы открытого документа в Sh, его EOL,
+                    // определить его Range Body и Summary                }
+                    //!!!!!                if (!Check(rng, doc.stampList))
+// это неправильно!!                    Excel.Range rng = (doc.FileName == F_SFDC) ? doc.Summary : doc.Body;
                 }
                 return doc;
             }
             catch
             {
+                // надо проверить, что Document name не существует
+                // в случае, если существует, но не удалось прочитать - создать событие FATAL_ERR
                 return null;
             }
-    // ДОПИСАТЬ!! Но вначале надо отладить recognizeDoc. При этом скорее всего внутреннюю часть цикла
-    // проверки Штампов для Документа надо будет перенести в метод checkStampdocFailed
         }
-
-        private bool checkStamp(Excel.Range rng, List<Stamp> list)
-        {
-            throw new NotImplementedException();
-        }
-
-        private bool checkStamp(Excel.Range rng, Document stampList)
-        {
-            return false;
-        }
- 
+/// <summary>
+/// isDocOpen(name)     - проверяет, что Документ name открыт и доступен
+/// </summary>
+/// <param name="name"></param>
+/// <returns></returns>
+/// <juornal> 10.12.2013
+/// </juornal> 
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
-
+/// <summary>
+/// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
+/// </summary>
+/// <param name="wb"></param>
+/// <returns>имя распознанного документа или null, если Документ не распознан</returns>
+/// <journal> 14.12.2013
+/// 16.12.13 (ПХ) переписано распознавание с учетом if( isSF(wb) )
+/// </journal>
         public static string recognizeDoc(Excel.Workbook wb) {
 
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
-            int ee = Lib.EOL(wholeSheet);
             Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet).ToString()];
 
+            Stamp stmpSF = Documents["SFDC"].stamp;
+            bool is_wbSF = Stamp.Check(rng, stmpSF, true);
             // ищем подходящий документ в TOCmatch
             foreach (var doc in Documents)
             {
@@ -229,6 +259,47 @@ namespace ExcelAddIn2
                     for (int i = 1; i <= rng.Rows.Count; i++) stamps.Add(new OneStamp(rng.Rows[i]));
                 }
             }
+            /// <summary>
+            /// Check(rng, stmp)        - проверка, что Range rng соответствует цепочке Штампов в stmp
+            /// </summary>
+            /// <param name="rng">Range rng - проверяемый Документ</param>
+            /// <param name="stmp">Stamp stmp   - цепочка Штампов, соответствуюших данному Документу</param>
+            /// <returns>true, если результат проверки положительный, иначе false</returns>
+            /// <journal> 12.12.13
+            /// 16.12.13 (ПХ) перенес в класс Stamp и переписал
+            /// </journal>
+            public static bool Check(Excel.Range rng, Stamp stmp, bool atBottom)
+            {
+                foreach (OneStamp st in stmp.stamps)
+                {
+                    return OneStamp.Check(rng, st, atBottom);
+
+                    //// цикл по позициям для сигнатуры - хотя бы одна должна удовлетвориться
+                    //bool signOK = false;
+                    //foreach (var pos in stmp.stampPosition)
+                    //{
+                    //    // В ЭТОМ МЕСТЕ НЕ РАЗОБРАЛСЯ С ДОСТУПОМ К Cells
+                    //    if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature)
+                    //    {
+                    //        signOK = true;
+                    //        break;
+                    //    }
+                    //}   // конец цикла по позициям
+                    //if (!signOK)
+                    //{
+                    //    allStampsOK = false;
+                    //    break;      // прерываем цикл по сигнатурам; к следующему документу
+                    //}
+
+
+                }
+                return false;
+            }
+
+            //private bool Check(Excel.Range rng, Document stampList)
+            //{
+//                throw new NotImplementedException();            //    return false;
+            //}
         }
 
     //           struct oneStamp {
@@ -257,6 +328,22 @@ namespace ExcelAddIn2
                 List<int> col = intListFrCell("D1", rng);
                 // декартово произведение множеств rw и col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
+            }
+/// <summary>
+/// Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
+/// </summary>
+/// <param name="rng"></param>
+/// <param name="stmp"></param>
+/// <returns></returns>
+            public static bool Check(Excel.Range rng, OneStamp stmp, bool atBottom)
+            {
+                int shiftToEol = (atBottom) ? rng.Rows.Count - 4 : 0;
+                foreach (var pos in stmp.stampPosition)
+                {
+                    if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature)
+                        return true;
+                }
+                return false;
             }
 
             private List<int> intListFrCell(string coord, Excel.Range rng)
