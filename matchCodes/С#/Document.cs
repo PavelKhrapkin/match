@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  16.12.2013  П.Храпкин, А.Пасс
+ *  17.12.2013  П.Храпкин, А.Пасс
  *  
- * - 16.12.13 переписано с VBA TOCmatch на С#
+ * - 17.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
@@ -50,17 +50,35 @@ namespace ExcelAddIn2
         public Excel.Range Body;
         public Excel.Range Summary;
 
-        public const string F_MATCH = "match.xlsm";
         private const string TOC = "TOCmatch";
         private const int TOC_DIRDBS_COL = 10;  //в первой строке в колонке TOC_DIRDBS_COL записан путь к dirDBs
         private const int TOC_LINE = 4;         //строка номер TOL_LINE таблицы ТОС отностися к самому этому документу.
         private const string dirDBs = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //временно!!!
 
-        private const string F_1C = "1C.xlsx";
-        private const string F_SFDC = "SFDC.xlsx";
-        private const string F_ADSK = "ADSK.xlsm";
-        private const string F_STOCK = "Stock.xlsx";
-        private const string F_TMP = "W_TMP.xlsm";
+        /// <summary>
+        /// F_MATCH = "match.xlsm" - имя файла таблиц приложения match
+        /// </summary>
+        public const string F_MATCH = "match.xlsm";
+        /// <summary>
+        /// F_1C = "1C.xlsx"    - файл отчетов 1C: Платежей, Договоров, Списка клиентов
+        /// </summary>
+        public const string F_1C = "1C.xlsx";
+        /// <summary>
+        /// F_SFDC = "SFDC.xlsx"    - файл отчетов Salesforce.com
+        /// </summary>
+        public const string F_SFDC = "SFDC.xlsx";
+        /// <summary>
+        /// F_ADSK = "ADSK.xlsm"    - файл отчетов Autodesk
+        /// </summary>
+        public const string F_ADSK = "ADSK.xlsm";
+        /// <summary>
+        /// F_STOCK = "Stock.xlsx"  - файл отчетов по Складу и Провозка Заказов
+        /// </summary>
+        public const string F_STOCK = "Stock.xlsx";
+        /// <summary>
+        /// временный файл для промежуточных результатов
+        /// </summary>
+        public const string F_TMP = "W_TMP.xlsm";
 
         static Document()
         {
@@ -125,7 +143,6 @@ namespace ExcelAddIn2
         /// <param name="name"></param>
         /// <param name="wb"></param>
         /// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
-        /// </remarks>
         /// <journal> Не дописано
         /// 15.12.2013 - взаимодействие с getDoc(name)
         /// </journal>
@@ -139,19 +156,20 @@ namespace ExcelAddIn2
 // здесь только если частичное, то есть потом будет выполняться Merge
             }
             wb.Worksheets[1].Name = "TMP";
-            wb.Worksheets[1].Move(After: Sh);
+//            wb.Worksheets[1].Move(1);
+            wb.Worksheets[1].Move(Type.Missing, Sh);
 // потом из wb переносим данные в старый файл
 // а в конце запускаем Loader
             return doc;
         }
-/// <summary>
-/// getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
-/// </summary>
-/// <param name="name">имя извлекаемого документа</param>
-/// <returns>Document</returns>
-/// <journal> Не дописано
-/// 15.12.2013 - чтение из файла, формирование Range Body и Summary
-/// </journal>
+        /// <summary>
+        /// getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
+        /// </summary>
+        /// <param name="name">имя извлекаемого документа</param>
+        /// <returns>Document</returns>
+        /// <journal> Не дописано
+        /// 15.12.2013 - чтение из файла, формирование Range Body и Summary
+        /// </journal>
         public static Document getDoc(string name)
         {
             try
@@ -191,7 +209,6 @@ namespace ExcelAddIn2
         /// 16.12.13 (ПХ) переписано распознавание с учетом if( isSF(wb) )
         /// </journal>
         public static string recognizeDoc(Excel.Workbook wb) {
-
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
             Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet).ToString()];
 
@@ -200,27 +217,9 @@ namespace ExcelAddIn2
             // ищем подходящий документ в TOCmatch
             foreach (var doc in Documents)
             {
-                // у F_SFDC штамп находится в конце документа
-                int shiftToEol = (doc.Value.FileName == F_SFDC) ? rng.Rows.Count - 4 : 0;
-
-                // цикл по штампам документа (сигнатурам) - все должны удовлетвориться
-                bool allStampsOK = true;
-                foreach (var stmp in doc.Value.stamp.stamps) {
-                    // цикл по позициям для сигнатуры - хотя бы одна должна удовлетвориться
-                    bool signOK = false;
-                    foreach (var pos in stmp.stampPosition) {
-                        // В ЭТОМ МЕСТЕ НЕ РАЗОБРАЛСЯ С ДОСТУПОМ К Cells
-                        if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature) {
-                            signOK = true;
-                            break;
-                        }
-                    }   // конец цикла по позициям
-                    if (!signOK) {
-                        allStampsOK = false;
-                        break;      // прерываем цикл по сигнатурам; к следующему документу
-                    }
-                }   // конец цикла по сигнатурам
-                if (allStampsOK) return doc.Value.name;
+                if (is_wbSF && (doc.Value.FileName != F_SFDC)) continue;
+                if (doc.Value.name == "SFDC" || doc.Value.name == "Process") continue;
+                if (Stamp.Check(rng, doc.Value.stamp)) return doc.Value.name;
             }       // конец цикла по документам
             return null;        // ничего не нашли
         }
@@ -276,35 +275,9 @@ namespace ExcelAddIn2
             public static bool Check(Excel.Range rng, Stamp stmp)
             {
                 foreach (OneStamp st in stmp.stamps)
-                {
-                    return OneStamp.Check(rng, st);
-
-                    //// цикл по позициям для сигнатуры - хотя бы одна должна удовлетвориться
-                    //bool signOK = false;
-                    //foreach (var pos in stmp.stampPosition)
-                    //{
-                    //    // В ЭТОМ МЕСТЕ НЕ РАЗОБРАЛСЯ С ДОСТУПОМ К Cells
-                    //    if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature)
-                    //    {
-                    //        signOK = true;
-                    //        break;
-                    //    }
-                    //}   // конец цикла по позициям
-                    //if (!signOK)
-                    //{
-                    //    allStampsOK = false;
-                    //    break;      // прерываем цикл по сигнатурам; к следующему документу
-                    //}
-
-
-                }
-                return false;
+                    if (!OneStamp.Check(rng, st)) return false;
+                return true;
             }
-
-            //private bool Check(Excel.Range rng, Document stampList)
-            //{
-//                throw new NotImplementedException();            //    return false;
-            //}
         }
 
         /// <summary>
@@ -312,9 +285,9 @@ namespace ExcelAddIn2
         /// </summary>
         public class OneStamp
         {
-            public string signature;  // проверяемый текст Штампа - сигнатура
+            private string signature;  // проверяемый текст Штампа - сигнатура
             private char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
-            public List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
+            private List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
             private bool _isSF;
  
             /// <summary>
@@ -340,18 +313,31 @@ namespace ExcelAddIn2
                 // декартово произведение множеств rw и col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
             }
-/// <summary>
-/// Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
-/// </summary>
-/// <param name="rng"></param>
-/// <param name="stmp"></param>
-/// <returns></returns>
+            /// <summary>
+            /// Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
+            /// </summary>
+            /// <param name="rng"></param>
+            /// <param name="stmp"></param>
+            /// <returns></returns>
             public static bool Check(Excel.Range rng, OneStamp stmp)
             {
-                int shiftToEol = (stmp._isSF) ? rng.Rows.Count - 4 : 0;
+                int shiftToEol = (stmp._isSF) ? rng.Rows.Count - 6 : 0;
+                string sig = stmp.signature.ToLower();
                 foreach (var pos in stmp.stampPosition)
-                    if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature)
-                        return true;
+                {
+                    var x = rng.Cells[pos[0] + shiftToEol, pos[1]].Value2;
+                    if (x == null) continue;
+                    string strToCheck = x.ToLower();
+
+                    if (stmp.typeStamp == '=')
+                    {
+                        if (strToCheck == sig) return true;
+                    }
+                    else
+                    {
+                        if (strToCheck.Contains(sig)) return true;
+                    }
+                }
                 return false;
             }
 
