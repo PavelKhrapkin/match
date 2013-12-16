@@ -14,8 +14,8 @@ namespace ExcelAddIn2
         private Beginning check;
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-//            System.Windows.Forms.MessageBox.Show("Hello");
-//            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
+            //            System.Windows.Forms.MessageBox.Show("Hello");
+            //            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
             check = new Beginning();
             this.Application.WorkbookOpen += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookOpenEventHandler(Application_myOpenEvent);
 
@@ -39,22 +39,31 @@ namespace ExcelAddIn2
 
         void Application_WorkbookBeforeSave(Microsoft.Office.Interop.Excel.Workbook Wb, bool SaveAsUI, ref bool Cancel)
         {
- /*           Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
-            Excel.Range firstRow = activeWorksheet.get_Range("A1");
-            firstRow.EntireRow.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
-            Excel.Range newFirstRow = activeWorksheet.get_Range("A1");
-            newFirstRow.Value2 = "This text was added by using code";
-  */
+            /*           Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
+                       Excel.Range firstRow = activeWorksheet.get_Range("A1");
+                       firstRow.EntireRow.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
+                       Excel.Range newFirstRow = activeWorksheet.get_Range("A1");
+                       newFirstRow.Value2 = "This text was added by using code";
+             */
             System.Windows.Forms.MessageBox.Show("Helolo 3");
         }
 
         void Application_myOpenEvent(Microsoft.Office.Interop.Excel.Workbook Wb)
         {
-            if (Wb.Name == Document.F_MATCH) return;
-//            System.Windows.Forms.MessageBox.Show(Wb.Name);
-            try {
+            if (Wb.Name == Document.F_MATCH
+                || Wb.Name == Document.F_1C
+                || Wb.Name == Document.F_SFDC
+                || Wb.Name == Document.F_TMP
+                || Wb.Name == Document.F_ADSK
+                || Wb.Name == Document.F_STOCK
+                ) return;
+            //            System.Windows.Forms.MessageBox.Show(Wb.Name);
+            try
+            {
                 check.test(Wb);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 System.Windows.Forms.MessageBox.Show("Îøèáêà> " + ex.Message);
             }
         }
