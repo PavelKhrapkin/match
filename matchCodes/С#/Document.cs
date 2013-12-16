@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  15.12.2013  П.Храпкин, А.Пасс
+ *  16.12.2013  П.Храпкин, А.Пасс
  *  
- * - 15.12.13 переписано с VBA TOCmatch на С#
+ * - 16.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
@@ -26,6 +26,9 @@ using Lib = match.MatchLib;
 
 namespace ExcelAddIn2
 {
+    /// <summary>
+    /// класс Document содержит таблицу параметров всех Документов, известных приложению match
+    /// </summary>
     public class Document
     {
         private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
@@ -90,7 +93,8 @@ namespace ExcelAddIn2
                     int j;
                     for (j = i + 1; j <= tocRng.Rows.Count
                             && (String.IsNullOrEmpty(tocRng.Range["B" + j].Value2)); j++) ;
-                    doc.stamp = new Stamp(tocRng.Range["J" + i + ":M" + --j]);
+                    bool isSF = doc.FileName == F_SFDC;
+                    doc.stamp = new Stamp(tocRng.Range["J" + i + ":M" + --j], isSF);
 
                     doc.creationDate = DateTime.FromOADate(rw.Range["N1"].Value2);
 
@@ -115,16 +119,16 @@ namespace ExcelAddIn2
                 // переустановка match -- будем делать потом
             }
         }
-/// <summary>
-/// loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
-/// </summary>
-/// <param name="name"></param>
-/// <param name="wb"></param>
-/// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
-/// </remarks>
-/// <journal> Не дописано
-/// 15.12.2013 - взаимодействие с getDoc(name)
-/// </journal>
+        /// <summary>
+        /// loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="wb"></param>
+        /// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
+        /// </remarks>
+        /// <journal> Не дописано
+        /// 15.12.2013 - взаимодействие с getDoc(name)
+        /// </journal>
         public static Document loadDoc(string name, Excel.Workbook wb)
         {
             Document doc = getDoc(name);
@@ -170,29 +174,29 @@ namespace ExcelAddIn2
                 return null;
             }
         }
-/// <summary>
-/// isDocOpen(name)     - проверяет, что Документ name открыт и доступен
-/// </summary>
-/// <param name="name"></param>
-/// <returns></returns>
-/// <juornal> 10.12.2013
-/// </juornal> 
+        /// <summary>
+        /// isDocOpen(name)     - проверяет, что Документ name открыт и доступен
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <juornal> 10.12.2013
+        /// </juornal> 
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
-/// <summary>
-/// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
-/// </summary>
-/// <param name="wb"></param>
-/// <returns>имя распознанного документа или null, если Документ не распознан</returns>
-/// <journal> 14.12.2013
-/// 16.12.13 (ПХ) переписано распознавание с учетом if( isSF(wb) )
-/// </journal>
+        /// <summary>
+        /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
+        /// </summary>
+        /// <param name="wb"></param>
+        /// <returns>имя распознанного документа или null, если Документ не распознан</returns>
+        /// <journal> 14.12.2013
+        /// 16.12.13 (ПХ) переписано распознавание с учетом if( isSF(wb) )
+        /// </journal>
         public static string recognizeDoc(Excel.Workbook wb) {
 
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
             Excel.Range rng = wholeSheet.Range["1:" + Lib.EOL(wholeSheet).ToString()];
 
             Stamp stmpSF = Documents["SFDC"].stamp;
-            bool is_wbSF = Stamp.Check(rng, stmpSF, true);
+            bool is_wbSF = Stamp.Check(rng, stmpSF);
             // ищем подходящий документ в TOCmatch
             foreach (var doc in Documents)
             {
@@ -242,9 +246,10 @@ namespace ExcelAddIn2
                 return null;
             }
         }
-/*
- * Класс, описывающий все штампы документа 
- */
+
+        /// <summary>
+        /// Класс Stamp, описывающий все штампы документа
+        /// </summary>    
         private class Stamp
         {
             public List<OneStamp> stamps = new List<OneStamp>();
@@ -252,11 +257,11 @@ namespace ExcelAddIn2
              * Конструктор. 
              *  rng - range, включающий колонки с J по М для всех строк, описывающих документ.
              */
-            public Stamp(Excel.Range rng)
+            public Stamp(Excel.Range rng, bool isSF)
             {       // цикл
                 if ((char)rng.Range["B1"].Value2[0] != 'N')
                 {
-                    for (int i = 1; i <= rng.Rows.Count; i++) stamps.Add(new OneStamp(rng.Rows[i]));
+                    for (int i = 1; i <= rng.Rows.Count; i++) stamps.Add(new OneStamp(rng.Rows[i], isSF));
                 }
             }
             /// <summary>
@@ -268,11 +273,11 @@ namespace ExcelAddIn2
             /// <journal> 12.12.13
             /// 16.12.13 (ПХ) перенес в класс Stamp и переписал
             /// </journal>
-            public static bool Check(Excel.Range rng, Stamp stmp, bool atBottom)
+            public static bool Check(Excel.Range rng, Stamp stmp)
             {
                 foreach (OneStamp st in stmp.stamps)
                 {
-                    return OneStamp.Check(rng, st, atBottom);
+                    return OneStamp.Check(rng, st);
 
                     //// цикл по позициям для сигнатуры - хотя бы одна должна удовлетвориться
                     //bool signOK = false;
@@ -302,27 +307,33 @@ namespace ExcelAddIn2
             //}
         }
 
-    //           struct oneStamp {
-    //               string signature
-/*
-* Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
-*/
+        /// <summary>
+        /// Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
+        /// </summary>
         public class OneStamp
         {
             public string signature;  // проверяемый текст Штампа - сигнатура
             private char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
             public List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
-            /*
-            * Конструктор
-            *  rng - range, включающий одну строку штампа (т.е. сигнатуру)
-            *  
-            * примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
-            *  .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
-            */
-            public OneStamp(Excel.Range rng)
+            private bool _isSF;
+ 
+            /// <summary>
+            /// Конструктор OneStanp(rng, isSF)
+            /// </summary>
+            /// <param name="rng">rng - range, включающий одну строку штампа (т.е. сигнатуру)</param>
+            /// <param name="isSF">isSF</param>
+            /// <example>
+            /// примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
+            ///  .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
+            /// </example>
+            /// <journal> 12.12.2013 (AP)
+            /// 16.12.13 (ПХ) добавлен параметр isSF - добавляется в структуру Штампа
+            /// </journal>
+            public OneStamp(Excel.Range rng, bool isSF)
             {
                 signature = rng.Range["A1"].Value2; 
                 typeStamp = rng.Range["B1"].Value2[0];
+                _isSF = isSF;
 
                 List<int> rw = intListFrCell("C1", rng);
                 List<int> col = intListFrCell("D1", rng);
@@ -335,14 +346,12 @@ namespace ExcelAddIn2
 /// <param name="rng"></param>
 /// <param name="stmp"></param>
 /// <returns></returns>
-            public static bool Check(Excel.Range rng, OneStamp stmp, bool atBottom)
+            public static bool Check(Excel.Range rng, OneStamp stmp)
             {
-                int shiftToEol = (atBottom) ? rng.Rows.Count - 4 : 0;
+                int shiftToEol = (stmp._isSF) ? rng.Rows.Count - 4 : 0;
                 foreach (var pos in stmp.stampPosition)
-                {
                     if (rng.Cells[pos[0] + shiftToEol, pos[1]].Value2 == stmp.signature)
                         return true;
-                }
                 return false;
             }
 
