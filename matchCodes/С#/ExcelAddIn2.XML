@@ -1,0 +1,273 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ExcelAddIn2</name>
+    </assembly>
+    <members>
+        <member name="M:ExcelAddIn2.FileOpenEvent.newFile(Microsoft.Office.Interop.Excel.Workbook)">
+            <summary>
+            Open Workbook Event Handler
+            </summary>
+            <param name="Wb"></param>
+            <journal>   15.12.2013
+            </journal>
+        </member>
+        <member name="T:ExcelAddIn2.Document">
+            <summary>
+            класс Document содержит таблицу параметров всех Документов, известных приложению match
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_MATCH">
+            <summary>
+            F_MATCH = "match.xlsm" - имя файла таблиц приложения match
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_1C">
+            <summary>
+            F_1C = "1C.xlsx"    - файл отчетов 1C: Платежей, Договоров, Списка клиентов
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_SFDC">
+            <summary>
+            F_SFDC = "SFDC.xlsx"    - файл отчетов Salesforce.com
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_ADSK">
+            <summary>
+            F_ADSK = "ADSK.xlsm"    - файл отчетов Autodesk
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_STOCK">
+            <summary>
+            F_STOCK = "Stock.xlsx"  - файл отчетов по Складу и Провозка Заказов
+            </summary>
+        </member>
+        <member name="F:ExcelAddIn2.Document.F_TMP">
+            <summary>
+            временный файл для промежуточных результатов
+            </summary>
+        </member>
+        <member name="M:ExcelAddIn2.Document.loadDoc(System.String,Microsoft.Office.Interop.Excel.Workbook)">
+            <summary>
+            loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
+            </summary>
+            <param name="name"></param>
+            <param name="wb"></param>
+            <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
+            <journal> Не дописано
+            15.12.2013 - взаимодействие с getDoc(name)
+            </journal>
+        </member>
+        <member name="M:ExcelAddIn2.Document.getDoc(System.String)">
+            <summary>
+            getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
+            </summary>
+            <param name="name">имя извлекаемого документа</param>
+            <returns>Document</returns>
+            <journal> Не дописано
+            15.12.2013 - чтение из файла, формирование Range Body и Summary
+            </journal>
+        </member>
+        <member name="M:ExcelAddIn2.Document.isDocOpen(System.String)">
+            <summary>
+            isDocOpen(name)     - проверяет, что Документ name открыт и доступен
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+            <juornal> 10.12.2013
+            </juornal> 
+        </member>
+        <member name="M:ExcelAddIn2.Document.recognizeDoc(Microsoft.Office.Interop.Excel.Workbook)">
+            <summary>
+            recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
+            </summary>
+            <param name="wb"></param>
+            <returns>имя распознанного документа или null, если Документ не распознан</returns>
+            <journal> 14.12.2013
+            16.12.13 (ПХ) переписано распознавание с учетом if( is_wbSF(wb) )
+            </journal>
+        </member>
+        <member name="T:ExcelAddIn2.Document.Stamp">
+            <summary>
+            Класс Stamp, описывающий все штампы документа
+            </summary>    
+        </member>
+        <member name="M:ExcelAddIn2.Document.Stamp.Check(Microsoft.Office.Interop.Excel.Range,ExcelAddIn2.Document.Stamp)">
+            <summary>
+            Check(rng, stmp)        - проверка, что Range rng соответствует цепочке Штампов в stmp
+            </summary>
+            <param name="rng">Range rng - проверяемый Документ</param>
+            <param name="stmp">Stamp stmp   - цепочка Штампов, соответствуюших данному Документу</param>
+            <returns>true, если результат проверки положительный, иначе false</returns>
+            <journal> 12.12.13
+            16.12.13 (ПХ) перенес в класс Stamp и переписал
+            </journal>
+        </member>
+        <member name="T:ExcelAddIn2.Document.OneStamp">
+            <summary>
+            Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
+            </summary>
+        </member>
+        <member name="M:ExcelAddIn2.Document.OneStamp.#ctor(Microsoft.Office.Interop.Excel.Range,System.Boolean)">
+            <summary>
+            Конструктор OneStanp(rng, isSF)
+            </summary>
+            <param name="rng">rng - range, включающий одну строку штампа (т.е. сигнатуру)</param>
+            <param name="isSF">isSF</param>
+            <example>
+            примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
+             .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
+            </example>
+            <journal> 12.12.2013 (AP)
+            16.12.13 (ПХ) добавлен параметр isSF - добавляется в структуру Штампа
+            </journal>
+        </member>
+        <member name="M:ExcelAddIn2.Document.OneStamp.Check(Microsoft.Office.Interop.Excel.Range,ExcelAddIn2.Document.OneStamp)">
+            <summary>
+            Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
+            </summary>
+            <param name="rng"></param>
+            <param name="stmp"></param>
+            <returns></returns>
+        </member>
+        <member name="T:match.MatchLib">
+            <summary>
+            класс MatchLib  -- библиотека общих подпрограмм
+            </summary>
+        </member>
+        <member name="M:match.MatchLib.EOL(Microsoft.Office.Interop.Excel.Worksheet)">
+            <summary>
+             EOL(Worksheet Sh)   - возвращает число непустых строк листа Sh
+            </summary>
+            <param name="Sh"></param>
+            <returns></returns>
+            <journal>21.11.2013
+            13.12.13 - ограничение количества просматриваемых колонок до 20
+            </journal>
+        </member>
+        <member name="M:match.MatchLib.ToIntList(System.String,System.Char)">
+            <summary>
+            ToIntList(s, separator) - разбирает строку s с разделительным символом separatop;
+                                      возвращает List int найденных целых чисел
+            </summary>
+            <param name="s"></param>
+            <param name="separator"></param>
+            <returns></returns>
+            <journal> 12.12.13 A.Pass
+            </journal>
+        </member>
+        <member name="M:match.MatchLib.isCellEmpty(Microsoft.Office.Interop.Excel.Worksheet,System.Int32,System.Int32)">
+            <summary>
+            isCellEmpty(sh,row,col)     - возвращает true, если ячейка листа sh[rw,col] пуста или строка с пробелами
+            </summary>
+            <param name="sh"></param>
+            <param name="row"></param>
+            <param name="col"></param>
+            <returns></returns>
+            <journal> 13.12.13 A.Pass
+            </journal>
+        </member>
+        <member name="F:ExcelAddIn2.Form1.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:ExcelAddIn2.Form1.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:ExcelAddIn2.Form1.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="T:ExcelAddIn2.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:ExcelAddIn2.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:ExcelAddIn2.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="T:ExcelAddIn2.ThisAddIn">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InternalStartup">
+            <summary>
+            Обязательный метод для поддержки конструктора - не изменяйте
+            содержимое данного метода при помощи редактора кода.
+            </summary>
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.#ctor(Microsoft.Office.Tools.Excel.ApplicationFactory,System.IServiceProvider)">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.Initialize">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.FinishInitialization">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InitializeDataBindings">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InitializeCachedData">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InitializeData">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.BindToData">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.StartCaching(System.String)">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.StopCaching(System.String)">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.IsCached(System.String)">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.BeginInitialization">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.EndInitialization">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InitializeControls">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.InitializeComponents">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.NeedsFill(System.String)">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisAddIn.OnShutdown">
+            
+        </member>
+        <member name="T:ExcelAddIn2.Globals">
+            
+        </member>
+        <member name="M:ExcelAddIn2.Globals.#ctor">
+            
+        </member>
+        <member name="T:ExcelAddIn2.ThisRibbonCollection">
+            
+        </member>
+        <member name="M:ExcelAddIn2.ThisRibbonCollection.#ctor(Microsoft.Office.Tools.Ribbon.RibbonFactory)">
+            
+        </member>
+    </members>
+</doc>
