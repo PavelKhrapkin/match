@@ -1,20 +1,20 @@
-/*-----------------------------------------------------------------------
- * Document -- класс Документов проекта match 3.0
+п»ї/*-----------------------------------------------------------------------
+ * Document -- РєР»Р°СЃСЃ Р”РѕРєСѓРјРµРЅС‚РѕРІ РїСЂРѕРµРєС‚Р° match 3.0
  * 
- *  19.12.2013  П.Храпкин, А.Пасс
+ *  19.12.2013  Рџ.РҐСЂР°РїРєРёРЅ, Рђ.РџР°СЃСЃ
  *  
- * - 19.12.13 переписано с VBA TOCmatch на С#
+ * - 19.12.13 РїРµСЂРµРїРёСЃР°РЅРѕ СЃ VBA TOCmatch РЅР° РЎ#
  * -------------------------------------------
- * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
- * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
- * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
- * isDocOpen(name)      - проверяет, что Документ name открыт
- * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
- * Check(rng,stampList)       - проверка Штампов stampList в Range rng
+ * Document(name)       - РљРћРќРЎРўР РЈРљРўРћР  РІРѕР·РІСЂР°С‰Р°РµС‚ РћР‘РЄР•РљРў Р”РѕРєСѓРјРµРЅС‚ СЃ РёРјРµРЅРµРј name
+ * loadDoc(name, wb)    - Р·Р°РіСЂСѓР¶Р°РµС‚ Р”РѕРєСѓРјРµРЅС‚ name РёР»Рё РµРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ РёР· С„Р°Р№Р»Р° wb
+ * getDoc(name)         - РІРѕР·РІСЂР°С‰Р°РµС‚ Р”РѕРєСѓРјРµРЅС‚ СЃ РёРјРµРЅРµРј name; РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё - РѕС‚РєСЂС‹РІР°РµС‚ РµРіРѕ
+ * isDocOpen(name)      - РїСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ Р”РѕРєСѓРјРµРЅС‚ name РѕС‚РєСЂС‹С‚
+ * recognizeDoc(wb)     - СЂР°СЃРїРѕР·РЅР°РµС‚ РїРµСЂРІС‹Р№ Р»РёСЃС‚ С„Р°Р№Р»Р° wb РїРѕ С‚Р°Р±Р»РёС†Рµ РЁС‚Р°РјРїРѕРІ
+ * Check(rng,stampList)       - РїСЂРѕРІРµСЂРєР° РЁС‚Р°РјРїРѕРІ stampList РІ Range rng
  * 
- * внутренний класс Stamp предназначен для заполнения списков Штампов
- * каждый Штамп содержит сигнатуру, то есть проверяемый текст, и пар координат - его положений
- * Stamp(Range rng)     - разбирает rng, помещая из таблицы TOCmatch Штамп в List Штампов в Документе
+ * РІРЅСѓС‚СЂРµРЅРЅРёР№ РєР»Р°СЃСЃ Stamp РїСЂРµРґРЅР°Р·РЅР°С‡РµРЅ РґР»СЏ Р·Р°РїРѕР»РЅРµРЅРёСЏ СЃРїРёСЃРєРѕРІ РЁС‚Р°РјРїРѕРІ
+ * РєР°Р¶РґС‹Р№ РЁС‚Р°РјРї СЃРѕРґРµСЂР¶РёС‚ СЃРёРіРЅР°С‚СѓСЂСѓ, С‚Рѕ РµСЃС‚СЊ РїСЂРѕРІРµСЂСЏРµРјС‹Р№ С‚РµРєСЃС‚, Рё РїР°СЂ РєРѕРѕСЂРґРёРЅР°С‚ - РµРіРѕ РїРѕР»РѕР¶РµРЅРёР№
+ * Stamp(Range rng)     - СЂР°Р·Р±РёСЂР°РµС‚ rng, РїРѕРјРµС‰Р°СЏ РёР· С‚Р°Р±Р»РёС†С‹ TOCmatch РЁС‚Р°РјРї РІ List РЁС‚Р°РјРїРѕРІ РІ Р”РѕРєСѓРјРµРЅС‚Рµ
  */
 using System;
 using Box = System.Windows.Forms.MessageBox;
@@ -27,11 +27,11 @@ using Lib = match.MatchLib;
 namespace ExcelAddIn2
 {
     /// <summary>
-    /// класс Document содержит таблицу параметров всех Документов, известных приложению match
+    /// РєР»Р°СЃСЃ Document СЃРѕРґРµСЂР¶РёС‚ С‚Р°Р±Р»РёС†Сѓ РїР°СЂР°РјРµС‚СЂРѕРІ РІСЃРµС… Р”РѕРєСѓРјРµРЅС‚РѕРІ, РёР·РІРµСЃС‚РЅС‹С… РїСЂРёР»РѕР¶РµРЅРёСЋ match
     /// </summary>
     public class Document
     {
-        private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
+        private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //РєРѕР»Р»РµРєС†РёСЏ Р”РѕРєСѓРјРµРЅС‚РѕРІ
  
         private string name;
         private bool isOpen = false;
@@ -41,8 +41,8 @@ namespace ExcelAddIn2
         private DateTime MadeTime;
         private ulong chkSum;
         private int EOLinTOC;
-        private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
-        private DateTime creationDate;  // дата создания Документа
+        private Stamp stamp;        //РєР°Р¶РґС‹Р№ РґРѕРєСѓРјРµРЅС‚ СЃСЃС‹Р»Р°РµС‚СЃСЏ РЅР° С†РµРїРѕС‡РєСѓ СЃРёРіРЅР°С‚СѓСЂ РёР»Рё РЁС‚Р°РјРї
+        private DateTime creationDate;  // РґР°С‚Р° СЃРѕР·РґР°РЅРёСЏ Р”РѕРєСѓРјРµРЅС‚Р°
         private string Loader;
         private bool isPartialLoadAllowed;
         private string BodyPtrn;
@@ -51,34 +51,34 @@ namespace ExcelAddIn2
         public Excel.Range Summary;
 
         /// <summary>
-        /// F_MATCH = "match.xlsm" - имя файла таблиц приложения match
+        /// F_MATCH = "match.xlsm" - РёРјСЏ С„Р°Р№Р»Р° С‚Р°Р±Р»РёС† РїСЂРёР»РѕР¶РµРЅРёСЏ match
         /// </summary>
         public const string F_MATCH = "match.xlsm";
         /// <summary>
-        /// F_1C = "1C.xlsx"    - файл отчетов 1C: Платежей, Договоров, Списка клиентов
+        /// F_1C = "1C.xlsx"    - С„Р°Р№Р» РѕС‚С‡РµС‚РѕРІ 1C: РџР»Р°С‚РµР¶РµР№, Р”РѕРіРѕРІРѕСЂРѕРІ, РЎРїРёСЃРєР° РєР»РёРµРЅС‚РѕРІ
         /// </summary>
         public const string F_1C = "1C.xlsx";
         /// <summary>
-        /// F_SFDC = "SFDC.xlsx"    - файл отчетов Salesforce.com
+        /// F_SFDC = "SFDC.xlsx"    - С„Р°Р№Р» РѕС‚С‡РµС‚РѕРІ Salesforce.com
         /// </summary>
         public const string F_SFDC = "SFDC.xlsx";
         /// <summary>
-        /// F_ADSK = "ADSK.xlsm"    - файл отчетов Autodesk
+        /// F_ADSK = "ADSK.xlsm"    - С„Р°Р№Р» РѕС‚С‡РµС‚РѕРІ Autodesk
         /// </summary>
         public const string F_ADSK = "ADSK.xlsm";
         /// <summary>
-        /// F_STOCK = "Stock.xlsx"  - файл отчетов по Складу и Провозка Заказов
+        /// F_STOCK = "Stock.xlsx"  - С„Р°Р№Р» РѕС‚С‡РµС‚РѕРІ РїРѕ РЎРєР»Р°РґСѓ Рё РџСЂРѕРІРѕР·РєР° Р—Р°РєР°Р·РѕРІ
         /// </summary>
         public const string F_STOCK = "Stock.xlsx";
         /// <summary>
-        /// временный файл для промежуточных результатов
+        /// РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РґР»СЏ РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹С… СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
         /// </summary>
         public const string F_TMP = "W_TMP.xlsm";
 
         private const string TOC = "TOCmatch";
-        private const int TOC_DIRDBS_COL = 10;  //в первой строке в колонке TOC_DIRDBS_COL записан путь к dirDBs
-        private const int TOC_LINE = 4;         //строка номер TOL_LINE таблицы ТОС отностися к самому этому документу.
-//        private const string dirDBs = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //временно!!!
+        private const int TOC_DIRDBS_COL = 10;  //РІ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРµ РІ РєРѕР»РѕРЅРєРµ TOC_DIRDBS_COL Р·Р°РїРёСЃР°РЅ РїСѓС‚СЊ Рє dirDBs
+        private const int TOC_LINE = 4;         //СЃС‚СЂРѕРєР° РЅРѕРјРµСЂ TOL_LINE С‚Р°Р±Р»РёС†С‹ РўРћРЎ РѕС‚РЅРѕСЃС‚РёСЃСЏ Рє СЃР°РјРѕРјСѓ СЌС‚РѕРјСѓ РґРѕРєСѓРјРµРЅС‚Сѓ.
+//        private const string dirDBs = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //РІСЂРµРјРµРЅРЅРѕ!!!
 
         static Document()
         {
@@ -107,7 +107,7 @@ namespace ExcelAddIn2
                     doc.SheetN = rw.Range["I1"].Value2;
                     Documents.Add(docName, doc);
 
-                    // построить Range, включающий все штампы документа
+                    // РїРѕСЃС‚СЂРѕРёС‚СЊ Range, РІРєР»СЋС‡Р°СЋС‰РёР№ РІСЃРµ С€С‚Р°РјРїС‹ РґРѕРєСѓРјРµРЅС‚Р°
                     int j;
                     for (j = i + 1; j <= tocRng.Rows.Count
                             && (String.IsNullOrEmpty(tocRng.Range["B" + j].Value2)); j++) ;
@@ -120,11 +120,11 @@ namespace ExcelAddIn2
                     doc.SummPtrn = rw.Range["Q1"].Value2;
                     doc.Loader = rw.Range["T1"].Value2;
 
-                    // флаг, разрешающий частичное обновление Документа пока прописан хардкодом
+                    // С„Р»Р°Рі, СЂР°Р·СЂРµС€Р°СЋС‰РёР№ С‡Р°СЃС‚РёС‡РЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ Р”РѕРєСѓРјРµРЅС‚Р° РїРѕРєР° РїСЂРѕРїРёСЃР°РЅ С…Р°СЂРґРєРѕРґРѕРј
                     switch (docName)
                     {
-                        case "Платежи":
-                        case "Договоры": doc.isPartialLoadAllowed = true;
+                        case "РџР»Р°С‚РµР¶Рё":
+                        case "Р”РѕРіРѕРІРѕСЂС‹": doc.isPartialLoadAllowed = true;
                             break;
                         default: doc.isPartialLoadAllowed = false;
                             break;
@@ -133,18 +133,18 @@ namespace ExcelAddIn2
             }
             //if (dirDBs != (string)db_match.Worksheets[TOC].cells[1, TOC_DIRDBS_COL].Value2)
             //{
-            //    Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
-            //    // переустановка match -- будем делать потом
+            //    Box.Show("Р¤Р°Р№Р» '" + F_MATCH + "' Р·Р°РіСЂСѓР¶РµРЅ РёР· РЅРµРѕР±С‹С‡РЅРѕРіРѕ РјРµСЃС‚Р°!");
+            //    // РїРµСЂРµСѓСЃС‚Р°РЅРѕРІРєР° match -- Р±СѓРґРµРј РґРµР»Р°С‚СЊ РїРѕС‚РѕРј
             //}
         }
         /// <summary>
-        /// loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
+        /// loadDoc(name, wb)   - Р·Р°РіСЂСѓР·РєР° СЃРѕРґРµСЂР¶РёРјРѕРіРѕ Р”РѕРєСѓРјРµРЅС‚Р° name РёР· С„Р°Р№Р»Р° wb
         /// </summary>
         /// <param name="name"></param>
         /// <param name="wb"></param>
-        /// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
-        /// <journal> Не дописано
-        /// 15.12.2013 - взаимодействие с getDoc(name)
+        /// <returns>Document   - РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё С‡РёС‚Р°РµС‚ name РёР· С„Р°Р№Р»Р° РІ match Рё СЃР»РёРІР°РµС‚ РµРіРѕ СЃ РґР°РЅРЅС‹РјРё РІ wb</returns>
+        /// <journal> РќРµ РґРѕРїРёСЃР°РЅРѕ
+        /// 15.12.2013 - РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёРµ СЃ getDoc(name)
         /// </journal>
         public static Document loadDoc(string name, Excel.Workbook wb)
         {
@@ -154,22 +154,22 @@ namespace ExcelAddIn2
 //            Excel.Worksheet Sh = fileOpen(doc.FileName).Worksheets[doc.SheetN];
             if (doc.isPartialLoadAllowed)
             {
-// дальше распознавание частичное или полное обновление прежнего Документа
-// здесь только если частичное, то есть потом будет выполняться Merge
+// РґР°Р»СЊС€Рµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ С‡Р°СЃС‚РёС‡РЅРѕРµ РёР»Рё РїРѕР»РЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ РїСЂРµР¶РЅРµРіРѕ Р”РѕРєСѓРјРµРЅС‚Р°
+// Р·РґРµСЃСЊ С‚РѕР»СЊРєРѕ РµСЃР»Рё С‡Р°СЃС‚РёС‡РЅРѕРµ, С‚Рѕ РµСЃС‚СЊ РїРѕС‚РѕРј Р±СѓРґРµС‚ РІС‹РїРѕР»РЅСЏС‚СЊСЃСЏ Merge
             }
             wb.Worksheets[1].Name = "TMP";
             wb.Worksheets[1].Move(Sh);
-// потом из wb переносим данные в старый файл
-// а в конце запускаем Loader
+// РїРѕС‚РѕРј РёР· wb РїРµСЂРµРЅРѕСЃРёРј РґР°РЅРЅС‹Рµ РІ СЃС‚Р°СЂС‹Р№ С„Р°Р№Р»
+// Р° РІ РєРѕРЅС†Рµ Р·Р°РїСѓСЃРєР°РµРј Loader
             return doc;
         }
         /// <summary>
-        /// getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
+        /// getDoc(name)            - РёР·РІР»РµС‡РµРЅРёРµ Р”РѕРєСѓРјРµРЅС‚Р° name. Р•СЃР»Рё РµС‰Рµ РЅРµ РїСЂРѕС‡С‚РµРЅ - РёР· С„Р°Р№Р»Р°
         /// </summary>
-        /// <param name="name">имя извлекаемого документа</param>
+        /// <param name="name">РёРјСЏ РёР·РІР»РµРєР°РµРјРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р°</param>
         /// <returns>Document</returns>
-        /// <journal> Не дописано
-        /// 15.12.2013 - чтение из файла, формирование Range Body и Summary
+        /// <journal> РќРµ РґРѕРїРёСЃР°РЅРѕ
+        /// 15.12.2013 - С‡С‚РµРЅРёРµ РёР· С„Р°Р№Р»Р°, С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ Range Body Рё Summary
         /// </journal>
         public static Document getDoc(string name)
         {
@@ -178,23 +178,23 @@ namespace ExcelAddIn2
                 Document doc = Documents[name];
                 if (!doc.isOpen)
                 {
-                    // загрузка Документа из файла
-                    // надо проверить Штампы открытого документа в Sh, его EOL,
-                    // определить его Range Body и Summary                }
+                    // Р·Р°РіСЂСѓР·РєР° Р”РѕРєСѓРјРµРЅС‚Р° РёР· С„Р°Р№Р»Р°
+                    // РЅР°РґРѕ РїСЂРѕРІРµСЂРёС‚СЊ РЁС‚Р°РјРїС‹ РѕС‚РєСЂС‹С‚РѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° РІ Sh, РµРіРѕ EOL,
+                    // РѕРїСЂРµРґРµР»РёС‚СЊ РµРіРѕ Range Body Рё Summary                }
                     //!!!!!                if (!Check(rng, doc.stampList))
-// это неправильно!!                    Excel.Range rng = (doc.FileName == F_SFDC) ? doc.Summary : doc.Body;
+// СЌС‚Рѕ РЅРµРїСЂР°РІРёР»СЊРЅРѕ!!                    Excel.Range rng = (doc.FileName == F_SFDC) ? doc.Summary : doc.Body;
                 }
                 return doc;
             }
             catch
             {
-                // надо проверить, что Document name не существует
-                // в случае, если существует, но не удалось прочитать - создать событие FATAL_ERR
+                // РЅР°РґРѕ РїСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ Document name РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚
+                // РІ СЃР»СѓС‡Р°Рµ, РµСЃР»Рё СЃСѓС‰РµСЃС‚РІСѓРµС‚, РЅРѕ РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ - СЃРѕР·РґР°С‚СЊ СЃРѕР±С‹С‚РёРµ FATAL_ERR
                 return null;
             }
         }
         /// <summary>
-        /// isDocOpen(name)     - проверяет, что Документ name открыт и доступен
+        /// isDocOpen(name)     - РїСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ Р”РѕРєСѓРјРµРЅС‚ name РѕС‚РєСЂС‹С‚ Рё РґРѕСЃС‚СѓРїРµРЅ
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -202,12 +202,12 @@ namespace ExcelAddIn2
         /// </juornal> 
         public bool isDocOpen(string name) { return (Documents.ContainsKey(name)); }
         /// <summary>
-        /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
+        /// recognizeDoc(wb)        - СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ Р”РѕРєСѓРјРµРЅС‚Р° РІ Р›РёСЃС‚Рµ[1] wb
         /// </summary>
         /// <param name="wb"></param>
-        /// <returns>имя распознанного документа или null, если Документ не распознан</returns>
+        /// <returns>РёРјСЏ СЂР°СЃРїРѕР·РЅР°РЅРЅРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° РёР»Рё null, РµСЃР»Рё Р”РѕРєСѓРјРµРЅС‚ РЅРµ СЂР°СЃРїРѕР·РЅР°РЅ</returns>
         /// <journal> 14.12.2013
-        /// 16.12.13 (ПХ) переписано распознавание с учетом if( is_wbSF(wb) )
+        /// 16.12.13 (РџРҐ) РїРµСЂРµРїРёСЃР°РЅРѕ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ СЃ СѓС‡РµС‚РѕРј if( is_wbSF(wb) )
         /// </journal>
         public static string recognizeDoc(Excel.Workbook wb) {
             Excel.Worksheet wholeSheet = wb.Worksheets[1];
@@ -215,41 +215,41 @@ namespace ExcelAddIn2
 
             Stamp stmpSF = Documents["SFDC"].stamp;
             bool is_wbSF = Stamp.Check(rng, stmpSF);
-            // ищем подходящий документ в TOCmatch
+            // РёС‰РµРј РїРѕРґС…РѕРґСЏС‰РёР№ РґРѕРєСѓРјРµРЅС‚ РІ TOCmatch
             foreach (var doc in Documents)
             {
                 if (is_wbSF && (doc.Value.FileName != F_SFDC)) continue;
                 if (doc.Value.name == "SFDC" || doc.Value.name == "Process") continue;
                 if (Stamp.Check(rng, doc.Value.stamp)) return doc.Value.name;
-            }       // конец цикла по документам
-            return null;        // ничего не нашли
+            }       // РєРѕРЅРµС† С†РёРєР»Р° РїРѕ РґРѕРєСѓРјРµРЅС‚Р°Рј
+            return null;        // РЅРёС‡РµРіРѕ РЅРµ РЅР°С€Р»Рё
         }
 
         /// <summary>
-        /// Класс Stamp, описывающий все штампы документа
+        /// РљР»Р°СЃСЃ Stamp, РѕРїРёСЃС‹РІР°СЋС‰РёР№ РІСЃРµ С€С‚Р°РјРїС‹ РґРѕРєСѓРјРµРЅС‚Р°
         /// </summary>    
         private class Stamp
         {
             public List<OneStamp> stamps = new List<OneStamp>();
             /*
-             * Конструктор. 
-             *  rng - range, включающий колонки с J по М для всех строк, описывающих документ.
+             * РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ. 
+             *  rng - range, РІРєР»СЋС‡Р°СЋС‰РёР№ РєРѕР»РѕРЅРєРё СЃ J РїРѕ Рњ РґР»СЏ РІСЃРµС… СЃС‚СЂРѕРє, РѕРїРёСЃС‹РІР°СЋС‰РёС… РґРѕРєСѓРјРµРЅС‚.
              */
             public Stamp(Excel.Range rng, bool isSF)
-            {       // цикл
+            {       // С†РёРєР»
                 if ((char)rng.Range["B1"].Value2[0] != 'N')
                 {
                     for (int i = 1; i <= rng.Rows.Count; i++) stamps.Add(new OneStamp(rng.Rows[i], isSF));
                 }
             }
             /// <summary>
-            /// Check(rng, stmp)        - проверка, что Range rng соответствует цепочке Штампов в stmp
+            /// Check(rng, stmp)        - РїСЂРѕРІРµСЂРєР°, С‡С‚Рѕ Range rng СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ С†РµРїРѕС‡РєРµ РЁС‚Р°РјРїРѕРІ РІ stmp
             /// </summary>
-            /// <param name="rng">Range rng - проверяемый Документ</param>
-            /// <param name="stmp">Stamp stmp   - цепочка Штампов, соответствуюших данному Документу</param>
-            /// <returns>true, если результат проверки положительный, иначе false</returns>
+            /// <param name="rng">Range rng - РїСЂРѕРІРµСЂСЏРµРјС‹Р№ Р”РѕРєСѓРјРµРЅС‚</param>
+            /// <param name="stmp">Stamp stmp   - С†РµРїРѕС‡РєР° РЁС‚Р°РјРїРѕРІ, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС€РёС… РґР°РЅРЅРѕРјСѓ Р”РѕРєСѓРјРµРЅС‚Сѓ</param>
+            /// <returns>true, РµСЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ РїСЂРѕРІРµСЂРєРё РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Р№, РёРЅР°С‡Рµ false</returns>
             /// <journal> 12.12.13
-            /// 16.12.13 (ПХ) перенес в класс Stamp и переписал
+            /// 16.12.13 (РџРҐ) РїРµСЂРµРЅРµСЃ РІ РєР»Р°СЃСЃ Stamp Рё РїРµСЂРµРїРёСЃР°Р»
             /// </journal>
             public static bool Check(Excel.Range rng, Stamp stmp)
             {
@@ -260,26 +260,26 @@ namespace ExcelAddIn2
         }
 
         /// <summary>
-        /// Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
+        /// РљР»Р°СЃСЃ, РѕРїРёСЃС‹РІР°СЋС‰РёР№ С€С‚Р°РјРї РґРѕРєСѓРјРµРЅС‚Р° (СЃ РІР°СЂРёР°РЅС‚Р°РјРё РїРѕР·РёС†РёР№, Р·Р°РґР°РЅРЅС‹РјРё РІ РѕРґРЅРѕР№ СЃС‚СЂРєРµ TOCmatch)
         /// </summary>
         public class OneStamp
         {
-            private string signature;  // проверяемый текст Штампа - сигнатура
-            private char typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
-            private List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
+            private string signature;  // РїСЂРѕРІРµСЂСЏРµРјС‹Р№ С‚РµРєСЃС‚ РЁС‚Р°РјРїР° - СЃРёРіРЅР°С‚СѓСЂР°
+            private char typeStamp;   // '=' - С‚РѕС‡РЅРѕРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СЃРёРіРЅР°С‚СѓСЂС‹; 'I' - "С‚РµРєСЃС‚ РІРєР»СЋС‡Р°РµС‚.."
+            private List<int[]> stampPosition = new List<int[]>();   // Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Рµ РїРѕР·РёС†РёРё СЃРёРіРЅР°С‚СѓСЂ РЁС‚Р°РјРїРѕРІ
             private bool _isSF;
  
             /// <summary>
-            /// Конструктор OneStanp(rng, isSF)
+            /// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ OneStanp(rng, isSF)
             /// </summary>
-            /// <param name="rng">rng - range, включающий одну строку штампа (т.е. сигнатуру)</param>
+            /// <param name="rng">rng - range, РІРєР»СЋС‡Р°СЋС‰РёР№ РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ С€С‚Р°РјРїР° (С‚.Рµ. СЃРёРіРЅР°С‚СѓСЂСѓ)</param>
             /// <param name="isSF">isSF</param>
             /// <example>
-            /// примеры: {[1, "1, 6"]} --> [1,1] или [1,6]
+            /// РїСЂРёРјРµСЂС‹: {[1, "1, 6"]} --> [1,1] РёР»Рё [1,6]
             ///  .. {["4,1", "2,3"]} --> [4,2]/[4,3]/[1,2]/[1,3]
             /// </example>
             /// <journal> 12.12.2013 (AP)
-            /// 16.12.13 (ПХ) добавлен параметр isSF - добавляется в структуру Штампа
+            /// 16.12.13 (РџРҐ) РґРѕР±Р°РІР»РµРЅ РїР°СЂР°РјРµС‚СЂ isSF - РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ СЃС‚СЂСѓРєС‚СѓСЂСѓ РЁС‚Р°РјРїР°
             /// </journal>
             public OneStamp(Excel.Range rng, bool isSF)
             {
@@ -289,11 +289,11 @@ namespace ExcelAddIn2
 
                 List<int> rw = intListFrCell("C1", rng);
                 List<int> col = intListFrCell("D1", rng);
-                // декартово произведение множеств rw и col
+                // РґРµРєР°СЂС‚РѕРІРѕ РїСЂРѕРёР·РІРµРґРµРЅРёРµ РјРЅРѕР¶РµСЃС‚РІ rw Рё col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
             }
             /// <summary>
-            /// Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
+            /// Check(rng, stmp)        - РїСЂРѕРІРµСЂРєР° СЃРёРіРЅР°С‚СѓСЂС‹ РЁС‚Р°РјРїР° stmp РІ rng РґР»СЏ РµРіРѕ РІСЃРµС… РґРѕРїСѓСЃС‚РёРјС‹С… РїРѕР·РёС†РёР№
             /// </summary>
             /// <param name="rng"></param>
             /// <param name="stmp"></param>
@@ -325,6 +325,6 @@ namespace ExcelAddIn2
                 return Lib.ToIntList(rng.Range[coord].Value2.ToString(), ',');
             }
 
-        }   // конец класса OneStamp
-    }    // конец класса Document
+        }   // РєРѕРЅРµС† РєР»Р°СЃСЃР° OneStamp
+    }    // РєРѕРЅРµС† РєР»Р°СЃСЃР° Document
 }
