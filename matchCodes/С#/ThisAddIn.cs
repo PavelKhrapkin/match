@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,12 +11,13 @@ namespace ExcelAddIn2
 {
     public partial class ThisAddIn
     {
-        private Beginning check;
+ 
+        private FileOpenEvent check;
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            //            System.Windows.Forms.MessageBox.Show("Hello");
-            //            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
-            check = new Beginning();
+//            System.Windows.Forms.MessageBox.Show("Hello");
+//            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
+            check = new FileOpenEvent();
             this.Application.WorkbookOpen += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookOpenEventHandler(Application_myOpenEvent);
 
         }
@@ -25,11 +26,11 @@ namespace ExcelAddIn2
         {
         }
 
-        #region Код, автоматически созданный VSTO
+        #region РљРѕРґ, Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё СЃРѕР·РґР°РЅРЅС‹Р№ VSTO
 
         /// <summary>
-        /// Обязательный метод для поддержки конструктора - не изменяйте
-        /// содержимое данного метода при помощи редактора кода.
+        /// РћР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РїРѕРґРґРµСЂР¶РєРё РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° - РЅРµ РёР·РјРµРЅСЏР№С‚Рµ
+        /// СЃРѕРґРµСЂР¶РёРјРѕРµ РґР°РЅРЅРѕРіРѕ РјРµС‚РѕРґР° РїСЂРё РїРѕРјРѕС‰Рё СЂРµРґР°РєС‚РѕСЂР° РєРѕРґР°.
         /// </summary>
         private void InternalStartup()
         {
@@ -39,12 +40,12 @@ namespace ExcelAddIn2
 
         void Application_WorkbookBeforeSave(Microsoft.Office.Interop.Excel.Workbook Wb, bool SaveAsUI, ref bool Cancel)
         {
-            /*           Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
-                       Excel.Range firstRow = activeWorksheet.get_Range("A1");
-                       firstRow.EntireRow.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
-                       Excel.Range newFirstRow = activeWorksheet.get_Range("A1");
-                       newFirstRow.Value2 = "This text was added by using code";
-             */
+ /*           Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
+            Excel.Range firstRow = activeWorksheet.get_Range("A1");
+            firstRow.EntireRow.Insert(Excel.XlInsertShiftDirection.xlShiftDown);
+            Excel.Range newFirstRow = activeWorksheet.get_Range("A1");
+            newFirstRow.Value2 = "This text was added by using code";
+  */
             System.Windows.Forms.MessageBox.Show("Helolo 3");
         }
 
@@ -57,14 +58,11 @@ namespace ExcelAddIn2
                 || Wb.Name == Document.F_ADSK
                 || Wb.Name == Document.F_STOCK
                 ) return;
-            //            System.Windows.Forms.MessageBox.Show(Wb.Name);
-            try
-            {
-                check.test(Wb);
-            }
-            catch (Exception ex)
-            {
-                System.Windows.Forms.MessageBox.Show("Ошибка> " + ex.Message);
+//            System.Windows.Forms.MessageBox.Show(Wb.Name);
+            try {
+                check.newFile(Wb);
+            } catch (Exception ex) {
+                System.Windows.Forms.MessageBox.Show("РћС€РёР±РєР°> " + ex.Message);
             }
         }
 
