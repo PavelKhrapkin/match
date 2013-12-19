@@ -17,6 +17,9 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace match
 {
+    /// <summary>
+    /// класс MatchLib  -- библиотека общих подпрограмм
+    /// </summary>
     public static class MatchLib
     {
  //       public static int EOL2(Excel.Worksheet Sh)
@@ -55,29 +58,38 @@ namespace match
             return beg;
         }
 */
+        /// <summary>
+        ///  EOL(Worksheet Sh)   - возвращает число непустых строк листа Sh
+        /// </summary>
+        /// <param name="Sh"></param>
+        /// <returns></returns>
+        /// <journal>21.11.2013
+        /// 13.12.13 - ограничение количества просматриваемых колонок до 20
+        /// </journal>
         public static int EOL(Excel.Worksheet Sh)
-        /*
-         * EOL(Worksheet Sh)   - возвращает число непустых строк листа Sh 
-         *
-         * 21.11.2013
-         * 13.12.13 - ограничение числа проверяемых колонок 20
-         */
         {
             int maxCol = Sh.UsedRange.Columns.Count;
             if (maxCol > 20) maxCol = 20;
 
-            for (int i = Sh.UsedRange.Rows.Count; i > 0; i--)
-                for (int col = 1; col < maxCol; col++)
+            for (int i = Sh.UsedRange.Rows.Count; i > 0; i--) {
+                for (int col = 1; col < maxCol; col++) {
                     if (Sh.Cells[i, col].Value2 != null) return i;
 //                    if (!String.IsNullOrEmpty(Sh.Cells[i, col].Value2)) return i;
-//                    if (isCellEmpty(Sh, Sh.Cells[i, col].Value2)) return i;
+//                    if (!isCellEmpty(Sh, i, col)) return i;
+                }
+            }
             return 0;
         }
-
+/// <summary>
+/// ToIntList(s, separator) - разбирает строку s с разделительным символом separatop;
+///                           возвращает List int найденных целых чисел
+/// </summary>
+/// <param name="s"></param>
+/// <param name="separator"></param>
+/// <returns></returns>
+/// <journal> 12.12.13 A.Pass
+/// </journal>
         public static List<int> ToIntList(string s, char separator)
-        /*
-         *  преобразует строку, разделенную символами separator, в List<int>.
-         */
         {
             string[] ar = s.Split(separator);
             List<int> ints = new List<int>();
@@ -88,9 +100,15 @@ namespace match
             }
             return ints;
         }
-        /*
-         *  Возвращает true если ячейка пуста или ее значение есть строка, содержащая только пробелы
-         */
+/// <summary>
+/// isCellEmpty(sh,row,col)     - возвращает true, если ячейка листа sh[rw,col] пуста или строка с пробелами
+/// </summary>
+/// <param name="sh"></param>
+/// <param name="row"></param>
+/// <param name="col"></param>
+/// <returns></returns>
+/// <journal> 13.12.13 A.Pass
+/// </journal>
         public static bool isCellEmpty(Excel.Worksheet sh, int row, int col)
         {
             var value = sh.UsedRange.Cells[row, col].Value2;
