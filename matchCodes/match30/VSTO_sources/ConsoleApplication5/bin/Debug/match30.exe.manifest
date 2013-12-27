@@ -57,14 +57,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="match30.exe" size="23040">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="match30.exe" size="24576">
       <assemblyIdentity name="match30" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>qQ/b8hXkYKgMFYDZoC89Z/EnooFMPeQh7fYlaq4QIjs=</dsig:DigestValue>
+        <dsig:DigestValue>WpDcY8o+u8gkPCJjuNVxbhxb8IM6QSwH5GUshkJRjJc=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

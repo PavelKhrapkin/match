@@ -65,19 +65,33 @@ namespace match.Lib
         /// <returns></returns>
         /// <journal>21.11.2013
         /// 13.12.13 - ограничение количества просматриваемых колонок до 20
+        /// 25.12.13 - модификация для усечения файлов с очень длинным пустым хвостом
         /// </journal>
         public static int EOL(Excel.Worksheet Sh)
         {
-            int maxCol = Sh.UsedRange.Columns.Count;
-            if (maxCol > 20) maxCol = 20;
+            const int MAX_COL = 20;         // максимальное число просматриваемых колонок листа
+            const int MAX_EMPTY_ROWS = 5;   // максимальное число безрезультатных строк вверх, 
+                                            // .. после которых увеличиваем шаг
+            int step = 1;
+            int maxCol = Math.Min(Sh.UsedRange.Columns.Count, MAX_COL);
 
-            for (int i = Sh.UsedRange.Rows.Count; i > 0; i--)
+            for (int i = Sh.UsedRange.Rows.Count, row_count=1; i > 0; i--, row_count++)
             {
+                if (row_count > MAX_EMPTY_ROWS)
+                {
+                    row_count = 1;
+                    step *= 2;
+                    i -= step;
+                }
                 for (int col = 1; col < maxCol; col++)
                 {
-                    if (Sh.Cells[i, col].Value2 != null) return i;
-                    //                    if (!String.IsNullOrEmpty(Sh.Cells[i, col].Value2)) return i;
-                    //                    if (!isCellEmpty(Sh, i, col)) return i;
+                    if (Sh.Cells[i, col].Value2 != null)
+                    {
+                        if (step == 1) return i;
+                        i += step - 1;
+                        step = 1;
+                        row_count = 1;
+                    }
                 }
             }
             return 0;

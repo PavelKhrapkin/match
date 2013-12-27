@@ -1,9 +1,9 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  25.12.2013  П.Храпкин, А.Пасс
+ *  26.12.2013  П.Храпкин, А.Пасс
  *  
- * - 25.12.13 переписано с VBA TOCmatch на С#
+ * - 26.12.13 переписано с VBA TOCmatch на С#
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb
@@ -44,6 +44,7 @@ namespace match.Document
         private DateTime MadeTime;
         private ulong chkSum;
         private int EOLinTOC;
+        private List<int> ResLines; //число строк в пятке -- возможны альтернативные значения
         private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
         private DateTime creationDate;  // дата создания Документа
         private string Loader;
@@ -78,7 +79,8 @@ namespace match.Document
                     string tx = rw.Range["C1"].Value2.ToString();
                     doc.EOLinTOC = String.IsNullOrEmpty(tx) ? 0 : Convert.ToInt32(tx);
                     //                    MyCol        = rw.Range["D1"].Value2;
-                    //                    ResLines     = rw.Range["E1"].Value2;
+                    var ttt = rw.Range["E1"].Value2;
+                    if (ttt != null) doc.ResLines = Lib.MatchLib.ToIntList(ttt.ToString(), '/');
                     doc.MadeStep = rw.Range["F1"].Value2;
                     //                    Period    = rw.Range["G1"].Value2;
                     doc.FileName = rw.Range["H1"].Value2;
@@ -159,13 +161,30 @@ namespace match.Document
                     // загрузка Документа из файла
                     Excel.Workbook wb = FileOpenEvent.fileOpen(doc.FileName);
                     Excel.Worksheet wholeSheet = wb.Worksheets[doc.SheetN];
-                    doc.Body = wholeSheet.Range["1:" + Lib.MatchLib.EOL(wholeSheet)];
+                    // разделим пятку (то есть Summary) и Body по doc.Reslines
+                    int linesSumary = doc.getResLines();
+                    int wholeEOL = Lib.MatchLib.EOL(wholeSheet);
+                    int iEOL = (linesSumary == 0) ? wholeEOL : wholeEOL - linesSumary - 1;
+                    if (iEOL != doc.EOLinTOC)
+                    {
+                        new Log("(Worning) переопределил EOL("+ name + ")=" 
+                            + iEOL + " было " + doc.EOLinTOC);
+                        doc.EOLinTOC = iEOL;
+                    }
+                    doc.Body = wholeSheet.Range["1:" + iEOL];
+                    if (linesSumary > 0)
+                        doc.Summary = wholeSheet.Range[(iEOL + 1) + ":" + wholeEOL];
                     //-------------------------------------------
                     //надо именно тут переопределить doc.Body -= Range(Reslines)
                     // и doc.summary = Range(reslines)
                     // а потом переписать проверку в OneStamp
                     //---------------------------------------------
-                    if (!Stamp.Check(doc.Body, doc.stamp)) new Log("Fatal Stamp");
+                    if (!Stamp.Check(doc.Body, doc.stamp))
+                    {
+                        new Log("Fatal Stamp chain");
+//                        Stamp.trace(rng, 
+                    }
+                    doc.isOpen = true;
                 }
                 return doc;
             }
@@ -209,6 +228,20 @@ namespace match.Document
             }       // конец цикла по документам
             return null;        // ничего не нашли
         }
+        /// <summary>
+        /// возвращает количество строк пятки (Summary) в зависимости от контекста Документа this,
+        /// то есть от того, какой Шаг его обработки был выполнен (MadeStep)
+        /// </summary>
+        private int getResLines()
+        {
+            if (!this.isOpen) return 0;
+            switch (this.ResLines.Count)
+            {
+                case 0: return 0;
+                case 1: return this.ResLines[1];
+                default: return (this.MadeStep == "Loaded") ? this.ResLines[1] : this.ResLines[2];
+            }
+        }
 
         /// <summary>
         /// Класс Stamp, описывающий все штампы документа
@@ -242,6 +275,26 @@ namespace match.Document
                     if (!OneStamp.Check(rng, st)) return false;
                 return true;
             }
+
+            /// <summary>
+            /// trace(Stamp)    - вывод в Log-файл данных по Штампам Документа
+            /// </summary>
+            /// <param name="st"></param>
+            /// <journal> 26.12.13 -- не дописано -- нужно rnd не только doc.Body, но для SF doc.Summary
+            /// </journal>
+            public void trace(Document doc)
+            {
+                Log.set("Stamp.trace("+doc.name+")");
+                Excel.Range rng = (doc.FileName == Decl.F_SFDC) ? doc.Summary : doc.Body;
+                foreach (OneStamp st in doc.stamp.stamps)
+                    if (OneStamp.Check(rng, st)) 
+                    {
+                        new Log("\t=OK=>" + st.ToString());
+                    } else {
+                        new Log("\t=!!=>" + st.ToString() + "\tFATAL!");
+                    }
+                new Log("Документ соответствует Штампам");
+            }
         }
 
         /// <summary>
@@ -257,7 +310,7 @@ namespace match.Document
             /// <summary>
             /// Конструктор OneStanp(rng, isSF)
             /// </summary>
-            /// <param name="rng">rng - range, включающий одну строку штампа (т.е. сигнатуру)</param>
+            /// <param name="rng">rng - range, включающий одну строку штампа (т.е. сигнатуру и позиции)</param>
             /// <param name="isSF">isSF</param>
             /// <example>
             /// примеры: {[1, "1, 6"]} --> [1,1] или [1,6]

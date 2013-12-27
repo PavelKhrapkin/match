@@ -14,13 +14,14 @@ namespace match30
     {
         static void Main(string[] args)
         {
+            string docName = "Склад";
             DateTime _t = DateTime.Now; 
             Console.WriteLine("{0}> match 3.0.0.0 -- отладка", _t);
 
             Log.set("Program");
-            new Log("getDoc(SF)");
+            new Log("getDoc(" + docName + ")");
 
-            Document.getDoc("SF");
+            Document.getDoc(docName);
             Console.ReadLine();
         }
     }
