@@ -21,17 +21,7 @@ namespace match
 
             DateTime _t = DateTime.Now;
             Console.WriteLine("{0}> match.Declaration 3.0.0.0 -- отладка", _t);
-
-            //string docName = "Process111";
-            //Dcs p = Dcs.getDoc(docName);
-            //Excel.Range rng = p.Body.Range["A1:D3"];
-            //List<string> s = MatchLib.ToStrList(rng);
-
             Log.set("Program");
-
-            //List<string> tmp = new List<string>();
-            //tmp = MatchLib.ToStrList("текст, и его фрагмент");
-            //new Log("getDoc(" + docName + ")");
 
             Excel.Workbook Wb = Fls.FileOpenEvent.fileOpen("PP.xlsx");
             string newDocName = Dcs.recognizeDoc(Wb);
@@ -40,3 +30,4 @@ namespace match
             Console.ReadLine();
         }
     }
+}
