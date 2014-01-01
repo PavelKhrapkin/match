@@ -29,8 +29,6 @@ namespace match.Process
 
         private string name;                            // имя Процесса
         private List<Step> steps = new List<Step>();    // Шаги, составляющие Процесс
-        private List<string> docNames = new List<string>();
-        private List<Docs> docs = new List<Docs>();     // Документы, обрабатываемае в Процессе
         public List<int> results = new List<int>();     // один или несколько Результатов Процесса
         private Excel.Range _rng;
         private int line_procStart;
@@ -39,6 +37,8 @@ namespace match.Process
         /// Статический конструктор Процесса запускается системой перед первым обращением к классу.
         /// Он считывает данные в коллекцию Processes из листа Process файла match.xlsm
         /// </summary>
+        /// <journal> 1.1.2014
+        /// </journal>
         static Process()
         {
             Log.set("статический конструктор Процессов");
@@ -46,35 +46,26 @@ namespace match.Process
             {
                 Process proc = null;
                 Docs proc_doc = Docs.getDoc("Process");
-                string StepName;
                 int line_process = 0;
                 foreach (Excel.Range rw in proc_doc.Body.Rows)
                 {
                     line_process++;
                     var cell = rw.Range[Decl.STEP_NAME].Value2;
                     if (cell == null || rw.Range[Decl.STEP_COMMENT].Value2 != null) continue;
-                    StepName = cell.ToString();
-
-                    switch (StepName)
+                    switch ((string)cell.Text)
                     {
                         case "<*>ProcStart":
                             proc = new Process();
                             proc.line_procStart = line_process;
                             proc.name = rw.Range[Decl.PROC_NAME].Text;
-                            //загрузим имена обрабатываемых в Процессе Документов
-                            Excel.Range rng_docs = rw.Range[Decl.PROC_DOCUMENTS];
-                            proc.docNames = MatchLib.ToStrList(rng_docs);
                             break;
                         case "<*>ProcEnd":
                             proc._rng = proc_doc.Body.Range[proc.line_procStart + ":" + line_process];
                             Processes.Add(proc.name, proc);
-                            StepName = null;
                             break;
                         default:
                             if (proc.name == null) continue;    //пустой Шаг
-                            // добавим Шаг в Процесс StepName
-                            Step stp = new Step(rw);
-                            proc.steps.Add(stp);
+                            proc.steps.Add(new Step(rw));
                             break;
                     }
                 }
@@ -90,24 +81,18 @@ namespace match.Process
         /// </summary>
         /// <param name="name"></param>
         /// <returns>List<int> results</int></returns>
-        /// <remarks>
-        /// - при работе статического конструктора из листа Process извлекаются только
-        ///   строки - имена Документов. При исполнении Процесса с диска загружаются и
-        ///   проверяются реальные Документы. Таким образом, в списке docNames вполне могут
-        ///   быть пустые строки или несуществующие имена Документов; лишь при исполнении
-        ///   Процесса может возникнуть сообщение об ошибке - о несуществующем Документе.
-        /// </remarks>
+        /// <issue> 
+        /// 1.1.14 - не написана интеграция результатов отдельных Шагов в общий результат Процесса
+        /// </issue>
         /// <journal> 31.12.2013
         /// </journal>
         public static List<int> Run(string name)
         {
             Log.set("Process.Run(" + name + ")");
             Process proc = Processes[name];
-            // извлечь Документы, обрабатываемые Процессом
-            foreach (string docName in proc.docNames)
-                if (docName != "") proc.docs.Add(Docs.getDoc(docName));
-            foreach (Step stp in proc.steps)
-                stp.Exec();
+            //**************************************************************
+            foreach (Step stp in proc.steps) stp.Exec();    //**** Step.Exec
+            //**************************************************************
             Log.exit();
             return Processes[name].results;
         }
@@ -138,7 +123,8 @@ namespace match.Process
             private bool done;                                  // не пусто - Шаг выполнен
             private List<string> prevSteps = new List<string>();    // предыдущие Шаги
             private List<string> parameters = new List<string>();   // входные параметры Шага
-            private List<string> docs = new List<string>();     // имена Документов, обрабатываемае в Шаге
+            private List<string> docNames = new List<string>();     // имена Документов, обрабатываемае в Шаге
+            private List<Docs> docs = new List<Docs>();         // собственно Документы
             private List<int> results = new List<int>();        // один или несколько Результатов Шага
             private Excel.Range _stepRow;                       // строка таблицы Процессов по Шагу 
             /// <summary>
@@ -152,21 +138,9 @@ namespace match.Process
                 done = !String.IsNullOrEmpty(rw.Range[Decl.STEP_DONE].Text);
                 _stepRow = rw;
 
-                parameters =    MatchLib.ToStrList(rw.Range[Decl.STEP_PARAMS]);
-                docs =          MatchLib.ToStrList(rw.Range[Decl.STEP_DOCS]);
-                prevSteps =  MatchLib.ToStrList(rw.Range[Decl.STEP_PREV].Text);
-
-                /* ----------- все это можно будет стереть -----------
-                //// разбор параметров и Документов Шага
-                //string[]  step_pars = {"F1", "G1", "H1", "I1", "J1"};
-                //foreach (var cell in step_pars) parameters.Add(rw.Range[cell].Text);
-
-                //string[] step_docs = { "K1", "L1", "M1", "N1", "O1" };
-                //foreach (var cell in step_docs) docs.Add(rw.Range[cell].Text);
-                
-                //List<string> fiveCell = new List<string>() {"F1", "G1", "H1", "I1", "J1"};
-                //fiveCell.ForEach(cell=> parameters.Add(rw.Range[cell].Text));
-                 ------------------------------------------------------- */
+                parameters  = MatchLib.ToStrList(rw.Range[Decl.STEP_PARAMS]);
+                docNames    = MatchLib.ToStrList(rw.Range[Decl.STEP_DOCS]);
+                prevSteps   = MatchLib.ToStrList(rw.Range[Decl.STEP_PREV].Text);
             }
             /// <summary>
             /// Step.Reset()    - cброс времени и статуса Шага done
@@ -178,16 +152,26 @@ namespace match.Process
                 _stepRow.Range[Decl.STEP_DONE].Value = "";
             }
             /// <summary>
-            /// выполнение Шага
+            /// Step.Exec()     - выполнение Шага
             /// </summary>
-            /// <returns></returns>
+            /// <returns>results - результаты работы ШАГА</returns>
+            /// <remarks>
+            /// - при работе статического конструктора из листа Process извлекаются только
+            ///   строки - имена Документов. При исполнении Шага с диска загружаются и
+            ///   проверяются реальные Документы. Таким образом, в списке docNames вполне могут
+            ///   быть пустые строки или несуществующие имена Документов; лишь при исполнении
+            ///   Процесса может возникнуть сообщение об ошибке - о несуществующем Документе.
+            /// </remarks>
             public List<int> Exec()
             {
-                Log.set("Log.Exec(" + this.name + ")");
-                if (!this.done)                // Шаг уже выполнен -> return
+                Log.set("Log.Exec(" + name + ")");
+                if (!done)                // Шаг уже выполнен -> return
                 {
+                    // извлечь Документы, обрабатываемые в Шаге
+                    foreach (string docName in docNames)
+                        if (docName != "") docs.Add(Docs.getDoc(docName));
                     // проверим необходимые Шаги контекста -- PrevStep
-                    foreach (var itemPrevStep in this.prevSteps)
+                    foreach (var itemPrevStep in prevSteps)
                     {
                         switch (itemPrevStep)
                         {
@@ -195,9 +179,8 @@ namespace match.Process
                             case "Loaded":
                                 {
                                     //   if (this.prevSteps.Contains("Loaded"))
-                                    // тут проверить основной обрабатываемый Документ
-                                    //(КАКОЙ?? он должен быть определен в строке <*>ProcStart)
-                                    //этот Документ должен быть doc.MadeStep == "Loaded"
+                                    // тут проверить ПЕРВЫЙ обрабатываемый Документ
+                                    // этот Документ должен быть doc.MadeStep == "Loaded"
                                     // а если то не так Log.FATAL
                                 }
                                 break;
@@ -211,12 +194,8 @@ namespace match.Process
                                 break;
                         }
                     }
-
-                    //this.prevSteps.ForEach(stp => (stp.name == "Loaded")? continue: stp.Exec());
-                    //this.docs.ForEach(doc => 
-                    //    {
-                    //        Docs.getDoc();
-                    //    }
+                    //-------------------------------------------
+                    // теперь передадим управление методу Шага
                     Program program = new Program();
                     MethodInfo[] methods = typeof(Process).GetMethods();
                     foreach (MethodInfo info in methods)
