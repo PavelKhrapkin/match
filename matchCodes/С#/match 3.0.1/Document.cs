@@ -1,11 +1,11 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  30.12.2013  П.Храпкин, А.Пасс
+ *  5.1.2014  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
- * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb, запускает Loader Документа
+ * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb, запускает Handler Документа
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
  * isDocChanged(name)      - проверяет, что Документ name открыт
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
@@ -35,6 +35,7 @@ namespace match.Document
     public class Document
     {
         private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
+        private static Excel.Range Headers; // в этом листе шапки в именованных Range по всем Документам
 
         private string name;
         private bool isOpen = false;
@@ -53,15 +54,17 @@ namespace match.Document
         private string Loader;
         private string LastUpdateFromFile;
         private bool isPartialLoadAllowed;
-        private string BodyPtrn;
-        private string SummPtrn;
+        public int MyCol;           // количесто колонок, добавляемых слева в Документ в loadDoc
+        public string BodyPtrnName;
+        public string SummPtrnName;
+        public Excel.Range BodyPtrn;
+        public Excel.Range SummaryPtrn;
         public Excel.Range Body;
         public Excel.Range Summary;
 
         private const string TOC = "TOCmatch";
         private const int TOC_DIRDBS_COL = 10;  //в первой строке в колонке TOC_DIRDBS_COL записан путь к dirDBs
         private const int TOC_LINE = 4;         //строка номер TOL_LINE таблицы ТОС отностися к самому этому документу.
-        //        private const string dirDBs = "C:\\Users\\Pavel_Khrapkin\\Documents\\Pavel\\match\\matchDBs\\";    //временно!!!
 
         static Document()
         {
@@ -76,21 +79,20 @@ namespace match.Document
             {
                 Excel.Range rw = tocRng.Rows[i];
 
-                string docName = rw.Range["B1"].Value2;
+                string docName = rw.Range[Decl.DOC_NAME].Value2;
                 if (!String.IsNullOrEmpty(docName))
                 {
                     doc = new Document();
-                    doc.MadeTime = DateTime.FromOADate(rw.Range["A1"].Value2);
+                    doc.MadeTime = DateTime.FromOADate(rw.Range[Decl.DOC_TIME].Value2);
                     doc.name = docName;
-                    string tx = rw.Range["C1"].Value2.ToString();
-                    doc.EOLinTOC = String.IsNullOrEmpty(tx) ? 0 : Convert.ToInt32(tx);
-                    //                    MyCol        = rw.Range["D1"].Value2;
-                    var ttt = rw.Range["E1"].Value2;
+                    doc.EOLinTOC = Lib.MatchLib.RngToInt(rw.Range[Decl.DOC_EOL]);
+                    var ttt = rw.Range[Decl.DOC_RESLINES].Value2;
                     if (ttt != null) doc.ResLines = Lib.MatchLib.ToIntList(ttt.ToString(), '/');
-                    doc.MadeStep = rw.Range["F1"].Value2;
+                    doc.MyCol = Lib.MatchLib.RngToInt(rw.Range[Decl.DOC_MYCOL]);
+                    doc.MadeStep = rw.Range[Decl.DOC_MADESTEP].Text;
                     //                    Period    = rw.Range["G1"].Value2;
-                    doc.FileName = rw.Range["H1"].Value2;
-                    doc.SheetN = rw.Range["I1"].Value2;
+                    doc.FileName = rw.Range[Decl.DOC_FILE].Value2;
+                    doc.SheetN = rw.Range[Decl.DOC_SHEET].Value2;
                     Documents.Add(docName, doc);
 
                     // построить Range, включающий все штампы документа
@@ -111,9 +113,9 @@ namespace match.Document
                         doc.creationDate = new DateTime(0);
                     }
 
-                    doc.BodyPtrn = rw.Range["P1"].Value2;
-                    doc.SummPtrn = rw.Range["Q1"].Value2;
-                    doc.Loader = rw.Range["T1"].Value2;
+                    doc.BodyPtrnName = rw.Range[Decl.DOC_PATTERN].Value2;
+                    doc.SummPtrnName = rw.Range[Decl.DOC_SUMMARY_PATTERN].Value2;
+                    doc.Loader       = rw.Range[Decl.DOC_LOADER].Value2;
                     // флаг, разрешающий частичное обновление Документа пока прописан хардкодом
                     switch (docName)
                     {
@@ -129,6 +131,10 @@ namespace match.Document
             doc.Wb = db_match;
             doc.Sheet = wholeSheet;
             doc.Body =  wholeSheet.Range["1:" + iEOL];
+
+            Excel.Worksheet hdrSht = doc.Wb.Worksheets[Decl.HEADER];
+            Headers = hdrSht.Range["1:" + Lib.MatchLib.EOL(hdrSht)];
+
             //-----------------------------------------------------------------
             // из коллекции Documents переносим произошедшие изменения в файл
 //            if (doc.Body.Range["A" + TOC_DIRDBS_COL].Value2 != Decl.dirDBs)
@@ -145,13 +151,14 @@ namespace match.Document
             Log.exit();
         }
         /// <summary>
-        /// loadDoc(name, wb)   - загрузка содержимого Документа name из файла wb
+        /// loadDoc(name, wb)   -  содержимого Документа name из файла wb
         /// </summary>
         /// <param name="name"></param>
         /// <param name="wb"></param>
         /// <returns>Document   - при необходимости читает name из файла в match и сливает его с данными в wb</returns>
         /// <journal> Не дописано
         /// 15.12.2013 - взаимодействие с getDoc(name)
+        /// 6.1.13 - заменяем Body на собержимое нового Документа
         /// </journal>
         public static Document loadDoc(string name, Excel.Workbook wb)
         {
@@ -163,7 +170,7 @@ namespace match.Document
                 // Здесь только если частичное, то есть потом будет выполняться Merge
             }
             doc.LastUpdateFromFile = wb.Name;
- // не пригодится           string oldRepName = "Old_" + doc.SheetN;
+            string oldRepName = "Old_" + doc.SheetN;
             try
             {
                 wb.Worksheets[1].Name = "TMP";
@@ -176,12 +183,22 @@ namespace match.Document
                 Log.FATAL("Не удалось перенести лист [1] из входного файла "
                     + doc.LastUpdateFromFile + " в Документ " + name);
             }
+            doc.Sheet = doc.Wb.Worksheets[name];
+            int iEOL = Lib.MatchLib.EOL(doc.Sheet);
+            doc.Body = doc.Sheet.Range["1:" + iEOL];
 
-            // потом из wb переносим данные в старый файл
-            // а в конце запускаем Loader
+            // если есть --> запускаем Handler
 
-            List<int> RecLoaded;
-            if (doc.Loader != null) RecLoaded = Proc.Reset(doc.Loader);
+//            List<int> RecLoaded;
+            if (doc.Loader != null)
+            {
+                Proc.Reset(doc.Loader);
+                // если нужно --> делаем Merge
+            }
+//            RecLoaded = Proc.Reset(doc.Loader);
+
+
+
             Log.exit();
             return doc;
         }
@@ -193,6 +210,7 @@ namespace match.Document
         /// <journal> 25.12.2013 отлажено
         /// 25.12.2013 - чтение из файла, формирование Range Body
         /// 28.12.13 - теперь doc.Sheet и doc.Wb храним в структуре Документа
+        /// 5.1.14  - обработка шаблонов Документа
         /// </journal>
         public static Document getDoc(string name)
         {
@@ -205,41 +223,50 @@ namespace match.Document
                     // загрузка Документа из файла
                     doc.Wb = FileOpenEvent.fileOpen(doc.FileName);
                     doc.Sheet = doc.Wb.Worksheets[doc.SheetN];
+                    Document docTOC = Documents[TOC];
                     // разделим пятку (то есть Summary) и Body по doc.Reslines
                     int linesSumary = doc.getResLines();
                     int wholeEOL = Lib.MatchLib.EOL(doc.Sheet);
                     int iEOL = (linesSumary == 0) ? wholeEOL : wholeEOL - linesSumary - 1;
                     if (iEOL != doc.EOLinTOC)
                     {
-                        new Log("(Worning) переопределил EOL(" + name + ")="
+                        Log.Warning("переопределил EOL(" + name + ")="
                             + iEOL + " было " + doc.EOLinTOC);
                         doc.EOLinTOC = iEOL;
                     }
                     doc.Body = doc.Sheet.Range["1:" + iEOL];
                     if (linesSumary > 0)
                         doc.Summary = doc.Sheet.Range[(iEOL + 1) + ":" + wholeEOL];
-                    //-------------------------------------------
+                    //---------------------- еще не до конца реализовано ---------------------
                     //надо именно тут переопределить doc.Body -= Range(Reslines)
                     // и doc.summary = Range(reslines)
                     // а потом переписать проверку в OneStamp
-                    //---------------------------------------------
+                    //-------------------------------------------------------------------------
+                    docTOC = Documents[TOC];
+                    Excel.Worksheet hdrSht = docTOC.Wb.Worksheets[Decl.HEADER];
+                    int iii = Lib.MatchLib.EOL(hdrSht);
+                    Headers = hdrSht.Range["1:" + Lib.MatchLib.EOL(hdrSht)];
+                    if (!String.IsNullOrEmpty(doc.BodyPtrnName)) doc.BodyPtrn = Headers.Range[doc.BodyPtrnName];
+                    if (!String.IsNullOrEmpty(doc.SummPtrnName)) doc.SummaryPtrn = Headers.Range[doc.SummPtrnName];
+                  
                     if (!Stamp.Check(doc.Body, doc.stamp))
                     {
                         new Log("Fatal Stamp chain");
                         //                        Stamp.trace(rng, 
                     }
-                    Log.exit();
                     doc.isOpen = true;
                 }
+                Log.exit();
                 return doc;
             }
             catch
             {
-                new Log("FATAL -- не открыт!!");
+                Log.FATAL("Документ \"" + name + "\" не открыт!!");
                 // надо проверить, что Document name не существует
                 // в случае, если существует, но не удалось прочитать - создать событие FATAL_ERR
-                return null;
+                return null;    // нужно только при обработке Event File Open для неизвестного файла
             }
+ 
         }
         /// <summary>
         /// isDocChanged(name) - проверяет, что Документ name доступен и изменен
