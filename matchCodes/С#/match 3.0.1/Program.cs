@@ -1,3 +1,5 @@
+//#define TRACE
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,10 +20,8 @@ namespace match
     {
         static void Main(string[] args)
         {
-
-            DateTime _t = DateTime.Now;
-            Console.WriteLine("{0}> match.Declaration 3.0.0.0 -- отладка", _t);
             Log.set("Program");
+            new Log("v3.0.1.04 " + DateTime.Now.DayOfWeek);
 
             Excel.Workbook Wb = Fls.FileOpenEvent.fileOpen("PP.xlsx");
             string newDocName = Dcs.recognizeDoc(Wb);
