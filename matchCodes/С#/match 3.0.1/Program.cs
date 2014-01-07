@@ -1,5 +1,3 @@
-//#define TRACE
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,13 +18,13 @@ namespace match
     {
         static void Main(string[] args)
         {
-            Log.set("Program");
-            new Log("v3.0.1.04 " + DateTime.Now.DayOfWeek);
+//            MatchLib.TestTime();
 
+            Log.START("match v3.0.1.12");
             Excel.Workbook Wb = Fls.FileOpenEvent.fileOpen("PP.xlsx");
             string newDocName = Dcs.recognizeDoc(Wb);
+            new Log("Входной файл распознан как Документ \"" + newDocName + "\"");
             Dcs doc = Dcs.loadDoc(newDocName, Wb);
-            Log.exit();
             Console.ReadLine();
         }
     }
