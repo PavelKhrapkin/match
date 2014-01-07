@@ -12,6 +12,8 @@ namespace match.MyFile
 {
     class FileOpenEvent
     {
+        public static string dirDBs = null;
+
         private static Excel.Application _app = null;
         /*
                 /// <summary>
@@ -36,26 +38,47 @@ namespace match.MyFile
         /// <param name="name"></param>
         /// <returns>Excel.Workbook</returns>
         /// <journal>11.12.2013
-        /// 6.1.14  - единая точка выхода из метода
+        /// 7.1.14  - единая точка выхода из метода с finally
         /// </journal>
         public static Excel.Workbook fileOpen(string name)
         {
             Log.set("fileOpen");
-            if (_app == null) _app = new Excel.Application();
-            _app.Visible = true;
-            Excel.Workbook _wb;
-            foreach (Excel.Workbook W in _app.Workbooks)
-                if (W.Name == name) _wb = W;
-            try { _wb = _app.Workbooks.Open(Decl.dirDBs + name); }
-            catch (Exception ex)
-            {
-                
-                Log.FATAL("не открыт файл" + name + "\nDirDBs=\"" + Decl.dirDBs + "\""
+            try {
+                if (dirDBs == null)
+                {
+                    dirDBs = Environment.GetEnvironmentVariable(Decl.DIR_DBS);
+                    //if (dirDBs == null) dirDBs = "C:\\DirDbs";  // по умолчанию                                      
+                    if (dirDBs == null)
+                    {
+                        // по умолчанию                                      
+#if msgBox                        
+                        // Configure open file dialog box
+                        Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+                        dlg.FileName = "DirDbs"; // Default file name
+                        dlg.DefaultExt = ""; // Default file extension
+//                        dlg.Filter = "Text documents (.txt)|*.txt"; // Filter files by extension 
+
+                        // Show open file dialog box
+                        Nullable<bool> result = dlg.ShowDialog();
+
+                        // Process open file dialog box results 
+                        if (result == true)
+#else
+                        if (dirDBs == null) dirDBs = "C:\\DBs";
+#endif
+
+                    }
+                }
+                if (_app == null) _app = new Excel.Application();
+                _app.Visible = true;
+                foreach (Excel.Workbook W in _app.Workbooks) if (W.Name == name) return W;
+                return _app.Workbooks.Open(dirDBs + "\\" + name);
+            } catch (Exception ex) {
+                Log.FATAL("не открыт файл" + name + "\nDirDBs=\"" + dirDBs + "\""
                     + "\n сообщение по CATCH '" + ex);
                 return null;
             }
-            Log.exit();
-            return _wb;
+            finally { Log.exit(); }
         }
         public static void fileSave(Excel.Workbook Wb) { Wb.Save(); }
     }
