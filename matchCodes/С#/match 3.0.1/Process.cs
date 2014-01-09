@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Excel = Microsoft.Office.Interop.Excel;
 
+using match.MyFile;
 using Decl = match.Declaration.Declaration;
 using Docs = match.Document.Document;
 using match.Handler;
@@ -45,7 +46,7 @@ namespace match.Process
             Log.set("статический конструктор Процессов");
             try {
                 Process proc = null;
-                Docs proc_doc = Docs.getDoc("Process");
+                Docs proc_doc = Docs.getDoc(Decl.PROCESS);
                 int line_process = 0;
                 foreach (Excel.Range rw in proc_doc.Body.Rows)
                 {
@@ -87,9 +88,9 @@ namespace match.Process
         /// </issue>
         /// <journal> 31.12.2013
         /// </journal>
-        public static List<int> Run(string name)
+        public static List<int> Start(string name)
         {
-            Log.set("Process.Run(" + name + ")");
+            Log.set("Process.Start(" + name + ")");
             Process proc = Processes[name];
             //**************************************************************
             foreach (Step stp in proc.steps) stp.Exec();    //**** Step.Exec
@@ -108,7 +109,7 @@ namespace match.Process
             return Processes[name].results;
         }
         /// <summary>
-        /// Reset(name) - сбрасываем и запускаем заново Процесс name -- Run(name)
+        /// Reset(name) - сбрасываем и запускаем заново Процесс name -- Start(name)
         /// </summary>
         /// <param name="name"></param>
         /// <returns>List<int> results</int></returns>
@@ -121,7 +122,7 @@ namespace match.Process
             int rngCount = proc._rng.Rows.Count;
             proc._rng.Range["A1:C" + rngCount].Interior.Color = Excel.Constants.xlNone;
             proc.steps.ForEach(stp => stp.Reset());
-            proc.results = Process.Run(name);
+            proc.results = Process.Start(name);
             Log.exit();
             return Processes[name].results;
         }
@@ -177,50 +178,61 @@ namespace match.Process
             public void Exec()
             {
                 Log.set("Log.Exec(" + name + ")");
-                if (!done)                // Шаг уже выполнен -> return
+                if (done) goto exit;               // Шаг уже выполнен -> return
+                // извлечь Документы, обрабатываемые в Шаге
+                //foreach (string docName in docNames)
+                //    if (docName != "") docs.Add(Docs.getDoc(docName));
+                // проверим необходимые Шаги контекста -- PrevStep
+                foreach (var itemPrevStep in prevSteps)
                 {
-                    // извлечь Документы, обрабатываемые в Шаге
-                    //foreach (string docName in docNames)
-                    //    if (docName != "") docs.Add(Docs.getDoc(docName));
-                    // проверим необходимые Шаги контекста -- PrevStep
-                    foreach (var itemPrevStep in prevSteps)
+                    switch (itemPrevStep)
                     {
-                        switch (itemPrevStep)
-                        {
-                            case "": break;
-                            case "Loaded":
-                                {
-                                    //   if (this.prevSteps.Contains("Loaded"))
-                                    // тут проверить ПЕРВЫЙ обрабатываемый Документ
-                                    // этот Документ должен быть doc.MadeStep == "Loaded"
-                                    // а если это не так Log.FATAL
-                                }
-                                break;
-                            default:
-                                {
-                                    // структура PrevStep: Процесс/Шаг
-                                    // разбор и, если нужно, исполнение Шага в звене prevStepItem
-                                    // вначале отделим имя Процесса ('/'), на которое ссылается itemPrevStep
-                                    // если оно опушено, то это PrevStep в текущем Процессе
-                                }
-                                break;
-                        }
-                    }
-                    //-------------------------------------------
-                    // теперь передадим управление методу Шага
-                    // обращение имеет вид
-                    //      results = docs[0].Метод([parameters],[docs])
-                    // то есть, parameters.Count =0 и Документ лишь один -- вызов метода без аргументов
-
-                    MethodInfo[] methods = typeof(match.Handler.Handler).GetMethods();
-                    foreach (MethodInfo info in methods)
-                    {
-                        Console.WriteLine(info.Name);
-
-                        if (info.Name == name) info.Invoke(new match.Handler.Handler(parameters, docNames), null);
+                        case "": break;
+                        case "Loaded":
+                            {
+                                //   if (this.prevSteps.Contains("Loaded"))
+                                // тут проверить ПЕРВЫЙ обрабатываемый Документ
+                                // этот Документ должен быть doc.MadeStep == "Loaded"
+                                // а если это не так Log.FATAL
+                            }
+                            break;
+                        default:
+                            {
+                                // структура PrevStep: Процесс/Шаг
+                                // разбор и, если нужно, исполнение Шага в звене prevStepItem
+                                // вначале отделим имя Процесса ('/'), на которое ссылается itemPrevStep
+                                // если оно опушено, то это PrevStep в текущем Процессе
+                            }
+                            break;
                     }
                 }
-                Log.exit();
+                //-------------------------------------------
+                // теперь передадим управление методу Шага
+                // обращение имеет вид docs[0].Метод([parameters],[docs])  
+
+                MethodInfo[] methods = typeof(match.Handler.Handler).GetMethods();
+
+                foreach (MethodInfo info in methods)
+                {
+                    Console.WriteLine(info.Name);
+                    if (info.Name == name)
+                    {
+                        info.Invoke(new match.Handler.Handler(parameters, docNames), null);
+                        goto stepDone;
+                    }
+                }
+                Log.FATAL("Шаг \"" + name + "\" вызывает несуществующий метод.");
+                // сохраним Документ, обработанный в Шаге
+stepDone:       Docs doc = Docs.getDoc(docNames[0]);
+                FileOpenEvent.fileSave(doc.Wb);
+                // сохраним изменения в таблице Process
+                done = true;
+                _stepRow.Range[Decl.STEP_DONE].Value2 = "1";
+                _stepRow.Range["A1:C1"].Interior.Color = Excel.XlRgbColor.rgbLightGreen;
+                Docs docProc = Docs.getDoc(Decl.PROCESS);
+                docProc.isChanged = true;
+                Docs.saveDoc(Decl.PROCESS);
+exit:           Log.exit();
             }
         }
     }

@@ -38,9 +38,13 @@ namespace match.Document
 
         public string name;
         private bool isOpen = false;
-        private bool isChanged = false;
+        public bool isChanged = false;
         private string FileName;
-        private Excel.Workbook Wb;
+        public Excel.Workbook Wb;
+        //public int Wb
+        //    {           get {
+        //      return Wb;
+        //    }
         private string SheetN;
         public Excel.Worksheet Sheet;
         private string MadeStep;
@@ -162,7 +166,13 @@ namespace match.Document
             {
                 wb.Worksheets[1].Name = "TMP";
                 wb.Worksheets[1].Move(doc.Sheet);
-                doc.Sheet.Name = "Old_" + doc.SheetN;
+                 // если Old_ уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
+                if (match.MyFile.FileOpenEvent.sheetExists(doc.Wb, oldRepName))
+                {
+                    match.MyFile.FileOpenEvent.DisplayAlert(false);
+                    doc.Wb.Worksheets[doc.name].Delete();
+                    match.MyFile.FileOpenEvent.DisplayAlert(true);
+                } else doc.Sheet.Name = "Old_" + doc.SheetN;
                 doc.Wb.Worksheets["TMP"].Name = doc.SheetN;
             }
             catch
@@ -215,7 +225,8 @@ namespace match.Document
                     if (!Stamp.Check(doc.Body, doc.stamp))
                     {
                         new Log("Fatal Stamp chain");
-                        //                        Stamp.trace(rng, 
+
+                        //  НЕ НАПИСАНО!!!                      Stamp.trace(rng, 
                     }
                     doc.isOpen = true;
                 }
@@ -267,6 +278,44 @@ namespace match.Document
             return doc.isOpen && doc.isChanged;
         }
         /// <summary>
+        /// "сброс" Документа приводит к тому, что его содержимое выбрасывается,
+        /// остаются только заголовки колонок.
+        /// </summary>
+        /// <journal>9.1.2014</journal>
+        public void Reset()
+        {
+            Log.set("Reset");
+            try
+            {
+                Body.Rows["2:" + Body.Rows.Count].Delete();
+//                Body.Range["A2", Body.Cells[Body.Rows.Count, 1]].Delete();
+/////                saveDoc();
+            }
+            catch { Log.FATAL("Ошибка при удалении строк Body Документа \"" + name + "\""); }
+            finally { Log.exit(); }
+        }
+        /// <summary>
+        /// добавляет строку к Body Документа
+        /// </summary>
+        /// <journal>9.1.2014</journal>
+        public Excel.Range AddRow()
+        {
+            Log.set("AddRow");
+            try
+            {
+                Body.Range["A" + (int)(Body.Rows.Count + 1)].EntireRow.Insert();
+//                Body.Rows[Body.Rows.Count].Insert(Excel.XlInsertShiftDirection.xlShiftDown);
+//                return Body.Rows[Body.Rows.Count];
+                return Body;
+            }
+            catch
+            { 
+                Log.FATAL("Ошибка при добавлении строки Документа \"" + name + "\"");
+                return null;
+            }
+            finally { Log.exit(); }
+        }
+        /// <summary>
         /// сохраняет Документ, если он изменялся
         /// </summary>
         /// <param name="name"></param>
@@ -274,9 +323,10 @@ namespace match.Document
         {
             if (isOpen && isChanged) FileOpenEvent.fileSave(Wb);
         }
-        public void saveDoc(string name)
+        public static void saveDoc(string name)
         {
-            if (isDocChanged(name)) FileOpenEvent.fileSave(Documents[name].Wb);
+            Document doc = Documents[name];
+            if (doc.isDocChanged(name)) FileOpenEvent.fileSave(doc.Wb);
         }
         /// <summary>
         /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
@@ -360,7 +410,7 @@ namespace match.Document
                     {
                         new Log("\t=!!=>" + st.ToString() + "\tFATAL!");
                     }
-                new Log("Документ соответствует Штампам");
+                Log.FATAL("Документ соответствует Штампам");
             }
         }
 

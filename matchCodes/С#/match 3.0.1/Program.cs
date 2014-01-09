@@ -7,7 +7,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 using Decl = match.Declaration.Declaration;
 using Dcs = match.Document.Document;
-//using Proc = match.Process.Process;
+using Proc = match.Process.Process;
 using Fls = match.MyFile;
 using match.Lib;
 using Log = match.Lib.Log;
@@ -18,9 +18,13 @@ namespace match
     {
         static void Main(string[] args)
         {
-//            MatchLib.TestTime();
 
             Log.START("match v3.0.1.12");
+
+            Proc.Reset("LOAD_SF_DicAccSyn");  //позже вернемся в вопросу о месте для констанся - имени Процессов
+
+
+
             Excel.Workbook Wb = Fls.FileOpenEvent.fileOpen("PP.xlsx");
             string newDocName = Dcs.recognizeDoc(Wb);
             new Log("Входной файл распознан как Документ \"" + newDocName + "\"");

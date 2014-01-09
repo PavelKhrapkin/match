@@ -14,13 +14,13 @@ namespace match.Handler
 {
     class Handler
     {
-        List<Docs> docs = new List<Docs>();
+        Dictionary<string,Docs> docs = new Dictionary<string, Docs>();
  //       List<Excel.Range> patterns = new List<Excel.Range>();
       
         public Handler(List<string> parameters, List<string> docNames)
         {
             foreach (string docName in docNames)
-                if (docName != "") docs.Add(Docs.getDoc(docName));
+                if (docName != "") docs.Add(docName, Docs.getDoc(docName));
         }
 
         /// <summary>
@@ -31,7 +31,8 @@ namespace match.Handler
         {
             Log.set("InsMyCol");
             new Log("перед запуском InsMyCol");
-            Docs doc = docs[0];
+//            Docs doc = docs[0];
+            Docs doc = docs.First().Value;
 
             if (doc.Body.Range["A1"].Text == doc.BodyPtrn.Range["A1"].Text)
                 Log.FATAL("Попытка обработать уже обработанный Документ");
@@ -60,7 +61,87 @@ namespace match.Handler
         public void DateSort()
         {
         }
+        public void PaymentPaint()
+        {
+        }
+        public void ContractPaint()
+        {
+        }
+        public void SF_Paint()
+        {
+        }
+        public void AccPaint()
+        {
+        }
+        public void Acc1C_Bottom()
+        {
+        }
+        public void DicAccSyn()
+        {
+            const string SF_ACC_SYNONIMS = "SF_DicAccSyn";
+            const string DOC_ACC_SYNONIMS = "DicAccSynonims";
+            const string SYN_VALUE_COL = "C1";  // колонка 2 - список синонимов
+            string[] ACC_DEL = { "<ИЛИ>" };
+
+            Log.set("DicAccSyn");
+            try
+            {
+                Docs docSF  = docs[SF_ACC_SYNONIMS];
+                Docs doc    = docs[DOC_ACC_SYNONIMS];
+                doc.Reset();
+                Excel.Range Bdy = doc.Body;
+
+                //      цикл по всем строкам листа
+                int rowNum = 2;
+                foreach (Excel.Range row in docSF.Body.Rows)
+                {
+                    string[] syn = ((string)row.Range[SYN_VALUE_COL].Text)
+                        .Split(ACC_DEL, StringSplitOptions.RemoveEmptyEntries);
+                    if (syn.Length < 2) continue;
+                    foreach (string str in syn)
+                    {
+//                        Excel.Range rw = doc.AddRow();
+                        doc.Body.Range["A" + rowNum].Value = str.Trim();
+                        doc.Body.Range["B" + rowNum].Value = row.Range[SYN_VALUE_COL].Text;
+                        rowNum++;
+                    }
+                }
+            }
+            finally { Log.exit(); }
+        }
         public void RowDel()
+        {
+        }
+        public void CheckRepDate()
+        {
+        }
+        public void MergeReps()
+        {
+        }
+        public void Adapt()
+        {
+
+            Log.set("Adapt");
+            try
+            {
+                Excel.Workbook db_match = match.MyFile.FileOpenEvent.fileOpen(Decl.F_MATCH); //
+                Excel._Worksheet hdrSht = db_match.Worksheets[Decl.HEADER];
+                Excel.Range ptrn;
+                try { ptrn = hdrSht.get_Range("HDR_??"); }  catch { ptrn = null; }
+
+            }
+            finally
+            {
+                Log.exit();
+            }
+        }
+        public void ProcStart()
+        {
+        }
+        public void Paid1C()
+        {
+        }
+        public void WrCSV()
         {
         }
     }
