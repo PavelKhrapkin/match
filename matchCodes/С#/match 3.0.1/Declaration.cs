@@ -60,6 +60,8 @@ namespace match.Declaration
         public const string DOC_LOADER      = "T1"; // Loader Документа
 
         //-----------константы таблицы Процессов -----------------
+        public const string PROCESS = "Process";
+
         public const string STEP_TIME   = "A1";
         public const string STEP_NAME   = "B1";
         public const string STEP_PREV   = "C1";
