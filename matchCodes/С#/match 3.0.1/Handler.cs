@@ -34,14 +34,14 @@ namespace match.Handler
 //            Docs doc = docs[0];
             Docs doc = docs.First().Value;
 
-            if (doc.Body.Range["A1"].Text == doc.BodyPtrn.Range["A1"].Text)
+            if (doc.Body.Range["A1"].Text == doc.docPtrn.Range["A1"].Text)
                 Log.FATAL("Попытка обработать уже обработанный Документ");
             //---  вставляем колонки по числу MyCol        
             doc.Sheet.Range["A1", doc.Body.Cells[1, doc.MyCol]].EntireColumn.Insert();
             //--- устанавливает ширину колонки листа по значениям в строке Шаблона Width
             new Log("после вставки колонок");
             int i = 1;
-            foreach (Excel.Range col in doc.BodyPtrn.Columns)
+            foreach (Excel.Range col in doc.docPtrn.Columns)
             {
                 string s = col.Range[Decl.PTRN_WIDTH].Text;
                 if (s == Decl.PTRN_COPYHDR) col.Range["A1"].Copy(doc.Body.Cells[1, i]);
@@ -52,7 +52,7 @@ namespace match.Handler
                 doc.Body.Columns[i++].ColumnWidth = W;
             }
             //--- копируем колонки MyCol от верха до Body.EOL
-            doc.BodyPtrn.Range["A1", doc.BodyPtrn.Cells[2, doc.MyCol]].Copy(doc.Body.Range["A1"]);
+            doc.docPtrn.Range["A1", doc.docPtrn.Cells[2, doc.MyCol]].Copy(doc.Body.Range["A1"]);
             doc.Body.Range["A2", doc.Body.Cells[doc.Body.Rows.Count, doc.MyCol]].FillDown();
             //--- если есть --> формируем пятку
             if (doc.SummaryPtrn != null) doc.SummaryPtrn.Copy(doc.Summary.Range["A2"]);
@@ -81,6 +81,7 @@ namespace match.Handler
             const string SF_ACC_SYNONIMS = "SF_DicAccSyn";
             const string DOC_ACC_SYNONIMS = "DicAccSynonims";
             const string SYN_VALUE_COL = "C1";  // колонка 2 - список синонимов
+
             string[] ACC_DEL = { "<ИЛИ>" };
 
             Log.set("DicAccSyn");
@@ -95,9 +96,11 @@ namespace match.Handler
                 int rowNum = 2;
                 foreach (Excel.Range row in docSF.Body.Rows)
                 {
+                    // извлекаем и разделяем синонимы делимитером ACC_DEL ("<ИЛИ>")
                     string[] syn = ((string)row.Range[SYN_VALUE_COL].Text)
                         .Split(ACC_DEL, StringSplitOptions.RemoveEmptyEntries);
                     if (syn.Length < 2) continue;
+                    // цикл по синонимам - порождаем по строке на синоним
                     foreach (string str in syn)
                     {
 //                        Excel.Range rw = doc.AddRow();
@@ -118,17 +121,76 @@ namespace match.Handler
         public void MergeReps()
         {
         }
+
+        enum pass { first, second } ;       // описание типа pass (перечисление проходов)
         public void Adapt()
         {
-
+            const string PTRN_TITLE = "A1";
+            const string PTRN_VALUE = "A2";
+            const string PTRN_WIDTH = "A3";
+            const string PTRN_COLS  = "A4";
+            const string PTRN_ADAPTER = "A5";
+            const string PTRN_FETCH = "A6";
+//            const string PTRN_1STPASS = "A7";
             Log.set("Adapt");
             try
             {
-                Excel.Workbook db_match = match.MyFile.FileOpenEvent.fileOpen(Decl.F_MATCH); //
-                Excel._Worksheet hdrSht = db_match.Worksheets[Decl.HEADER];
-                Excel.Range ptrn;
-                try { ptrn = hdrSht.get_Range("HDR_??"); }  catch { ptrn = null; }
+                Docs doc = docs.First().Value;
+                int iRow = 0;
+                foreach (Excel.Range row in doc.Body.Rows)
+                {
+                    if (++iRow == 1)
+                    {
+                        // занимаемся заголовками колонок -- пока просто пропустим строку
+                        continue;
+                    }
+                    // цикл по проходам
+                    foreach (pass passNum in Enum.GetValues(typeof(pass)))
+                    {
+                        int colNum = 0;         
+                        foreach (Excel.Range col in doc.docPtrn.Columns)
+                        {
+                            colNum++;           // ведем номер колонки в Range как целое число
+                            string sX = col.Range[PTRN_COLS].Text;
+                            string rqst = col.Range[PTRN_ADAPTER].Text;
+                            int iX;
+                            if (int.TryParse(sX, out iX))   // проверяем что число
+                            {
+                                if (passNum == pass.first) {
+                                    // НЕДОПИСАНО!!! Надо извлечь номера отмеченных колонок из отдельного
+                                    // именованного Range, например "HDR_1C_Payment_MyCol_Pass0"
 
+                                    // на первом проходе - игнорируем все колонки кроме отмеченных
+//                                    if (col.Range[PTRN_1STPASS].Text == "") continue;
+                                    if (iX == colNum) continue;
+                                } else if (iX != colNum) continue;
+                                string x = row.Cells[1, 9].Text;
+    //                            string x = row.Cells[1, iX].Text;
+                                //                          string y = Adapter(rqst, 
+                            }
+                            else if (sX[0] == '#')
+                            {
+                                sX = sX.Substring(1);   // отсечь 1-й символ
+                                if (int.TryParse(sX, out iX) || iX >= 0)   // проверяем что число и оно >= 0
+                                {
+                                }
+                                else Log.FATAL("не числовое значение Шаблона с # в Value: '" + sX +"'");
+
+                            }
+                            else if (col.Range[PTRN_TITLE].Text == "ForProcess")
+                            {
+                            }
+                            else Log.FATAL("недопустимое значение Шаблона в Value: '" + sX + "'");
+                            // вызов адаптера rqst
+                            string y = Adapter (rqst
+                                            ,col.Range[PTRN_FETCH].Text
+                                            );
+                            if (y == null)  // Adapter возвращает null при ошибке
+                            {
+                            }
+                        }
+                    } 
+                }
             }
             finally
             {
@@ -143,6 +205,10 @@ namespace match.Handler
         }
         public void WrCSV()
         {
+        }
+        string Adapter(string rqst, string y)
+        {
+            return null;
         }
     }
 }
