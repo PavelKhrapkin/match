@@ -1,13 +1,14 @@
 ﻿/*-----------------------------------------------------------------------
  * MatchLib -- библиотека общих подпрограмм проекта match 3.0
  * 
- *  07.01.14 П.Храпкин, А.Пасс
+ *  11.01.14 П.Храпкин, А.Пасс
  *  
  * - 20.11.13 переписано с VBA на С#
  * - 1.12.13 добавлен метод ToIntList
  * - 1.1.14 добавлен ToStrList с перегрузками и умолчаниями
  * - 02.01.14 двоичный поиск EOL
  *            добавлен метод getDateTime(dynamic inp)
+ * - 11.01.14 EOC - определение числа колонок листа -- ПХ
  * -------------------------------------------
  * EOL(Sh)                  - возвращает число непустых строк в листе Sh
  * ToIntList(s, separator)  - возвращает List<int>, разбирая строку s с разделителями separator
@@ -143,6 +144,17 @@ namespace match.Lib
             }
             return beg;
         }   // end EOL()
+        /// <summary>
+        ///  EOC(Worksheet Sh)   - возвращает число непустых колонок листа Sh
+        /// </summary>
+        /// <param name="Sh"></param>
+        /// <returns></returns>
+        /// <journal>11.1.2014 переписано из EOL</journal>
+        public static int EOC(Excel.Worksheet Sh)
+        {
+            object[,] bdy = (object[,])Sh.UsedRange.get_Value();
+            return bdy.GetLength(1);
+        }
         /*
          * возвращает true, если в строке есть непустые ячейки
          */
@@ -261,6 +273,13 @@ namespace match.Lib
                 if (int.TryParse(item, out v)) ints.Add(v);
             }
             return ints;
+        }
+        public static int ToInt(string s, string msg = "не разобрана строка")
+        {
+            int v;
+            if (int.TryParse(s, out v)) return v;
+            Log.Warning(msg + " \"" + s + "\"");
+            return -1;
         }
         /// <summary>
         /// isCellEmpty(sh,row,col)     - возвращает true, если ячейка листа sh[rw,col] пуста или строка с пробелами

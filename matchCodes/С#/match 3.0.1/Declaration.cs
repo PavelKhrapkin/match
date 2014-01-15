@@ -44,20 +44,26 @@ namespace match.Declaration
         //--------- листы match.xlsm --------------
         public const string WE = "We";
         public const string HEADER = "Header";
+        public const string WP_PROTOTYPE = "WP_Prototype";
 
         //-----------константы таблицы Документов -----------------
-        public const string DOC_TIME        = "A1"; // дата и время последнего изменения Документа
-        public const string DOC_NAME        = "B1"; // имя Документа
-        public const string DOC_EOL         = "C1"; // EOL Документа
-        public const string DOC_MYCOL       = "D1"; // количество колонок, дабавляемых слева в Документ в loadDoc
-        public const string DOC_RESLINES    = "E1"; // число строк пятки
-        public const string DOC_MADESTEP    = "F1"; // последний выполненный Шаг
-        public const string DOC_FILE        = "H1"; // файл match, содержащий Документ
-        public const string DOC_SHEET       = "I1"; // лист Документа
-        public const string DOC_CREATED     = "N1"; // дата создания Документа
-        public const string DOC_PATTERN     = "P1"; // основной шаблон Документа
-        public const string DOC_SUMMARY_PATTERN = "Q1"; // шаблон пятки
-        public const string DOC_LOADER      = "T1"; // Loader Документа
+        public const int DOC_TIME        = 1; // дата и время последнего изменения Документа
+        public const int DOC_NAME        = 2; // имя Документа
+        public const int DOC_EOL         = 3; // EOL Документа
+        public const int DOC_MYCOL       = 4; // количество колонок, дабавляемых слева в Документ в loadDoc
+        public const int DOC_RESLINES    = 5; // число строк пятки
+        public const int DOC_MADESTEP    = 6; // последний выполненный Шаг
+        public const int DOC_PERIOD      = 7; // периодичность работы с Документом в днях
+        public const int DOC_FILE        = 8; // файл match, содержащий Документ
+        public const int DOC_SHEET       = 9; // лист Документа
+        public const int DOC_STMPTXT     = 10; // текст Штампа
+        public const int DOC_STMPTYPE    = 11; // тип Штампа
+        public const int DOC_STMPROW     = 12; // строка Штампа
+        public const int DOC_STMPCOL     = 13; // колонка Штампа
+        public const int DOC_CREATED     = 14; // дата создания Документа
+        public const int DOC_PATTERN     = 16; // основной шаблон Документа
+        public const int DOC_SUMMARY_PATTERN = 17; // шаблон пятки
+        public const int DOC_LOADER      = 20; // Loader Документа
 
         //-----------константы таблицы Процессов -----------------
         public const string PROCESS = "Process";
@@ -77,6 +83,7 @@ namespace match.Declaration
         //-----------константы Шаблонов -----------------
         public const string PTRN_HDR    = "A1";     // заголовки колонок   
         public const string PTRN_WIDTH  = "A3";     // ширина колонок
+        public const int PTRN_FETCH = 6;    // Fetch запрос
 
         public const string PTRN_COPYHDR = "CopyHdr"; // указание копировать заголовок из Шаблона
     }

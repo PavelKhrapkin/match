@@ -33,15 +33,15 @@ namespace match.Handler
             new Log("перед запуском InsMyCol");
 //            Docs doc = docs[0];
             Docs doc = docs.First().Value;
-
-            if (doc.Body.Range["A1"].Text == doc.docPtrn.Range["A1"].Text)
+/* PK
+            if (doc.Body.Range["A1"].Text == doc.ptrn.Range["A1"].Text)
                 Log.FATAL("Попытка обработать уже обработанный Документ");
             //---  вставляем колонки по числу MyCol        
             doc.Sheet.Range["A1", doc.Body.Cells[1, doc.MyCol]].EntireColumn.Insert();
             //--- устанавливает ширину колонки листа по значениям в строке Шаблона Width
             new Log("после вставки колонок");
             int i = 1;
-            foreach (Excel.Range col in doc.docPtrn.Columns)
+            foreach (Excel.Range col in doc.ptrn.Columns)
             {
                 string s = col.Range[Decl.PTRN_WIDTH].Text;
                 if (s == Decl.PTRN_COPYHDR) col.Range["A1"].Copy(doc.Body.Cells[1, i]);
@@ -52,10 +52,11 @@ namespace match.Handler
                 doc.Body.Columns[i++].ColumnWidth = W;
             }
             //--- копируем колонки MyCol от верха до Body.EOL
-            doc.docPtrn.Range["A1", doc.docPtrn.Cells[2, doc.MyCol]].Copy(doc.Body.Range["A1"]);
+            doc.ptrn.Range["A1", doc.ptrn.Cells[2, doc.MyCol]].Copy(doc.Body.Range["A1"]);
             doc.Body.Range["A2", doc.Body.Cells[doc.Body.Rows.Count, doc.MyCol]].FillDown();
             //--- если есть --> формируем пятку
             if (doc.SummaryPtrn != null) doc.SummaryPtrn.Copy(doc.Summary.Range["A2"]);
+ PK */
             Log.exit();
         }
         public void DateSort()
@@ -83,7 +84,7 @@ namespace match.Handler
             const string SYN_VALUE_COL = "C1";  // колонка 2 - список синонимов
 
             string[] ACC_DEL = { "<ИЛИ>" };
-
+/* PK
             Log.set("DicAccSyn");
             try
             {
@@ -111,6 +112,7 @@ namespace match.Handler
                 }
             }
             finally { Log.exit(); }
+PK */ 
         }
         public void RowDel()
         {
@@ -125,6 +127,7 @@ namespace match.Handler
         enum pass { first, second } ;       // описание типа pass (перечисление проходов)
         public void Adapt()
         {
+/* PK
             const string PTRN_TITLE = "A1";
             const string PTRN_VALUE = "A2";
             const string PTRN_WIDTH = "A3";
@@ -148,7 +151,7 @@ namespace match.Handler
                     foreach (pass passNum in Enum.GetValues(typeof(pass)))
                     {
                         int colNum = 0;         
-                        foreach (Excel.Range col in doc.docPtrn.Columns)
+                        foreach (Excel.Range col in doc.ptrn.Columns)
                         {
                             colNum++;           // ведем номер колонки в Range как целое число
                             string sX = col.Range[PTRN_COLS].Text;
@@ -196,6 +199,7 @@ namespace match.Handler
             {
                 Log.exit();
             }
+ PK */
         }
         public void ProcStart()
         {
@@ -206,7 +210,7 @@ namespace match.Handler
         public void WrCSV()
         {
         }
-        string Adapter(string rqst, string y)
+        string Adapter(string rqst, string fetch_rqst)
         {
             return null;
         }

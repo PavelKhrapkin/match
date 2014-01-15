@@ -48,6 +48,7 @@ namespace match.Process
                 Process proc = null;
                 Docs proc_doc = Docs.getDoc(Decl.PROCESS);
                 int line_process = 0;
+/* PK
                 foreach (Excel.Range rw in proc_doc.Body.Rows)
                 {
                     line_process++;
@@ -73,6 +74,7 @@ namespace match.Process
                             break;
                     }
                 }
+ PK */
                 new Log("после работы статического конструктора Процессов");
             }
             catch { Log.FATAL("Не удалось инициализировать таблицу Процессов."); }

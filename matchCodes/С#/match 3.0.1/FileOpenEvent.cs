@@ -1,3 +1,5 @@
+//#define Test
+
 using System;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Collections.Generic;
@@ -6,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using match.Document;
 using match.Lib;
+using Mtr = match.Matrix.Matr;
 using Decl = match.Declaration.Declaration;
 
 namespace match.MyFile
@@ -80,6 +83,43 @@ namespace match.MyFile
             }
             finally { Log.exit(); }
         }
+        public static void DisplayAlert(bool val) { _app.DisplayAlerts = val; }
         public static void fileSave(Excel.Workbook Wb) { Wb.Save(); }
+
+#if Test
+        public static void TestSheetExists()
+        {
+            Excel.Workbook Wb = fileOpen(Decl.F_1C);
+            Console.WriteLine(" Платежи = ", Convert.ToString(sheetExists(Wb, "Платежи")));
+            Console.WriteLine(" Платежи25 = ", Convert.ToString(sheetExists(Wb, "Платежи25")));
+        }
+#endif
+        public static bool sheetExists(Excel.Workbook Wb, string name)
+        {
+            try { Excel.Worksheet Sh =  Wb.Worksheets[name]; return true; }
+            catch { return false; }
+        }
+
+        public static Mtr getRngValue(Excel.Worksheet Sh, int r0, int c0, int r1, int c1, string msg = "")
+        {
+            Log.set("ToMtr");
+            try
+            {
+                Excel.Range cell1 = Sh.Cells[r0, c0];
+                Excel.Range cell2 = Sh.Cells[r1, c1];
+                Excel.Range rng = Sh.Range[cell1, cell2];
+                return new Mtr(rng.get_Value());
+            }
+            catch
+            {
+                if (msg == "")
+                {
+                    msg = "Range[ [" + r0 + ", " + c0 + "] , [" + r1 + ", " + c1 + "] ]";
+                }
+                Log.FATAL(msg);
+                return null;
+            }
+            finally { Log.exit(); }
+        }
     }
 }
