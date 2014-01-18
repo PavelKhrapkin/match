@@ -246,12 +246,8 @@ namespace match.Document
                             + newEOL + " было " + doc.EOLinTOC);
                         doc.EOLinTOC = newEOL;
                     }
-                    if (!doc.stamp.Check((doc.FileName == Decl.F_SFDC)? doc.Summary: doc.Body))
-                    {
-                        new Log("Fatal Stamp chain");
-
-                        //  НЕ НАПИСАНО!!!                      Stamp.trace(rng, 
-                    }
+                    Mtr rng = (doc.FileName == Decl.F_SFDC)? doc.Summary: doc.Body;
+                    if (!doc.stamp.Check(rng)) Log.FATAL(doc.stamp.Trace(doc));
                     doc.isOpen = true;
                 }
                 Log.exit();
@@ -259,9 +255,8 @@ namespace match.Document
             }
             catch
             {
-                Log.FATAL("Документ \"" + name + "\" не открыт!!");
-                // надо проверить, что Document name не существует
-                // в случае, если существует, но не удалось прочитать - создать событие FATAL_ERR
+                string msg = (Documents.ContainsKey(name)) ? "не существует" : " не удалось открыть";
+                Log.FATAL("Документ \"" + name + "\" " + msg);
                 return null;    // нужно только при обработке Event File Open для неизвестного файла
             }
         }
@@ -517,38 +512,27 @@ namespace match.Document
                 foreach (OneStamp st in stamps) if (!st.Check(mtr)) return false;
                 return true;
             }
-
-            //public bool Check()
-            //{
-            //    Mtr range = (FileName == Decl.F_SFDC) ? Summary : Body;
-            //    foreach (OneStamp st in stamps) if (!st.Check(range)) return false;
-            //    return true;
-            //}
-            /* PK
-                        /// <summary>
-                        /// trace(Stamp)    - вывод в Log-файл данных по Штампам Документа
-                        /// </summary>
-                        /// <param name="st"></param>
-                        /// <journal> 26.12.13 -- не дописано -- нужно rnd не только doc.Body, но для SF doc.Summary
-                        /// </journal>
-                        public void trace(Document doc)
-                        {
-                            Log.set("Stamp.trace(" + doc.name + ")");
-                            Excel.Range rng = (doc.FileName == Decl.F_SFDC) ? doc.Summary : doc.Body;
-                            foreach (OneStamp st in doc.stamp.stamps)
-                                if (OneStamp.Check(rng, st))
-                                {
-                                    new Log("\t=OK=>" + st.ToString());
-                                }
-                                else
-                                {
-                                    new Log("\t=!!=>" + st.ToString() + "\tFATAL!");
-                                }
-                            Log.FATAL("Документ соответствует Штампам");
-                        }
-            PK */
+            /// <summary>
+            /// Trace(Stamp)    - вывод в Log-файл данных по Штампам Документа
+            /// </summary>
+            /// <param name="st"></param>
+            /// <journal> 26.12.13 -- не дописано -- нужно rnd не только doc.Body, но для SF doc.Summary
+            /// 18.1.14 (ПХ) отладка с Matrix
+            /// </journal>
+            public string Trace(Document doc)
+            {
+                Mtr rng = (doc.FileName == Decl.F_SFDC) ? doc.Summary : doc.Body;
+                string msg = (string)((rng == doc.Summary) ? "Пятка" : "Body");
+                msg += "Документ не соответствует Штампам";
+                foreach (OneStamp st in doc.stamp.stamps)
+                    traceSub(st.Check(rng) ? "OK" : "!!", st);
+                return msg;
+            }
+            static void traceSub(string msg, OneStamp st)
+            {
+                new Log("\t=" + msg + "=> " + st.get("type") + " " + st.get("sig") + " " + st.get());
+            }
         }
-
         /// <summary>
         /// Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
         /// </summary>
@@ -557,7 +541,6 @@ namespace match.Document
             private string signature;   // проверяемый текст Штампа - сигнатура
             private string typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
             private List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
-
             /// <summary>
             /// Конструктор OneStanp(doc_toc, int rowNumber)
             /// </summary>
@@ -580,6 +563,28 @@ namespace match.Document
                 List<int> col = intListFrCell(doc, rowNumber, Decl.DOC_STMPCOL);
                 // декартово произведение множеств rw и col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
+            }
+            /// <summary>
+            /// используется для внешнего доступа к private полям Штампа, в т.ч. для Log и Trace
+            /// </summary>
+            /// <param name="str">что извлекаем: "signature" или "type" или "position"</param>
+            /// <returns>string</returns>
+            /// <journal> 18.1.2014 (ПХ)</journal>
+            public string get(string str = "position")
+            {
+                string v;
+                switch (str.ToLower()[0])
+                {
+                    case 's': v = signature; break;
+                    case 't': v = typeStamp; break;
+                    default:
+                        {
+                            v = "{";
+                            foreach (int[] pos in stampPosition) v += "[" + pos[0] + "," + pos[1] + "]";
+                            v += "}"; break;
+                        }
+                }
+                return v;
             }
             private List<int> intListFrCell(Document doc, int row, int col)
             {
