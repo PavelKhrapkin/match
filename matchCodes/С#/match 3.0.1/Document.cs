@@ -1,7 +1,7 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  14.1.2014  П.Храпкин, А.Пасс
+ *  17.1.2014  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Excel = Microsoft.Office.Interop.Excel;
-using match.MyFile;
+using FileOp = match.MyFile.FileOpenEvent;
 using Decl = match.Declaration.Declaration;
 //using Mtrx = match.Matrix.Matrix;
 using Mtr = match.Matrix.Matr;  //--
@@ -76,7 +76,7 @@ namespace match.Document
         {
             Log.set("статический конструктор Документов");
             Document doc = null;
-            Excel.Workbook db_match = FileOpenEvent.fileOpen(Decl.F_MATCH);
+            Excel.Workbook db_match = FileOp.fileOpen(Decl.F_MATCH);
             Excel.Worksheet tocSheet = db_match.Worksheets[TOC];
 
             Excel.Worksheet hdrSht = db_match.Worksheets[Decl.HEADER]; // в этом листе шапки в именованных Range по всем Документам
@@ -180,6 +180,7 @@ namespace match.Document
             {
                 // Дальше распознавание частичное или полное обновление прежнего Документа.
                 // Здесь только если частичное, то есть потом будет выполняться Merge
+                // это еще не написано!!
             }
             doc.LastUpdateFromFile = wb.Name;
             string oldRepName = "Old_" + doc.SheetN;
@@ -188,11 +189,11 @@ namespace match.Document
                 wb.Worksheets[1].Name = "TMP";
                 wb.Worksheets[1].Move(doc.Sheet);
                  // если Old_ уже есть, но еще не обработан - уничтожаем прежний "частичный" отчет
-                if (match.MyFile.FileOpenEvent.sheetExists(doc.Wb, oldRepName))
+                if (FileOp.sheetExists(doc.Wb, oldRepName))
                 {
-                    match.MyFile.FileOpenEvent.DisplayAlert(false);
+                    FileOp.DisplayAlert(false);
                     doc.Wb.Worksheets[doc.name].Delete();
-                    match.MyFile.FileOpenEvent.DisplayAlert(true);
+                    FileOp.DisplayAlert(true);
                 } else doc.Sheet.Name = "Old_" + doc.SheetN;
                 doc.Wb.Worksheets["TMP"].Name = doc.SheetN;
             }
@@ -203,14 +204,15 @@ namespace match.Document
             }
             doc.Sheet = doc.Wb.Worksheets[name];
             doc.splitBodySummary();
-//PK            new Log("Во входном файле типа \"" + doc.name + "\" " + doc.Body.Rows.Count + " строк");
-
+            doc.FetchInit();
             // если есть --> запускаем Handler
             if (doc.Loader != null) Proc.Reset(doc.Loader);
-
-            // если нужно --> делаем Merge
-            //doc.Merge();
-
+            // если нужно --> делаем Merge name с oldRepName
+            if (FileOp.sheetExists(doc.Wb, oldRepName))
+            {
+                // еще не написано!!
+                // NB: в таблице Процессов есть Шаг MergeReps
+            }
             Log.exit();
             return doc;
         }
@@ -234,7 +236,7 @@ namespace match.Document
                 if (!doc.isOpen)
                 {
                     //---- загрузка Документа из файла
-                    doc.Wb = FileOpenEvent.fileOpen(doc.FileName);
+                    doc.Wb = FileOp.fileOpen(doc.FileName);
                     doc.Sheet = doc.Wb.Worksheets[doc.SheetN];
                     doc.splitBodySummary();
                     int newEOL = doc.Body.iEOL();
@@ -244,8 +246,7 @@ namespace match.Document
                             + newEOL + " было " + doc.EOLinTOC);
                         doc.EOLinTOC = newEOL;
                     }
-                    if (!doc.stamp.Check(doc))
-//                    if (!doc.stamp.Check())
+                    if (!doc.stamp.Check((doc.FileName == Decl.F_SFDC)? doc.Summary: doc.Body))
                     {
                         new Log("Fatal Stamp chain");
 
@@ -280,8 +281,8 @@ namespace match.Document
             int iEOL = (_resLns == 0) ? fullEOL : fullEOL - _resLns;
             int iEOC = Lib.MatchLib.EOC(Sheet);
 
-            Body = FileOpenEvent.getRngValue(Sheet, 1, 1, iEOL, iEOC);
-            if (_resLns > 0) Summary = FileOpenEvent.getRngValue(Sheet, iEOL + 1, 1, fullEOL, iEOC);
+            Body = FileOp.getRngValue(Sheet, 1, 1, iEOL, iEOC);
+            if (_resLns > 0) Summary = FileOp.getRngValue(Sheet, iEOL + 1, 1, fullEOL, iEOC);
         }
         /// <summary>
         /// isDocChanged(name) - проверяет, что Документ name доступен и изменен
@@ -343,17 +344,43 @@ namespace match.Document
         }
  PK */
         /// <summary>
+        /// подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body 
+        /// </summary>
+        /// <returns></returns>
+        /// <journal>17.1.2014 PKh</journal>
+        public long CheckSum()
+        {
+            DateTime t0 = DateTime.Now;
+            long checkSum = 0;
+
+            int maxRow = Body.iEOL();
+            int maxCol = Body.iEOC();
+            for (int i=1; i <= maxRow; i++)
+                for (int j=1; j <= maxCol; j++)
+                {
+                    string str = Body.String(i, j);
+                    if (str.Length == 0) continue;
+                    byte[] bt = Encoding.ASCII.GetBytes(str);
+                    foreach (var h in bt) checkSum += h;
+                }
+
+            DateTime t1 = DateTime.Now;
+            new Log("-> " + (t1 - t0) + "\tChechSum=" + checkSum);
+
+            return checkSum;
+        }
+        /// <summary>
         /// сохраняет Документ, если он изменялся
         /// </summary>
         /// <param name="name"></param>
         public void saveDoc()
         {
-            if (isOpen && isChanged) FileOpenEvent.fileSave(Wb);
+            if (isOpen && isChanged) FileOp.fileSave(Wb);
         }
         public static void saveDoc(string name)
         {
             Document doc = Documents[name];
-            if (doc.isDocChanged(name)) FileOpenEvent.fileSave(doc.Wb);
+            if (doc.isDocChanged(name)) FileOp.fileSave(doc.Wb);
         }
         /// <summary>
         /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
@@ -362,41 +389,31 @@ namespace match.Document
         /// <returns>имя распознанного документа или null, если Документ не распознан</returns>
         /// <journal> 14.12.2013
         /// 16.12.13 (ПХ) переписано распознавание с учетом if( is_wbSF(wb) )
+        /// 18.01.14 (ПХ) с использование Matrix
         /// </journal>
         public static string recognizeDoc(Excel.Workbook wb)
         {
             Log.set("recognizeDoc(wb)");
-            Excel.Worksheet wholeSheet = wb.Worksheets[1];
-//            Excel.Range rng = wholeSheet.Range["1:" + Lib.MatchLib.EOL(wholeSheet).ToString()];
-            object[,] toc = wholeSheet.UsedRange.get_Value();   //перенос данных из Excel в память
-            int iEOL = toc.GetLength(0);
-            int iEOC = toc.GetLength(1);
-/* PK
-            Mtrx[,] mtrx = new Mtrx[iEOL + 1, iEOC + 1];
-            for (int i = 1; i <= iEOL; i++)
+            Mtr wbMtr = FileOp.getSheetValue(wb.Worksheets[1]);
+            // вначале проверим где у wb Штамп - в теле или в пятке? Штамп в пятке бывает только у SF
+            // отделим от wbMtr область пятки SF -- переложим SFresLines строк wbMtr в wdSFsummary
+            int iEOL = wbMtr.iEOL();
+            int iEOC = wbMtr.iEOC();
+            object[,] tmp = new object [Decl.SFresLines + 1, iEOC + 1];
+            for (int rw = 1; rw <= Decl.SFresLines; rw++)
+                for (int col = 1; col <= iEOC; col++)
+                    tmp[rw, col] = wbMtr.get(iEOL - Decl.SFresLines + rw - 1, col);
+            Mtr wbSFsummary = new Mtr(tmp);
+
+            Mtr rng = (Documents["SFDC"].stamp.Check(wbSFsummary))? wbSFsummary: wbMtr;
+
+            try 
             {
-                for (int j = 1; j <= iEOC; j++)
-                {
-                    mtrx[i, j] = new Mtrx(toc[i, j]);
-                }
+                foreach (var doc in Documents)  // ищем подходящий документ по Штампам
+                    if (doc.Value.stamp.Check(rng)) return doc.Value.name;
+                return null;                    // если ничего не нашли -> вовращаем null
             }
-*/
-            Stamp stmpSF = Documents["SFDC"].stamp;
-//--            bool is_wbSF = stmpSF.Check(mtrx);
-//            bool is_wbSF = Stamp.Check(mtrx, stmpSF);
-            // ищем подходящий документ в TOCmatch
-            foreach (var doc in Documents)
-            {
-//--                if (is_wbSF && (doc.Value.FileName != Decl.F_SFDC)) continue;
-                if (doc.Value.name == "SFDC" || doc.Value.name == "Process") continue;
-//--                if (doc.Value.stamp.Check(mtrx))
-//                if (Stamp.Check(rng, doc.Value.stamp))
-                    {
-                    Log.exit();
-                    return doc.Value.name;
-                }
-            }       // конец цикла по документам
-            return null;        // ничего не нашли
+            finally { Log.exit(); }                  
         }
         /// <summary>
         /// инициирует Fetch-структуру Документа для Запроса fetch_rqst.
@@ -441,8 +458,14 @@ namespace match.Document
                 DateTime t0 = DateTime.Now;
                 for (int i = 1; i <= doc.Body.iEOL(); i++)
                 {
+
                     string s1 = doc.Body.String(i, key);
-                    if (s1 != "") keyDic.Add(s1, doc.Body.String(i, val));
+                    if (s1 != "")try { keyDic.Add(s1, doc.Body.String(i, val)); }
+                        catch
+                        {
+                            Log.Warning("Запрос \"" + fetch_rqst + " Строка " + i
+                                + " неуникальное значение \"" + s1 + "\" в ключевом поле запроса!");
+                        }
                 }
                 DateTime t1 = DateTime.Now;
                 new Log("-> "+(t1-t0));
@@ -457,7 +480,6 @@ namespace match.Document
         /// <journal> дек 2013
         /// 12.1.2014 - работа с матрицей в памяти, а не с Range в Excel
         /// </journal>
-//        private class Stamp : Document
         private class Stamp
         {
             public List<OneStamp> stamps = new List<OneStamp>();
@@ -466,6 +488,9 @@ namespace match.Document
             /// </summary>
             /// <param name="i0"></param>
             /// <param name="i1"></param>
+            /// <journal>
+            /// 18.1.2014 (ПХ) в класс Штамп и в конструктор добавлен _parentDoc - Документ Штампа
+            /// </journal>
             public Stamp(int i0, int i1)
             {
                 Document doc_toc = getDoc(TOC);
@@ -476,18 +501,20 @@ namespace match.Document
             }
             /// <summary>
             /// Check(Документ) - проверка, что штамп в Документе соответствует цепочке Штампов в TOCmatch
+            /// 
+            /// Штамп.Check(Mtr) - проверяем, что данные в Mtr содержат сигнатуры Штампа на нужных местах
             /// </summary>
             /// <param name="doc">проверяемый Документ</param>
             /// <returns>true, если результат проверки положительный, иначе false</returns>
             /// <journal> 12.12.13
             /// 16.12.13 (ПХ) перенес в класс Stamp и переписал
             /// 13.1.2014 - переписано
+            /// 18.1.14 (ПХ) - переписано еще раз: проверяем mtr
             /// </journal>
-//            public static bool Check(Excel.Range rng, Stamp stmp)
-            public bool Check(Document doc)
-            {
-                Mtr range = (doc.FileName == Decl.F_SFDC) ? doc.Summary : doc.Body;
-                foreach (OneStamp st in stamps) if (!st.Check(range)) return false;
+            public bool Check(Mtr mtr)
+            {             
+                if (mtr == null) return false;
+                foreach (OneStamp st in stamps) if (!st.Check(mtr)) return false;
                 return true;
             }
 
@@ -525,13 +552,11 @@ namespace match.Document
         /// <summary>
         /// Класс, описывающий штамп документа (с вариантами позиций, заданными в одной стрке TOCmatch)
         /// </summary>
-//        public class OneStamp : Document
         public class OneStamp
         {
             private string signature;   // проверяемый текст Штампа - сигнатура
-            private string typeStamp;     // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
+            private string typeStamp;   // '=' - точное соответствие сигнатуры; 'I' - "текст включает.."
             private List<int[]> stampPosition = new List<int[]>();   // альтернативные позиции сигнатур Штампов
-//            private bool _isSF;
 
             /// <summary>
             /// Конструктор OneStanp(doc_toc, int rowNumber)
@@ -551,57 +576,37 @@ namespace match.Document
                 signature = doc.Body.String(rowNumber, Decl.DOC_STMPTXT);
                 typeStamp = doc.Body.String(rowNumber, Decl.DOC_STMPTYPE);
   
-                List<int> rw = intListFrCell(doc, rowNumber, Decl.DOC_STMPROW);
+                List<int> rw  = intListFrCell(doc, rowNumber, Decl.DOC_STMPROW);
                 List<int> col = intListFrCell(doc, rowNumber, Decl.DOC_STMPCOL);
                 // декартово произведение множеств rw и col
                 rw.ForEach(r => col.ForEach(c => stampPosition.Add(new int[] { r, c })));
             }
+            private List<int> intListFrCell(Document doc, int row, int col)
+            {
+                return Lib.MatchLib.ToIntList(doc.Body.String(row, col), ',');
+            }
             /// <summary>
-            /// Check(rng, stmp)        - проверка сигнатуры Штампа stmp в rng для его всех допустимых позиций
+            /// Stamp.Check(mtr) - проверка mtr на соответствие Штампу в stmp. ОК->true, несовпадение->false
             /// </summary>
-            /// <param name="rng"></param>
-            /// <param name="stmp"></param>
+            /// <param name="mtr"></param>
             /// <returns>bool: true если проверка Штампа дает совпадение сигнатуры</returns>
             /// <journal> 12.12.2013
             /// 25.12.13 (ПХ) ToString вместо Value2 для проверяемой ячейки
             /// 13.1.14 - работа с матрицами
+            /// 18.1.14 - (ПХ) рефакторинг. Теперь сверяем strToCheck в mtr и SigInStamp в Штампе
             /// </journal>
             public bool Check(Mtr mtr)
             {
- //               int shiftToEol = (Wb.Name == Decl.F_SFDC) ? rng.GetLength(0) - 6 : 0;
-                string sig = signature.ToLower();
+                string sigInStamp = signature.ToLower();
                 foreach (var pos in stampPosition) {
-                    var x = mtr.String(pos[0], pos[1]);
-                    string strToCheck = x.ToLower();
+                    string strToCheck = mtr.String(pos[0], pos[1]).ToLower();
                     if (typeStamp == "=") {
-                        if (strToCheck == sig) return true;
+                        if (strToCheck == sigInStamp) return true;
                     } else {
-                        if (strToCheck.Contains(sig)) return true;
+                        if (strToCheck.Contains(sigInStamp)) return true;
                     }
                 }
                 return false;
-            }
-                
-//                string sig = stmp.signature.ToLower();
-//                foreach (var pos in stmp.stampPosition)
-//                {
-////                    var x = rng.Cells[pos[0] + shiftToEol, pos[1]].Value2.ToString();
-//                    if (x == null) continue;
-//                    string strToCheck = x.ToLower();
-
-//                    if (stmp.typeStamp == '=')
-//                    {
-//                        if (strToCheck == sig) return true;
-//                    }
-//                    else
-//                    {
-//                        if (strToCheck.Contains(sig)) return true;
-//                    }
-//                }
-
-            private List<int> intListFrCell(Document doc, int row, int col)
-            {
-                return Lib.MatchLib.ToIntList(doc.Body.String(row, col), ',');
             }
         }   // конец класса OneStamp
     }    // конец класса Document
