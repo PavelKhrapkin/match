@@ -1,13 +1,13 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  17.1.2014  П.Храпкин, А.Пасс
+ *  5.4.2014  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb, запускает Handler Документа
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
- * isDocChanged(name)      - проверяет, что Документ name открыт
+ * isDocChanged(name)   - проверяет, что Документ name открыт
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
  * 
  * внутренний класс Stamp предназначен для заполнения списков Штампов
@@ -16,6 +16,7 @@
  * Check(rng,stampList) - проверка Штампов stampList в Range rng 
  */
 using System;
+using System.Data;
 //using Box = System.Windows.Forms.MessageBox;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,12 +29,14 @@ using Mtr = match.Matrix.Matr;  //--
 using Lib = match.Lib;
 using Log = match.Lib.Log;
 using Proc = match.Process.Process;
+using System.Xml.Serialization;
 
 namespace match.Document
 {
     /// <summary>
     /// класс Document содержит таблицу параметров всех Документов, известных приложению match
     /// </summary>
+    [XmlRoot]
     public class Document
     {
         private static Dictionary<string, Document> Documents = new Dictionary<string, Document>();   //коллекция Документов
@@ -41,14 +44,16 @@ namespace match.Document
         public string name;
         private bool isOpen = false;
         public bool isChanged = false;
-        private string FileName;
 #if WB_PRIVATE
         //private Excel.Workbook wb;
         //public Excel.Workbook Wb { get; private set; }
 #else
+        [XmlIgnore]
         public Excel.Workbook Wb;
 #endif
+        private string FileName;
         private string SheetN;
+        [XmlIgnore]
         public Excel.Worksheet Sheet;
         private string MadeStep;
         private DateTime MadeTime;
@@ -63,9 +68,14 @@ namespace match.Document
         private bool isPartialLoadAllowed;
         public int MyCol;           // количесто колонок, добавляемых слева в Документ в loadDoc
         public int usedColumns;     // общее кол-во использованных колонок в Body Документа
+        [XmlIgnore]
         public Mtr ptrn;
+        [XmlIgnore]
         public Mtr Body;
+        public DataTable dt;
+        [XmlIgnore]
         public Mtr Summary;
+        [XmlIgnore]
         public Dictionary<string, Dictionary<string, string>> docDic = new Dictionary<string, Dictionary<string, string>>();
 
         private const string TOC = "TOCmatch";
@@ -96,6 +106,7 @@ namespace match.Document
                     if (doc.name == TOC)    // mtr относится только к TOCmatch, а не ко всем Документам  
                     {                       
                         doc.Body = mtr;
+                        doc.dt = doc.Body.DaTab();
                         doc.Wb = db_match;
                         doc.Sheet = tocSheet;
                         doc.EOLinTOC = iEOL;
@@ -117,12 +128,8 @@ namespace match.Document
                         if (ptrnName != "") doc.ptrn = new Mtr(hdrSht.Range[ptrnName].get_Value());
                     } catch {
                         if (ptrnName == "WP_Prototype") continue;
-                        //DefinedNames rngInMatch =  db_match.DefinedNames;
-                        //if (ptrnName == "WP_Prototype") {
-                        //doc.ptrn = new Mtr(wpPrototype.Range[ptrnName].get_Value());
-                        //}
-                    } // затычка
-        //            if (ptrnName != "") doc.ptrn = new Mtr(db_match.
+                    } // затычка специально для WP_prototype 23.1.14
+                    doc.Loader = mtr.String(i, Decl.DOC_LOADER);
                     int j;
                     for (j = i + 1; j <= iEOL && mtr.String(j, Decl.DOC_NAME) == ""; j++) ;
                     doc.stamp = new Stamp(i, j - 1);
@@ -205,6 +212,7 @@ namespace match.Document
             doc.Sheet = doc.Wb.Worksheets[name];
             doc.splitBodySummary();
             doc.FetchInit();
+
             // если есть --> запускаем Handler
             if (doc.Loader != null) Proc.Reset(doc.Loader);
             // если нужно --> делаем Merge name с oldRepName
@@ -226,6 +234,7 @@ namespace match.Document
         /// 28.12.13 - теперь doc.Sheet и doc.Wb храним в структуре Документа
         /// 5.1.14  - обработка шаблонов Документа
         /// 7.1.14  - отделяем пятку и помещаем в Body и Summary
+        /// 5.4.14  - инициализируем docDic, то есть подготавливаем набор данных для Fetch
         /// </journal>
         public static Document getDoc(string name)
         {
@@ -250,6 +259,7 @@ namespace match.Document
                     if (!doc.stamp.Check(rng)) Log.FATAL(doc.stamp.Trace(doc));
                     doc.isOpen = true;
                 }
+                doc.FetchInit();
                 Log.exit();
                 return doc;
             }
@@ -277,6 +287,7 @@ namespace match.Document
             int iEOC = Lib.MatchLib.EOC(Sheet);
 
             Body = FileOp.getRngValue(Sheet, 1, 1, iEOL, iEOC);
+            dt = Body.DaTab();
             if (_resLns > 0) Summary = FileOp.getRngValue(Sheet, iEOL + 1, 1, fullEOL, iEOC);
         }
         /// <summary>
@@ -368,14 +379,40 @@ namespace match.Document
         /// сохраняет Документ, если он изменялся
         /// </summary>
         /// <param name="name"></param>
+        //public void saveDoc()
+        //{
+            
+        //    if (isOpen && isChanged) FileOp.fileSave(Wb);
+        //}
+ //       public static void saveDoc(string name)
         public void saveDoc()
         {
-            if (isOpen && isChanged) FileOp.fileSave(Wb);
+//            Document doc = Documents[name];
+            if (isDocChanged(name))
+            {
+                FileOp.Reset(Sheet);
+                // записать шапку из Шаблона в A1
+                Excel.Range rng = Sheet.Range["A2"];
+                int rws = Body.iEOL();
+ /////               int cols = doc.Body.iEOC();
+                for (int rw = 2; rw <= rws; rw++) colCpy(Body, rw, rng, rw);
+                    //////for (int col = 1; col <= cols; col++)
+                    //////    rng.Cells[rw, col] = doc.Body.get(rw, col);
+
+                if (Summary != null)
+                {
+                    for (int rwMtr = 1, rw = rws + 1; rw <= Summary.iEOL(); rw++, rwMtr++)
+                        colCpy(Summary, rwMtr, rng, rw);
+                        //////for (int col = 1; col <= cols; col++)
+                        //////    rng.Cells[rw, col] = doc.Summary.get(rwMtr, col);
+                }
+                FileOp.fileSave(Wb);
+            }
         }
-        public static void saveDoc(string name)
+        private static void colCpy(Mtr mtr, int rwMtr, Excel.Range rng, int rwRng)
         {
-            Document doc = Documents[name];
-            if (doc.isDocChanged(name)) FileOp.fileSave(doc.Wb);
+            int cols = mtr.iEOC();
+            for (int col = 1; col <= cols; col++) rng.Cells[rwRng, col] = mtr.get(rwMtr, col);
         }
         /// <summary>
         /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
@@ -434,9 +471,12 @@ namespace match.Document
             catch { Log.FATAL("ошибка FetchInit() для Документа \"" + name + "\""); }
             finally { Log.exit(); }
         }
+ 
+        /// <param name="fetch_rqst"></param>
+        /// <example>FetchInit("SFacc/2:3")</example>
         public void FetchInit(string fetch_rqst)
         {
-            Log.set("FetchInit");
+            Log.set("FetchInit(fetch_rqst)");
             try
             {
                 if (String.IsNullOrEmpty(fetch_rqst)) { FetchInit(); return; }
@@ -467,6 +507,31 @@ namespace match.Document
             }
             catch { Log.FATAL("ошибка запроса \"" + fetch_rqst + "\" для Документа \"" + name + "\""); }
             finally { Log.exit(); }
+        }
+
+        /// <summary>
+        /// Fetch(fetch_rqst, x) -- извлекает значение по строкам х и ftch_rqst
+        /// </summary>
+        /// <example>Fetch("SFacc/2:3/0", "ООО «ОРБИТА СПб»") </example>
+        /// <example>Fetch("SF/2:3/0", "ООО «ОРБИТА СПб»") </example>
+        /// <param name="fetch_rqst"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <journal>5.4.2014</journal>
+        public string Fetch(string fetch_rqst, string x)
+        {
+            Log.set("Fetch");
+            string result = null;
+            try
+            {
+                string[] ar_rqst = fetch_rqst.Split('/');
+                Document doc = getDoc(ar_rqst[0]);
+                Dictionary<string, string> Dic = doc.docDic[ar_rqst[0] + "/" + ar_rqst[1]];
+                result = Dic[x];
+            }
+            catch { Log.FATAL("ошибка Fetch( \"" + fetch_rqst + "\", \"" + x + "\")" ); }
+            finally { Log.exit(); }
+            return result;
         }
 
         /// <summary>
