@@ -5,7 +5,7 @@ Attribute VB_Name = "For_PERSONAL"
 ' * MoveToMatch    - перенос Листа на первое место Match1SF    (Ctrl/Shift/M)
 ' * TriggerOptionsFormulaStyle  - переключение моды A1/R1C1    (Ctrl/Shift/R)
 '
-' П.Л.Храпкин 9.11.2013
+' П.Л.Храпкин 21.8.2014
 '   28.1.2012 - работы по параметризации имен и позиций листов
 '    5.2.2012 - в MoveToMatch - распознавание входного отчета по штампу
 '   16.5.2012 - добавлен отчет SF_PA
@@ -14,6 +14,7 @@ Attribute VB_Name = "For_PERSONAL"
 '   17.8.2012 - Обработка Процессов - Loader'ов в ProcessEngine
 '    8.9.2012 - этот модуль помещен под названием ForPERSONAL.bas, чтобы не путать
 '   9.11.2013 - добавлены макросы для обработки отчетов SN из PartnerCenter.Autodesk
+'   21.8.2014 - используем Dir(P) в MoveToMatch
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -34,6 +35,7 @@ Attribute MoveToMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 11.8.12 - bug fix - раскраска даты отчета
 ' 18.8.12 - перенос основного кода в MoveInMatch в match.xlsm
 ' 10.9.12 - bug fix - не там брал Path DBs
+' 21.8.14 - проверка, что match.xlsm есть по Dir(P)
     
     Dim D As String
     D = "C:\work\Match\match2.0\DBs"
@@ -56,8 +58,9 @@ OpenTry:
     On Error Resume Next
     Set W = Workbooks.Open(P, UpdateLinks:=False)
     On Error GoTo 0
-    If W Is Nothing Then
-'------- нет, match.xlsm не там. Он есть среди Workbooks?
+
+    If W Is Nothing Or Dir(P) = "" Then
+    '------- нет, match.xlsm не там. Он есть среди Workbooks?
         For Each W In Application.Workbooks
             If W.Name = F Then
                 P = W.Path & "\" & F
@@ -65,16 +68,20 @@ OpenTry:
             End If
         Next W
 '------ и среди Workbooks нет. Посмотрим в файле в С:\
+        If Dir(DinC) = "" Then
+            MsgBox "Не доступен файл '" & DinC & "'!"
+            End
+        End If
         On Error Resume Next
         Set W = Workbooks.Open(DinC)
         P = W.Sheets(1).Cells(1, 2) & F
         W.Close
         Set W = Workbooks.Open(P, UpdateLinks:=False)
         On Error GoTo 0
-        If W Is Nothing Then
+        If Dir(P) = "" Then
 Const Msg = "<!> MoveToMatch не удалось открыть файл match.xlsm'" _
     & vbCrLf & vbCrLf & "Попробуй открыть его вручную, а потом" _
-    & vbCrLf & "еще раз запусти MoveToMatch (Ctrl/ф)"
+    & vbCrLf & "еще раз запусти загрузку Документа"
             If MsgBox(Msg, vbYesNo) = vbYes Then GoTo OpenTry
             End
         End If
