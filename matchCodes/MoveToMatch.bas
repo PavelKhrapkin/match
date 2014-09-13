@@ -4,7 +4,7 @@ Attribute VB_Name = "MoveToMatch"
 '
 ' * MoveInMatch    - перенос входного Документа в базу и запуск Loader'а
 '
-' П.Л.Храпкин 16.11.2013
+' П.Л.Храпкин 13.09.2014
 
     Option Explicit    ' Force explicit variable declaration
     
@@ -34,6 +34,7 @@ Attribute MoveInMatch.VB_ProcData.VB_Invoke_Func = "ф\n14"
 ' 22.10.13 - убираем избыточные .Activate; делаем Freeze Top Row
 ' 26.10.13 - Public RepName заменен на локальный DocName
 ' 16.11.13 - Обработка колонки дат и сброс фильтра дополняемого листа
+' 13.09.14 - Bux fix - все еще не удален RepTOC - замена на LocalTOC
     
     Dim NewRep As String    ' имя файла с новым отчетом
     Dim DocName As String   ' имя Документа
@@ -204,7 +205,7 @@ DelRep: If SheetExists(DocName) Then
         .Cells(1, TOC_F_DIR_COL) = DirDBs
 '----------- окрашиваем даты в TOCmatch на сегодня -------------
         Dim D As Date, MaxDays As Integer
-        For i = 4 To RepTOC.EOL
+        For i = 8 To LocalTOC.EOL
             D = .Cells(i, TOC_DATE_COL)
             MaxDays = .Cells(i, TOC_MAXDAYS_COL)
             If D <> "0:00:00" And Now - D > MaxDays Then
@@ -231,12 +232,12 @@ DelRep: If SheetExists(DocName) Then
     End If
     MyDB.Save
     Exit Sub
-    Dim msg As String
-FatalInFile:    msg = "Не найден Штамп": GoTo FatMsg
-FatalFrDate:    msg = "FrDate": GoTo FatErMsg
-FatalToDate:    msg = "ToDate"
-FatErMsg:       msg = " не дата в ячейке " & msg & "='" & DateCell & "'": GoTo FatMsg
-FatalFrToDate:  msg = " странные даты входного документа '" & NewRep _
+    Dim Msg As String
+FatalInFile:    Msg = "Не найден Штамп": GoTo FatMsg
+FatalFrDate:    Msg = "FrDate": GoTo FatErMsg
+FatalToDate:    Msg = "ToDate"
+FatErMsg:       Msg = " не дата в ячейке " & Msg & "='" & DateCell & "'": GoTo FatMsg
+FatalFrToDate:  Msg = " странные даты входного документа '" & NewRep _
                     & "': NewFrDate=" & NewFrDate & " < " & "NewToDate=" & NewToDate
-FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & msg & vbCrLf & "Входной документ " & NewRep
+FatMsg: ErrMsg FATAL_ERR, "MoveToMatch: " & Msg & vbCrLf & "Входной документ " & NewRep
 End Sub
