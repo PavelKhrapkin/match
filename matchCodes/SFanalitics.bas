@@ -5,7 +5,7 @@ Attribute VB_Name = "SFanalitics"
 '       Проектов    = Opportunity   = Opp   Отчет SFopp или SF
 '       Платежей -- для занесенных в SF --  Отчет SF
 '       Договоров   = Contract      = Contr Отчет SFD
-'   16.10.2013
+'   19.12.2014
 '
 '''''''' S SFaccSplit(Col)             - преобразование строк SFacc с <ИЛИ> в Col в 2 строки
 ' - AccId(Account)              - Id SF Организации по имени 1С
@@ -27,13 +27,14 @@ Attribute VB_Name = "SFanalitics"
 Option Explicit
 Sub DicAccSyn(ByVal Dictionary As String)
 '
-' S DicAccSyn(Dictionary)   - построение словаря синонимоов организаций DicAccSynonims
+' S DicAccSyn(Dictionary)   - построение словаря синонимов организаций DicAccSynonims
 '
 ' 15.9.13
 ' 16.10.13 - без проверки Штампа при создании DicAccSynonims
+' 19.12.14 - bug fix for many Delimeters >2
 
     Const SFACC_DELIMETR = "<ИЛИ>"
-    Dim DicTOC As TOCmatch, R As TOCmatch, i As Long, Str As String, Part() As String
+    Dim DicTOC As TOCmatch, R As TOCmatch, i As Long, P As Long, Part() As String
     
     StepIn
 
@@ -44,13 +45,10 @@ Sub DicAccSyn(ByVal Dictionary As String)
     With DB_SFDC.Sheets(R.SheetN)
         For i = 2 To R.EOL
             Progress i / R.EOL
-            Str = .Cells(i, 3)
-            Do
-                Part = Split(Str, SFACC_DELIMETR)
-                WrNewSheet Dictionary, R.Name, i, Trim(Part(0))
-                If UBound(Part) < 1 Then Exit Do
-                Str = Trim(Part(1))
-            Loop
+            Part = Split(.Cells(i, 3), SFACC_DELIMETR)
+            For P = 0 To UBound(Part)
+                WrNewSheet Dictionary, R.Name, i, Trim(Part(P))
+            Next P
         Next i
     End With
 End Sub
