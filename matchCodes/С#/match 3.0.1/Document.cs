@@ -313,7 +313,9 @@ namespace match.Document
         /// "сброс" Документа приводит к тому, что его содержимое выбрасывается,
         /// остаются только заголовки колонок.
         /// </summary>
-        /// <journal>9.1.2014</journal>
+        /// <journal>9.1.2014
+        /// 21.12.2014 - переписать под Matrix
+        /// </journal>
         public void Reset()
         {
             Log.set("Reset");
@@ -327,14 +329,16 @@ namespace match.Document
             finally { Log.exit(); }
  PK */
         }
- /* PK       /// <summary>
+        /// <summary>
         /// добавляет строку к Body Документа
         /// </summary>
-        /// <journal>9.1.2014</journal>
+        /// <journal>9.1.2014
+        /// 21.12.2014 - переписать под Matrix
+        /// </journal>
         public Excel.Range AddRow()
         {
             Log.set("AddRow");
-            try
+ /* PK           try
             {
                 Body.Range["A" + (int)(Body.Rows.Count + 1)].EntireRow.Insert();
 //                Body.Rows[Body.Rows.Count].Insert(Excel.XlInsertShiftDirection.xlShiftDown);
@@ -347,8 +351,9 @@ namespace match.Document
                 return null;
             }
             finally { Log.exit(); }
-        }
  PK */
+        }
+ 
         /// <summary>
         /// подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body 
         /// </summary>
