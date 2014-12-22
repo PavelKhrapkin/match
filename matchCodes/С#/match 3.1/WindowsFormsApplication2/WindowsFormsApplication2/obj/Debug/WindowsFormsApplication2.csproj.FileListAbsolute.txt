@@ -8,3 +8,14 @@ C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFo
 C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.csproj.GenerateResource.Cache
 C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.exe
 C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.exe.config
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.csprojResolveAssemblyReference.cache
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.Form1.resources
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.Properties.Resources.resources
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.csproj.GenerateResource.Cache
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\ConsoleApplication6.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\ConsoleApplication6.pdb

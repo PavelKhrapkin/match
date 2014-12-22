@@ -32,8 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ConsoleApplication6">
-      <HintPath>..\..\..\..\..\..\..\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.exe</HintPath>
+    <Reference Include="ConsoleApplication6, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
