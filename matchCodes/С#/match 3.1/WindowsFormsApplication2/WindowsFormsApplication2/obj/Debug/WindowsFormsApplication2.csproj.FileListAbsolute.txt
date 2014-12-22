@@ -1,0 +1,10 @@
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.exe.config
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.exe
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\WindowsFormsApplication2.pdb
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\ConsoleApplication6.exe
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\bin\Debug\ConsoleApplication6.pdb
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.Form1.resources
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.Properties.Resources.resources
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.csproj.GenerateResource.Cache
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.exe
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\WindowsFormsApplication2\WindowsFormsApplication2\obj\Debug\WindowsFormsApplication2.pdb
