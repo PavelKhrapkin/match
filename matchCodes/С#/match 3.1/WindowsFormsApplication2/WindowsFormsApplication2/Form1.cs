@@ -26,8 +26,8 @@ namespace WindowsFormsApplication2
         { 
             Docs dicAcc = Docs.getDoc("SF_DicAccSyn");
             int i0 = dicAcc.Body.iEOL();
-            Docs synAcc = Docs.getDoc("DicAccSynonims");
-            synAcc.Reset();
+            Docs synAcc = Docs.NewSheet("DicAccSynonims");
+
             new Log("Исходный отчет " + dicAcc.name + " из " + i0 + "строк ЗАГРУЖЕН");
  
             for (int i = 2, k = 2; i <= i0 ; i++)

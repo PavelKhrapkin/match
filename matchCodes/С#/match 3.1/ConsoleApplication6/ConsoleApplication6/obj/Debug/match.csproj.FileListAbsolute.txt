@@ -1,0 +1,12 @@
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe.config
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.pdb
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.exe
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.pdb
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\match.csprojResolveAssemblyReference.cache
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe.config
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\match.csprojResolveAssemblyReference.cache

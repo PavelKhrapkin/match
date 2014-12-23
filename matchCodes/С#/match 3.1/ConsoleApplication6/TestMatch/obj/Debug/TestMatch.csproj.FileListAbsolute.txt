@@ -1,0 +1,18 @@
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.dll
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.pdb
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.exe
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.pdb
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.csprojResolveAssemblyReference.cache
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.dll
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.pdb
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\Tekla.Common.Geometry.Primitives.dll
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\Tekla.Common.Geometry.dll
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\Tekla.Common.Geometry.Primitives.xml
+C:\Users\Pavel_Khrapkin\Documents\Visual Studio 2012\Projects\ConsoleApplication6\TestMatch\bin\Debug\Tekla.Common.Geometry.xml
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.dll
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.exe
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.pdb
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.csprojResolveAssemblyReference.cache
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.dll
+F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.pdb
