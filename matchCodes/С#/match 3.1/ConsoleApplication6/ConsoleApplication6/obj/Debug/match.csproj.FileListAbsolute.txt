@@ -9,4 +9,3 @@ F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.pdb
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.exe
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.pdb
-F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\ConsoleApplication6\obj\Debug\match.csprojResolveAssemblyReference.cache

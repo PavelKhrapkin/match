@@ -1,17 +1,18 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.0
  * 
- *  5.4.2014  П.Храпкин, А.Пасс
+ *  25.12.2014  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
- * Document(name)       - КОНСТРУКТОР возвращает ОБЪЕКТ Документ с именем name
+ * Document(name)       - КОНСТРУКТОР возвращает объект Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb, запускает Handler Документа
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
+ * NewSheet(name)       - созданние нового листа с заголовком для Документа name
  * isDocChanged(name)   - проверяет, что Документ name открыт
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
  * 
  * внутренний класс Stamp предназначен для заполнения списков Штампов
- * каждый Штамп содержит сигнатуру, то есть проверяемый текст, и пар координат - его положений
+ * каждый Штамп содержит сигнатуру, то есть проверяемый текст, и пару координат - его положений
  * Stamp(Range rng)     - разбирает rng, помещая из таблицы TOCmatch Штамп в List Штампов в Документе
  * Check(rng,stampList) - проверка Штампов stampList в Range rng 
  */
@@ -58,7 +59,8 @@ namespace match.Document
         private string MadeStep;
         private DateTime MadeTime;
         private int periodDays;     // периодичность работы с Документом в днях
-        private ulong chkSum;
+        private ulong chkSum;       // контрольнаи сумма
+        private long colorTab;       // цвет Tab листа
         private int EOLinTOC;
         private List<int> ResLines; //число строк в пятке -- возможны альтернативные значения
         private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
@@ -120,6 +122,7 @@ namespace match.Document
                     doc.MyCol    = mtr.Int(i, Decl.DOC_MYCOL, "не распознан MyCol в строке " + i);
                     doc.MadeStep = mtr.String(i, Decl.DOC_MADESTEP);
                     doc.periodDays = mtr.Int(i, Decl.DOC_PERIOD);
+                    doc.colorTab = FileOp.cellColorIndex(tocSheet, i, Decl.DOC_SHEET);
                     doc.FileName = mtr.String(i, Decl.DOC_FILE);
                     doc.SheetN   = mtr.String(i, Decl.DOC_SHEET);
                     doc.creationDate = Lib.MatchLib.getDateTime(mtr.get(i, Decl.DOC_CREATED));
@@ -281,14 +284,19 @@ namespace match.Document
         {
             Log.set("NewSheet(" + name + ")");
             Document doc = getDoc(name);
-            if (doc == null) Log.FATAL("на создан новый лист в NewSheet(" + name + ")");
+            if (doc == null) Log.FATAL("не создан новый лист в NewSheet(" + name + ")");
             try
             {
                 Excel.Workbook wb = doc.Wb;
-                doc.Sheet.Delete();
-                wb.Worksheets[doc.SheetN].Add();
+ 
+                wb.Application.DisplayAlerts = false;
+                    doc.Sheet.Delete();
+                    wb.Application.Sheets.Add(After: wb.Application.Sheets.Item[2]);
+                    wb.Application.Sheets[3].Name = name;
+                    wb.Application.Sheets[3].Tab.Color = 35;
+                wb.Application.DisplayAlerts = true;
             }
-            catch { Log.FATAL("ошибка NewSheet(" + name + ")"); }
+            catch(Exception er) { Log.FATAL("ошибка NewSheet(" + name + ") " + er); }
             finally { Log.exit(); }
             return doc;
         }

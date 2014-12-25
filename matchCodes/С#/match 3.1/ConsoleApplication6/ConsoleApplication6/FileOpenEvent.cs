@@ -95,9 +95,26 @@ namespace match.MyFile
             catch { return false; }
         }
 
-        public static Mtr getRngValue(Excel.Worksheet Sh, int r0, int c0, int r1, int c1, string msg = "")
+        public static long cellColorIndex(Excel.Worksheet Sh, int row, int col, string msg = "")
         {
-            
+            Log.set("cellColor");
+            try
+            {
+                Excel.Range cell = Sh.Cells[row, col];
+                return cell.Interior.ColorIndex;
+            }
+            catch
+            {
+                if (msg == null) return 0;
+                if (msg == "") { msg = "Sheet[" + Sh.Name + "].Cell[" + row + "," + col + "]"; }
+                Log.FATAL(msg);
+                return 0;
+            }
+            finally { Log.exit(); }
+        }
+
+        public static Mtr getRngValue(Excel.Worksheet Sh, int r0, int c0, int r1, int c1, string msg = "")
+        {          
             Log.set("getRngValue");
             try
             {
@@ -117,6 +134,7 @@ namespace match.MyFile
             }
             finally { Log.exit(); }
         }
+
         public static Mtr getSheetValue(Excel.Worksheet Sh, string msg = "")
         {
             Log.set("getSheetValue");
