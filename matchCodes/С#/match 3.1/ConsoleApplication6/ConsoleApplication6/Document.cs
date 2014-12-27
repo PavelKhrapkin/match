@@ -60,18 +60,18 @@ namespace match.Document
         private DateTime MadeTime;
         private int periodDays;     // периодичность работы с Документом в днях
         private ulong chkSum;       // контрольнаи сумма
-        private long colorTab;       // цвет Tab листа
+        private long colorTab;      // цвет Tab листа
         private int EOLinTOC;
         private List<int> ResLines; //число строк в пятке -- возможны альтернативные значения
         private Stamp stamp;        //каждый документ ссылается на цепочку сигнатур или Штамп
-        private DateTime creationDate;  // дата создания Документа
+        private DateTime creationDate;  // дата создания Документа 
         private string Loader;
         private string LastUpdateFromFile;
         private bool isPartialLoadAllowed;
         public int MyCol;           // количесто колонок, добавляемых слева в Документ в loadDoc
         public int usedColumns;     // общее кол-во использованных колонок в Body Документа
         [XmlIgnore]
-        public Mtr ptrn;
+        public Mtr ptrn;            //шаблон - заголовок таблицы
         [XmlIgnore]
         public Mtr Body;
         public DataTable dt;
@@ -279,7 +279,9 @@ namespace match.Document
         /// </summary>
         /// <param name="name"></param>
         /// <returns>вновь созданный Документ name</returns>
-        /// <journal>6.4.2014</journal>
+        /// <journal>6.4.2014
+        /// 25.12.14 дописано
+        /// </journal>
         public static Document NewSheet(string name)
         {
             Log.set("NewSheet(" + name + ")");
@@ -288,13 +290,19 @@ namespace match.Document
             try
             {
                 Excel.Workbook wb = doc.Wb;
- 
-                wb.Application.DisplayAlerts = false;
+                //-- заменяем лист Sheet на пустой
+                 wb.Application.DisplayAlerts = false;
                     doc.Sheet.Delete();
                     wb.Application.Sheets.Add(After: wb.Application.Sheets.Item[2]);
                     wb.Application.Sheets[3].Name = name;
-                    wb.Application.Sheets[3].Tab.Color = 35;
+                    wb.Application.Sheets[3].Tab.ColorIndex = doc.colorTab;
                 wb.Application.DisplayAlerts = true;
+                //-- в новый Body переносим строку - заголовок из ptrn = Header
+                doc.Body = doc.ptrn;
+
+ //               Excel.Range Frm = Documents[Decl.F_MATCH].Wb.Sheets[Decl.HEADER].Range[doc.
+                //-- записываем в таблицу Documents данные по новому Документу name
+  //              doc.Body
             }
             catch(Exception er) { Log.FATAL("ошибка NewSheet(" + name + ") " + er); }
             finally { Log.exit(); }

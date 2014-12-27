@@ -16,3 +16,10 @@ F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.csprojResolveAssemblyReference.cache
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.dll
 F:\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.pdb
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.dll
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\TestMatch.pdb
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.exe
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\bin\Debug\ConsoleApplication6.pdb
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.csprojResolveAssemblyReference.cache
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.dll
+C:\Users\Pavel_Khrapkin\Documents\Pavel\match\matchCodes\С#\match 3.1\ConsoleApplication6\TestMatch\obj\Debug\TestMatch.pdb
