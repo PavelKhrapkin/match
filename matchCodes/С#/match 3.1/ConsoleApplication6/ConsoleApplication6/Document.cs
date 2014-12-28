@@ -298,7 +298,13 @@ namespace match.Document
                     wb.Application.Sheets[3].Tab.ColorIndex = doc.colorTab;
                 wb.Application.DisplayAlerts = true;
                 //-- в новый Body переносим строку - заголовок из ptrn = Header
-                doc.Body = doc.ptrn;
+                //doc.Body = doc.ptrn;
+                Mtr hdr;
+                for (int i = 0; i < doc.ptrn.iEOC(); i++) { hdr(1, i) = "h"; }//doc.ptrn.get(1,i);}
+                //= doc.ptrn[1,];
+                //doc.Body = new Matrix.Matr(doc.ptrn[1,]);
+                doc.Body = new Mtr(hdr);
+
 
  //               Excel.Range Frm = Documents[Decl.F_MATCH].Wb.Sheets[Decl.HEADER].Range[doc.
                 //-- записываем в таблицу Documents данные по новому Документу name
