@@ -298,17 +298,14 @@ namespace match.Document
                     wb.Application.Sheets[3].Tab.ColorIndex = doc.colorTab;
                 wb.Application.DisplayAlerts = true;
                 //-- в новый Body переносим строку - заголовок из ptrn = Header
-                //doc.Body = doc.ptrn;
-                Mtr hdr;
-                for (int i = 0; i < doc.ptrn.iEOC(); i++) { hdr(1, i) = "h"; }//doc.ptrn.get(1,i);}
-                //= doc.ptrn[1,];
-                //doc.Body = new Matrix.Matr(doc.ptrn[1,]);
-                doc.Body = new Mtr(hdr);
-
-
- //               Excel.Range Frm = Documents[Decl.F_MATCH].Wb.Sheets[Decl.HEADER].Range[doc.
+                object[,] hh = new object[1, doc.ptrn.iEOC()];
+                for (int i = 1; i <= doc.ptrn.iEOC(); i++) { hh[0,i-1] = doc.ptrn.String(1,i);}
+                doc.Body = new Mtr(hh);
                 //-- записываем в таблицу Documents данные по новому Документу name
-  //              doc.Body
+                doc.isChanged = true;
+                doc.creationDate = DateTime.Now;
+                doc.MadeStep = "NewSheet"; doc.MadeTime = doc.creationDate;
+                doc.EOLinTOC = 1;
             }
             catch(Exception er) { Log.FATAL("ошибка NewSheet(" + name + ") " + er); }
             finally { Log.exit(); }

@@ -36,7 +36,9 @@ namespace match.Matrix
 
     public class Matr : Object
     {
-        private object[,] _matr = new object[100, 100];
+        private const int MATR_PAGE = 100;
+        private object[,] _matr = new object[MATR_PAGE, MATR_PAGE];
+        ////private int _EOL = 0;
         
         public Matr(object[,] obj)
         {
@@ -88,6 +90,36 @@ namespace match.Matrix
             try { _matr[i, j] = this; }
             catch { Log.FATAL("!"); }
         }
+        /////// <summary>
+        /////// setRow(int i, object[] obj) - записывает ряд значений в Matr
+        /////// </summary>
+        /////// <param name="i">    int i   - номер рекорда матрицы</param>
+        /////// <param name="object[] obj"> object[] obj - массив объектов, записываемых в матрицу</param>
+        /////// <journal>28.12.2014
+        /////// </journal>
+        ////public void setRow(int i, object[] obj)
+        ////{
+        ////    try { for (int col = 1; col <= this.iEOC(); col++) { _matr[i, col] = obj[col]; } }
+        ////    catch { Log.FATAL("! строка " + i); }
+        ////}
+        /////// <summary>
+        /////// int AddRow(object[] obj) - добавляет ряд значений в Matr
+        /////// </summary>
+        /////// <param name="object[] obj">object[] obj - массив объектов, записываемых в матрицу</param>
+        /////// <journal>28.12.2014
+        /////// </journal>
+        ////public void AddRow(object[] obj)
+        ////{
+        ////    try
+        ////    {
+        ////        if (_EOL++ > MATR_PAGE)
+        ////        {
+        ////            Log.FATAL("!!!! не написано");
+        ////        }
+        ////        setRow(_EOL, obj);
+        ////    }
+        ////    catch { Log.FATAL("! EOL=" + _EOL); }
+        ////}
         public string String(int i, int j)
         {
             var v = get(i, j);

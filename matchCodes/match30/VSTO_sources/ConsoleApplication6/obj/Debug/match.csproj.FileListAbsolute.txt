@@ -1,6 +1,0 @@
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\match.csprojResolveAssemblyReference.cache
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe.config
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.exe
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\bin\Debug\ConsoleApplication6.pdb
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.exe
-c:\users\pavel_khrapkin\documents\visual studio 2012\Projects\ConsoleApplication6\ConsoleApplication6\obj\Debug\ConsoleApplication6.pdb
