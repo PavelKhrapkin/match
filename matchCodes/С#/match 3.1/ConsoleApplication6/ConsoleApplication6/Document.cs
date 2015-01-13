@@ -281,6 +281,7 @@ namespace match.Document
         /// <returns>вновь созданный Документ name</returns>
         /// <journal>6.4.2014
         /// 25.12.14 дописано
+        /// 13.01.14 bug fix: присваиваем новый doc.Sheet
         /// </journal>
         public static Document NewSheet(string name)
         {
@@ -294,7 +295,9 @@ namespace match.Document
                  wb.Application.DisplayAlerts = false;
                     doc.Sheet.Delete();
                     wb.Application.Sheets.Add(After: wb.Application.Sheets.Item[2]);
-                    wb.Application.Sheets[3].Name = name;
+                    Excel.Worksheet Sh = wb.Application.Sheets[3];
+                    doc.Sheet = Sh;              
+                    Sh.Name = name;
                     wb.Application.Sheets[3].Tab.ColorIndex = doc.colorTab;
                 wb.Application.DisplayAlerts = true;
                 //-- в новый Body переносим строку - заголовок из ptrn = Header
@@ -420,35 +423,55 @@ namespace match.Document
         /// <summary>
         /// сохраняет Документ, если он изменялся
         /// </summary>
+        /// <journal>13.1.2015 PKh</journal>
         /// <param name="name"></param>
-        //public void saveDoc()
-        //{
-            
-        //    if (isOpen && isChanged) FileOp.fileSave(Wb);
-        //}
- //       public static void saveDoc(string name)
         public void saveDoc()
         {
-//            Document doc = Documents[name];
-            if (isDocChanged(name))
-            {
-                FileOp.Reset(Sheet);
-                // записать шапку из Шаблона в A1
-                Excel.Range rng = Sheet.Range["A2"];
-                int rws = Body.iEOL();
- /////               int cols = doc.Body.iEOC();
-                for (int rw = 2; rw <= rws; rw++) colCpy(Body, rw, rng, rw);
-                    //////for (int col = 1; col <= cols; col++)
-                    //////    rng.Cells[rw, col] = doc.Body.get(rw, col);
+            if (isDocChanged(this.name))
+            {        
+                int rows = Body.iEOL();
+                int cols = Body.iEOC();
+                var startCell = (Excel.Range)this.Sheet.Cells[1, 1];
+                var endCell = (Excel.Range)this.Sheet.Cells[rows, cols];
+                Excel.Range writeRange = Sheet.Range[startCell, endCell];
 
-                if (Summary != null)
+                var data = new object[rows, cols];
+                for (var row = 1; row <= rows; row++)
                 {
-                    for (int rwMtr = 1, rw = rws + 1; rw <= Summary.iEOL(); rw++, rwMtr++)
-                        colCpy(Summary, rwMtr, rng, rw);
-                        //////for (int col = 1; col <= cols; col++)
-                        //////    rng.Cells[rw, col] = doc.Summary.get(rwMtr, col);
+                    for (var column = 1; column <= cols; column++)
+                    {
+                        data[row - 1, column - 1] = Body.get(row - 1, column - 1);
+                    }
                 }
-                FileOp.fileSave(Wb);
+                writeRange.Value2 = data;
+  //              data = Body as object[,];
+                writeRange.set_Value(Type.Missing, data);
+                writeRange.Value2 = Body;
+ //               writeRange.set_Value(Type.Missing, Body);
+
+
+ //               Excel.Range r = (Excel.Range)this.Body;
+
+                FileOp.fileSave(this.Wb);
+                FileOp.fileSave(Documents[Decl.F_MATCH].Wb);
+                //////////////////////FileOp.Reset(Sheet);
+                ////////////////////////// записать шапку из Шаблона в A1
+                ////////////////////////Excel.Range rng = Sheet.Range["A2"];
+                ////////////////////////int rws = Body.iEOL();
+                ////////////////////////FileOp.fileSave(this.Wb);
+ ///////////////////////////////////               int cols = doc.Body.iEOC();
+ //////////////////////////////               for (int rw = 2; rw <= rws; rw++) colCpy(Body, rw, rng, rw);
+ //////////////////////////////                   //////for (int col = 1; col <= cols; col++)
+ //////////////////////////////                   //////    rng.Cells[rw, col] = doc.Body.get(rw, col);
+
+ //////////////////////////////               if (Summary != null)
+ //////////////////////////////               {
+ //////////////////////////////                   for (int rwMtr = 1, rw = rws + 1; rw <= Summary.iEOL(); rw++, rwMtr++)
+ //////////////////////////////                       colCpy(Summary, rwMtr, rng, rw);
+ //////////////////////////////                       //////for (int col = 1; col <= cols; col++)
+ //////////////////////////////                       //////    rng.Cells[rw, col] = doc.Summary.get(rwMtr, col);
+ //////////////////////////////               }
+ //////////////////////////////               FileOp.fileSave(Wb);
             }
         }
         private static void colCpy(Mtr mtr, int rwMtr, Excel.Range rng, int rwRng)

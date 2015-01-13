@@ -39,7 +39,9 @@ namespace match
             docPay.FetchInit();
 
             Docs newPay = Docs.NewSheet("NewPayment");
-            Docs neDogovor = Docs.NewSheet("NewContract");
+//            Docs newDogovor = Docs.NewSheet("NewContract");
+
+            newPay.saveDoc();
         }
     }
 }
