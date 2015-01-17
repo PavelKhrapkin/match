@@ -108,7 +108,7 @@ namespace match.Document
                     if (doc.name == TOC)    // mtr относится только к TOCmatch, а не ко всем Документам  
                     {                       
                         doc.Body = mtr;
-                        doc.dt = doc.Body.DaTab();
+//!!                        doc.dt = doc.Body.DaTab();
                         doc.Wb = db_match;
                         doc.Sheet = tocSheet;
                         doc.EOLinTOC = iEOL;
@@ -281,7 +281,7 @@ namespace match.Document
         /// <returns>вновь созданный Документ name</returns>
         /// <journal>6.4.2014
         /// 25.12.14 дописано
-        /// 13.01.14 bug fix: присваиваем новый doc.Sheet
+        /// 13.01.15 bug fix: присваиваем новый doc.Sheet
         /// </journal>
         public static Document NewSheet(string name)
         {
@@ -304,6 +304,7 @@ namespace match.Document
                 object[,] hh = new object[1, doc.ptrn.iEOC()];
                 for (int i = 1; i <= doc.ptrn.iEOC(); i++) { hh[0,i-1] = doc.ptrn.String(1,i);}
                 doc.Body = new Mtr(hh);
+ //!!               doc.dt = doc.Body.DaTab();
                 //-- записываем в таблицу Documents данные по новому Документу name
                 doc.isChanged = true;
                 doc.creationDate = DateTime.Now;
@@ -332,7 +333,7 @@ namespace match.Document
             int iEOC = Lib.MatchLib.EOC(Sheet);
 
             Body = FileOp.getRngValue(Sheet, 1, 1, iEOL, iEOC);
-            dt = Body.DaTab();
+//!!            dt = Body.DaTab();
             if (_resLns > 0) Summary = FileOp.getRngValue(Sheet, iEOL + 1, 1, fullEOL, iEOC);
         }
         /// <summary>
@@ -423,7 +424,7 @@ namespace match.Document
         /// <summary>
         /// сохраняет Документ, если он изменялся
         /// </summary>
-        /// <journal>13.1.2015 PKh</journal>
+        /// <journal>14.1.2015 PKh</journal>
         /// <param name="name"></param>
         public void saveDoc()
         {
@@ -434,7 +435,8 @@ namespace match.Document
                 var startCell = (Excel.Range)this.Sheet.Cells[1, 1];
                 var endCell = (Excel.Range)this.Sheet.Cells[rows, cols];
                 Excel.Range writeRange = Sheet.Range[startCell, endCell];
-
+ // ---- реализуем     Excel.Range r = (Excel.Range)this.Body;
+ // ---- для этого перекладываем поэлементно из Body в data
                 var data = new object[rows, cols];
                 for (var row = 1; row <= rows; row++)
                 {
@@ -443,36 +445,24 @@ namespace match.Document
                         data[row - 1, column - 1] = Body.get(row - 1, column - 1);
                     }
                 }
+// ---- и перекладываем в Excel    writeRange.set_Value(Type.Missing, data);
+  //!!              writeRange.Value = dt;
                 writeRange.Value2 = data;
-  //              data = Body as object[,];
-                writeRange.set_Value(Type.Missing, data);
-                writeRange.Value2 = Body;
- //               writeRange.set_Value(Type.Missing, Body);
-
-
- //               Excel.Range r = (Excel.Range)this.Body;
-
+// --- устанавливаем ширину колонки листа по значениям в строке Шаблона Width
+                for (int col = 1; col <= cols; col++)
+                {
+                    string wdth = ptrn.String(3, col);
+                    string[] ar = wdth.Split('/');
+                    float W;
+                    if (!float.TryParse(ar[0], out W)) Log.FATAL("ошибка в строке Width шаблона = \""
+                        + wdth + "\" при обработке Документа " + this.name);
+                    writeRange.Columns[col].ColumnWidth = W;
+                }
+// -!!- еще надо записать doc.Summary, но это реализуем позже
                 FileOp.fileSave(this.Wb);
+// -??- надо убедиться, что в TOCmatch правильно записывается изменение состояния Документа
                 FileOp.fileSave(Documents[Decl.F_MATCH].Wb);
-                //////////////////////FileOp.Reset(Sheet);
-                ////////////////////////// записать шапку из Шаблона в A1
-                ////////////////////////Excel.Range rng = Sheet.Range["A2"];
-                ////////////////////////int rws = Body.iEOL();
-                ////////////////////////FileOp.fileSave(this.Wb);
- ///////////////////////////////////               int cols = doc.Body.iEOC();
- //////////////////////////////               for (int rw = 2; rw <= rws; rw++) colCpy(Body, rw, rng, rw);
- //////////////////////////////                   //////for (int col = 1; col <= cols; col++)
- //////////////////////////////                   //////    rng.Cells[rw, col] = doc.Body.get(rw, col);
-
- //////////////////////////////               if (Summary != null)
- //////////////////////////////               {
- //////////////////////////////                   for (int rwMtr = 1, rw = rws + 1; rw <= Summary.iEOL(); rw++, rwMtr++)
- //////////////////////////////                       colCpy(Summary, rwMtr, rng, rw);
- //////////////////////////////                       //////for (int col = 1; col <= cols; col++)
- //////////////////////////////                       //////    rng.Cells[rw, col] = doc.Summary.get(rwMtr, col);
- //////////////////////////////               }
- //////////////////////////////               FileOp.fileSave(Wb);
-            }
+             }
         }
         private static void colCpy(Mtr mtr, int rwMtr, Excel.Range rng, int rwRng)
         {

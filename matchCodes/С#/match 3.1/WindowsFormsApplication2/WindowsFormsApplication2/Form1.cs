@@ -37,6 +37,11 @@ namespace WindowsFormsApplication2
                 foreach (var p in part) 
                 {
                     new Log("\t" + i + ": " + k + "\t" + p + "\t" + CanonicAcc);
+ //                   DataRow dr;
+ //                   dr = synAcc.Body.DaTab();
+                    
+
+                    //synAcc.Body = null;
                     //synAcc.Body.set(k, 1) = p;
                     //synAcc.Body.set(k, 2) = part;
                     k++;

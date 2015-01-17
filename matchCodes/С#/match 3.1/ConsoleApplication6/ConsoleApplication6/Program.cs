@@ -39,6 +39,11 @@ namespace match
             docPay.FetchInit();
 
             Docs newPay = Docs.NewSheet("NewPayment");
+
+            newPay.Body.AddRow();
+            string[] hh = { "One", "Two", "Three" };
+            newPay.Body.AddRow(hh);
+
 //            Docs newDogovor = Docs.NewSheet("NewContract");
 
             newPay.saveDoc();

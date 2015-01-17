@@ -140,20 +140,66 @@ namespace match.Matrix
             catch { Log.FATAL(msg); }
             return 0;
         }
+        public float Float(int i, int j, string msg = "wrong Float")
+        {
+            object v = get(i, j);
+            if (v == null) return 0;
+            if (v.GetType() == typeof(float)) { return (float)v; }
+            try
+            {
+                int value;
+                string val = v.ToString();
+                if (int.TryParse(val, out value)) return value;
+                Log.FATAL(msg);
+            }
+            catch { Log.FATAL(msg); }
+            return 0;
+        }
         public int iEOL() { return _matr.GetLength(0); }
         public int iEOC() { return _matr.GetLength(1); }
+
+        /// <summary>
+        /// копируем данные из (matr)this в (Data Table)
+        /// </summary>
+        /// <returns></returns>
+        /// <journal>2014
+        /// 15.01.15 buf fix: все индексы dt и параметры get ведем в диапазоне 0..iEO, а не 1..iEO 
+        /// </journal>
         public DataTable DaTab()
         {
             DataTable _dt = new DataTable();
             int maxCol = iEOC(), maxRow = iEOL();
-            for (int col = 1; col <= maxCol; col++) _dt.Columns.Add();
-            for (int rw = 1; rw <= maxRow; rw++)
+            for (int col = 0; col < maxCol; col++) _dt.Columns.Add();
+            for (int rw = 0; rw < maxRow; rw++)
             {
                 _dt.Rows.Add();
-                for (int col = 1; col <= maxCol; col++) _dt.Rows[rw - 1][col - 1] = get(rw, col);
+    //!!            for (int col = 0; col < maxCol; col++) _dt.Rows[rw][col] = get(rw, col);
             }
             return _dt;
         }
+        /// <summary>
+        /// AddRow() - добавляет одну строку в конце матрицы
+        /// </summary>
+        /// <journal> 17.01.15 </journal>
+        public Matr AddRow()
+        {
+            int irw = iEOL(), icol = iEOC();
 
+            var newMatr = new object[irw + 1, icol];
+            for (int i = 0; i < irw; i++)
+                for (int j = 0; j < icol; j++)
+                    newMatr[i,j] = get(i, j);
+            for (int j = 0; j < icol; j++) newMatr[irw, j] = null;
+            _matr = newMatr;
+            return this;
+        }
+        public Matr AddRow(object[] Line)
+        {
+            AddRow();
+            int rw = iEOL() -1;
+            int cols = Math.Min(iEOC(), Line.Length);
+            for (int i = 0; i < cols; i++) _matr[rw, i] = Line[i];
+            return this;
+        }
     } // конец класса Matr
 }

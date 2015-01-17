@@ -86,7 +86,7 @@ namespace match.Declaration
 
         //-----------константы Шаблонов -----------------
         public const string PTRN_HDR    = "A1";     // заголовки колонок   
-        public const string PTRN_WIDTH  = "A3";     // ширина колонок
+        public const int PTRN_WIDTH = 3;    // ширина колонок
         public const int PTRN_FETCH = 6;    // Fetch запрос
 
         public const string PTRN_COPYHDR = "CopyHdr"; // указание копировать заголовок из Шаблона
