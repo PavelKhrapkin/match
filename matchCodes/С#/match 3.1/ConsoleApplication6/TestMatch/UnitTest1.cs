@@ -1,13 +1,29 @@
-﻿using System;
+﻿/*-----------------------------------------------------------------------
+ * UnitTest -- Unit тесты проекты match 3.1
+ * 
+ *  25.01.2015  П.Храпкин, А.Пасс
+ * ------------------------------------------- 
+ * 18/01/15 test_get_set_Matr() - проверка работы Matrix Matr, get и set
+ * 18/01/15 test_AddRow()       - проверка AddRow - добавления 1 строки
+ * test_ToStrList()
+ */
+using System;
+using System.Data;
+using System.Linq;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Serialization;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
+
 using match;
 using Lib = match.Lib;
 using match.Lib;
+using Mtr = match.Matrix.Matr;
+using CS = match.Lib.CS;
 using Log = match.Lib.Log;
 using Docs = match.Document.Document;
+using Lst = match.Document.Lst;
 using FileOp = match.MyFile.FileOpenEvent;
 
 namespace TestMatch
@@ -16,19 +32,87 @@ namespace TestMatch
     public class TestMatchLib
     {
         [TestMethod]
+        // 18.01.2015  проверка работы Matrix Matr, get и set и индексера
+        public void test_get_set_Matr()
+        {
+            object [,] init = { { 1, 2 }, { 3, 4 }, { 5, 6 } };
+            // то есть структуры init инициалицзируется
+            //      1 3 5
+            //      2 4 6
+            Assert.AreEqual(init.Length , 6);
+            Assert.AreEqual(init.GetLength(0), 3);
+            Assert.AreEqual(init.GetLength(1), 2);
+
+            Mtr xx = new Mtr(init);
+            bool eq = xx.Equals(init);
+            Assert.AreEqual(eq, false);
+            Assert.AreEqual(xx.iEOL(), 3);  // размеры xx и init совпадают,
+            Assert.AreNotEqual(xx, init);   //.. но это разные объекты!
+            Mtr yy = new Mtr(init);
+            Assert.AreEqual(xx.Compare(yy), true);  //и Compare говорит - они равны.
+
+            xx[2, 1] = 1230;                       // изменим xx
+            Assert.AreEqual(xx.Compare(yy), true); //..и так же изменился yy
+                                                   //..т.к. в памяти это init
+        }
+        [TestMethod]
+        // 25.1.2015
+        public void test_WrCSV_WrReport()
+        {
+            object[,] init = { { "H1","H2","H3" }, { "4","5","6" }, { "7","8","9" }, {"ж10","ш11","я12"} };
+            Mtr xx = new Mtr(init);
+            DataTable dt = new DataTable();
+            dt = xx.DaTab();
+            Assert.AreEqual(dt.Rows.Count, xx.iEOL());
+            Assert.AreEqual(dt.Columns.Count, xx.iEOC());
+
+            string col1name = dt.Columns[0].ColumnName;
+            string col2name = dt.Columns[1].ColumnName;
+            string col3name = dt.Columns[2].ColumnName;
+        // ---- сортировка DataTable
+            DataView dv = dt.DefaultView;
+            dv.Sort = col1name + " desc";
+            DataTable sdt = dv.ToTable();
+
+            FileOp.WrCSV("test", sdt);
+            FileOp.WrReport("test", sdt);
+        }
+        [TestMethod]
         public void test_ToStrList()
         {
             var strs = Lib.MatchLib.ToStrList("начало, продолжение, конец");
             Assert.AreEqual(strs.Count, 3);
             Assert.AreEqual(strs[0], "начало");
         }
+        [TestMethod]
+        // 19.1.2015
+        public void test_CheckSum()
+        {
+            Docs doc = Docs.getDoc("Платежи");
+            Assert.AreNotEqual(null, doc);
+            Assert.AreEqual(doc.name, "Платежи");
+            double iSum = Lib.CS.CheckSum(doc);
+            Assert.AreNotEqual(iSum, 0);
+            Assert.AreEqual(iSum > 0, true);
+            doc = Docs.getDoc("SFopp");             //теперь загружаем другой документ
+            Assert.AreEqual(doc.name, "SFopp");
+            double iSumOpp = Lib.CS.CheckSum(doc);  //..и пересчитываем его контр.сумму
+            Assert.AreNotEqual(iSum, iSumOpp);
+            doc = Docs.getDoc("Платежи");           //.. и опять Платежи
+            double reloadedSum = Lib.CS.CheckSum(doc);  //..сравниваем контр.суммы
+            Assert.AreEqual(reloadedSum, iSum);
+            doc.Body[12, 11] = "asdFghj";       // изменим ясейку в фале "Платежи"
+            iSum = Lib.CS.CheckSum(doc);        //..и опять пересчитываем контр.сумму
+            Assert.AreNotEqual(reloadedSum, iSum); //  теперь они не равны!  
+        }
+
     }
 
     [TestClass]
     public class UnitTest
     {
         [TestMethod]
-        public void testgetDoc ()
+        public void test_getDoc ()
         {
             var doc = Docs.getDoc("Платежи");
             Assert.AreNotEqual(null, doc);
@@ -36,7 +120,17 @@ namespace TestMatch
             doc = Docs.getDoc("ABCD");
             Assert.AreEqual(doc, null); // этот Документ не должен быть найден
         }
-
+        [TestMethod]
+        //22.01.20
+        public void test_LstInit()
+        {
+            Lst.Init(Lst.Entity.Accounts);
+            Assert.AreEqual(Lst.Accounts.Count > 1000, true);
+            Assert.AreEqual(Lst.Acc1Cs.Count, 0);
+            Assert.AreEqual(Lst.Contracts.Count, 0);
+            Assert.AreEqual(Lst.Opps.Count, 0);
+            Assert.AreEqual(Lst.Pays.Count, 0);
+        }
         [TestMethod]
         public void test_load_recognize_Doc()
         {
@@ -48,10 +142,23 @@ namespace TestMatch
             Docs doc = Docs.loadDoc(newDocName, Wb);
             Assert.AreNotEqual(null, doc);
         }
-
-        public void test_ProcReset()
+        [TestMethod]
+        // 19/01/2015
+        public void test_AddRow()
         {
-            //            Proc.Reset("LOAD_SF_DicAccSyn");  //позже вернемся в вопросу о месте для константы - имени Процессов
+            var doc = Docs.getDoc("SF_DicAccSyn");
+            Assert.AreEqual( doc.name, "SF_DicAccSyn");
+            int lc = doc.Body.iEOL();
+            Assert.AreEqual( lc > 1, true);
+
+            doc.Body.AddRow();
+            Assert.AreEqual( doc.Body.iEOL() - lc, 1);
+////            reloadedSum = Lib.CS.CheckSum(docAcc);
+            ////Assert.AreEqual(reloadedSum, iSum);
+            ////string[] hh = { "One", "Two", "Three" };
+            ////docAcc.Body.AddRow(hh);
+            ////reloadedSum = Lib.CS.CheckSum(docAcc);
+            ////Assert.AreNotEqual(reloadedSum, iSum); 
 
         }
         [TestMethod]
@@ -91,9 +198,9 @@ namespace TestMatch
         //    Excel.Worksheet Sh = Wb.Worksheets[1];
 
         //    string[,] arr = new string[44, 10000];
-        //    for (int i = 0; i < 3; i++)
+        //    for (int iSum = 0; iSum < 3; iSum++)
         //        for (int j = 0; j < 9; j++)
-        //            arr[i, j] = "txt" + i + j;
+        //            arr[iSum, j] = "txt" + iSum + j;
 
         //    Sh.get_Range("A1", "DD1000").Value = arr;
 
@@ -112,7 +219,7 @@ namespace TestMatch
             var doc = Docs.getDoc("Платежи");
             Assert.AreNotEqual(null, doc);
             //var ser = new System.Xml.Serialization.XmlSerializer(typeof(Docs));
-            //ser.Serialize(new StreamWriter("test.xml"), doc);
+            //ser.Serialize(new StreamWriter("test.xml"), docAcc);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace WindowsFormsApplication2
     {
         public Form1()
         {
-            Log.START("match v3.1.0.0");
+            Log.START("match v3.1.1.0");
             InitializeComponent();
         }
 
@@ -37,13 +37,8 @@ namespace WindowsFormsApplication2
                 foreach (var p in part) 
                 {
                     new Log("\t" + i + ": " + k + "\t" + p + "\t" + CanonicAcc);
- //                   DataRow dr;
- //                   dr = synAcc.Body.DaTab();
-                    
-
-                    //synAcc.Body = null;
-                    //synAcc.Body.set(k, 1) = p;
-                    //synAcc.Body.set(k, 2) = part;
+                    string[] str = {p, CanonicAcc};
+                    synAcc.Body.AddRow(str);
                     k++;
                 };
             }

@@ -1,3 +1,11 @@
+/*-----------------------------------------------------------------------
+ * Process -- класс Процессов проекта match 3.1
+ * 
+ *  17.01.2015  П.Храпкин, А.Пасс
+ *  
+ * -------------------------------------------
+ * Process()            - КОНСТРУКТОР заполняет каталог процессов
+ */
 using System;
 using System.Data;
 using System.Reflection;
@@ -22,6 +30,7 @@ namespace match.Process
     /// <journal> 29.12.2013
     /// 30.12.2013 - перенесено в C# из match 2.2 модуля ProcessEngin.bas
     /// 31.12.2013 -- основная реализация алгоритмов ProccessEngine
+    /// 17.1.2015 - переписано без Data Table
     /// </journal>
     class Process
     {
@@ -41,6 +50,7 @@ namespace match.Process
         /// Он считывает данные в коллекцию Processes из листа Process файла match.xlsm
         /// </summary>
         /// <journal> 1.1.2014
+        /// 17.1.2015 - переписано без Data Table
         /// </journal>
         static Process()
         {
@@ -48,10 +58,11 @@ namespace match.Process
             try {
                 Process proc = null;
                 Docs proc_doc = Docs.getDoc(Decl.PROCESS);
-                int line_process = 0;
-                foreach (DataRow rw in proc_doc.dt.Rows)
+                for (int line_process = 0; line_process < proc_doc.Body.iEOL(); line_process++)
                 {
-                    line_process++;
+                    int cols = proc_doc.Body.iEOC();
+                    object[] rw = new object[cols];
+                    for (int col=0; col < cols; col++) rw[col] = proc_doc.Body.get(line_process+1, col+1);
                     string cell = rw[Decl.STEP_NAME] as string;
                     if (String.IsNullOrEmpty(cell) || !String.IsNullOrEmpty(rw[Decl.STEP_COMMENT] as string)) continue;
                     switch (cell)
@@ -129,7 +140,7 @@ namespace match.Process
             //////Excel.Range rw = proc._rng.Range[proc._rng.Rows.Count];     //ПЕРЕПИСАТЬ!!
             //////docNames = MatchLib.ToStrList(rw.Range[Decl.STEP_DOCS]);    //ПЕРЕПИСАТЬ!!
 //----------------- еще не дописано!!!!!!!! --------------------
-//            docNames.ForEach(doc => doc = Docs.getDoc(
+//            docNames.ForEach(docAcc => docAcc = Docs.getDoc(
 //            proc.results[0].Value = (int) docs.Count;
 //            proc.results.ForEach(newLines => newLies = 
             Log.exit();
@@ -170,15 +181,16 @@ namespace match.Process
             public List<string> docNames = new List<string>();      // имена Документов, обрабатываемае в Шаге
  //           private List<Docs> docs = new List<Docs>();         // собственно Документы
             private List<int> results = new List<int>();        // один или несколько Результатов Шага
-            private DataRow _stepRow;                       // строка таблицы Процессов по Шагу 
+            private object[] _stepRow;                       // строка таблицы Процессов по Шагу 
             /// <summary>
             /// разбор строки rw для заполнения спецификации Шага
             /// </summary>
             /// <param name="rw"></param>
             /// <journal>
             /// 23.1.14 - overridden Step(DataRow)
+            /// 17.1.15 - без DataRow
             /// </journal>
-            public Step(DataRow rw)
+            public Step(object[] rw)
             {
                 name = rw[Decl.STEP_NAME] as string;
                 Log.set("конструктор Step(" + name + "...)");
@@ -218,27 +230,30 @@ namespace match.Process
                 //foreach (string docName in docNames)
                 //    if (docName != "") docs.Add(Docs.getDoc(docName));
                 // проверим необходимые Шаги контекста -- PrevStep
-                foreach (var itemPrevStep in prevSteps)
+                if (prevSteps != null && prevSteps.Any())
                 {
-                    switch (itemPrevStep)
+                    foreach (var itemPrevStep in prevSteps)
                     {
-                        case "": break;
-                        case "Loaded":
-                            {
-                                //   if (this.prevSteps.Contains("Loaded"))
-                                // тут проверить ПЕРВЫЙ обрабатываемый Документ
-                                // этот Документ должен быть doc.MadeStep == "Loaded"
-                                // а если это не так Log.FATAL
-                            }
-                            break;
-                        default:
-                            {
-                                // структура PrevStep: Процесс/Шаг
-                                // разбор и, если нужно, исполнение Шага в звене prevStepItem
-                                // вначале отделим имя Процесса ('/'), на которое ссылается itemPrevStep
-                                // если оно опушено, то это PrevStep в текущем Процессе
-                            }
-                            break;
+                        switch (itemPrevStep)
+                        {
+                            case "": break;
+                            case "Loaded":
+                                {
+                                    //   if (this.prevSteps.Contains("Loaded"))
+                                    // тут проверить ПЕРВЫЙ обрабатываемый Документ
+                                    // этот Документ должен быть docAcc.MadeStep == "Loaded"
+                                    // а если это не так Log.FATAL
+                                }
+                                break;
+                            default:
+                                {
+                                    // структура PrevStep: Процесс/Шаг
+                                    // разбор и, если нужно, исполнение Шага в звене prevStepItem
+                                    // вначале отделим имя Процесса ('/'), на которое ссылается itemPrevStep
+                                    // если оно опушено, то это PrevStep в текущем Процессе
+                                }
+                                break;
+                        }
                     }
                 }
                 //-------------------------------------------
@@ -249,7 +264,7 @@ namespace match.Process
 
                 foreach (MethodInfo info in methods)
                 {
-                    Console.WriteLine(info.Name);
+ //                   Console.WriteLine(info.Name);
                     if (info.Name == name)
                     {
                         info.Invoke(new match.Handler.Handler(parameters, docNames), null);

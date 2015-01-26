@@ -20,33 +20,9 @@ namespace match
     {
         static void Main(string[] args)
         {
-            Log.START("match v3.1.2.1");
+            Log.START("match v3.1 17/01/2015");
 
-            NonDialogPass();
-
-            //doc.isChanged = true; //ЗАТЫЧКА!!
-            //doc.saveDoc();
-            //Log.Save();
-            //new Log("CheckSum =" + doc.CheckSum());
-
-            //Console.ReadLine();
-        }
-
-        static void NonDialogPass()
-        {
-            // отладка -- потом убрать в UnitTest
-            Docs docPay = Docs.getDoc("Платежи");
-            docPay.FetchInit();
-
-            Docs newPay = Docs.NewSheet("NewPayment");
-
-            newPay.Body.AddRow();
-            string[] hh = { "One", "Two", "Three" };
-            newPay.Body.AddRow(hh);
-
-//            Docs newDogovor = Docs.NewSheet("NewContract");
-
-            newPay.saveDoc();
+            Proc.Start("HANDL_C#");
         }
     }
 }

@@ -1,14 +1,16 @@
 ﻿/*-----------------------------------------------------------------------
- * Document -- класс Документов проекта match 3.0
+ * Document -- класс Документов проекта match 3.1
  * 
- *  25.12.2014  П.Храпкин, А.Пасс
+ *  20.01.2015  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает объект Документ с именем name
  * loadDoc(name, wb)    - загружает Документ name или его обновления из файла wb, запускает Handler Документа
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
  * NewSheet(name)       - созданние нового листа с заголовком для Документа name
- * isDocChanged(name)   - проверяет, что Документ name открыт
+ * isDocChanged(name)   - проверяет, что Документ name открыт и изменился позле загрузки
+ * CheckSum()           - подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body
+ * saveDoc()            - сохраняет Документ, если он изменялся
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
  * 
  * внутренний класс Stamp предназначен для заполнения списков Штампов
@@ -28,6 +30,7 @@ using Decl = match.Declaration.Declaration;
 //using Mtrx = match.Matrix.Matrix;
 using Mtr = match.Matrix.Matr;  //--
 using Lib = match.Lib;
+using CS = match.Lib.CS;
 using Log = match.Lib.Log;
 using Proc = match.Process.Process;
 using System.Xml.Serialization;
@@ -59,7 +62,7 @@ namespace match.Document
         private string MadeStep;
         private DateTime MadeTime;
         private int periodDays;     // периодичность работы с Документом в днях
-        private ulong chkSum;       // контрольнаи сумма
+        private double chkSum;      // контрольная сумма
         private long colorTab;      // цвет Tab листа
         private int EOLinTOC;
         private List<int> ResLines; //число строк в пятке -- возможны альтернативные значения
@@ -67,7 +70,7 @@ namespace match.Document
         private DateTime creationDate;  // дата создания Документа 
         private string Loader;
         private string LastUpdateFromFile;
-        private bool isPartialLoadAllowed;
+//        private bool isPartialLoadAllowed;
         public int MyCol;           // количесто колонок, добавляемых слева в Документ в loadDoc
         public int usedColumns;     // общее кол-во использованных колонок в Body Документа
         [XmlIgnore]
@@ -108,7 +111,6 @@ namespace match.Document
                     if (doc.name == TOC)    // mtr относится только к TOCmatch, а не ко всем Документам  
                     {                       
                         doc.Body = mtr;
-//!!                        doc.dt = doc.Body.DaTab();
                         doc.Wb = db_match;
                         doc.Sheet = tocSheet;
                         doc.EOLinTOC = iEOL;
@@ -139,37 +141,36 @@ namespace match.Document
                 } //if docName !=""
             } // for по строкам TOC
 
- //                   try { doc.creationDate = Lib.MatchLib.getDateTime(Double.Parse(rw.Range[Decl.DOC_CREATED].Text)); }
- //                   catch { doc.creationDate = new DateTime(0); }
-
- //                   try { doc.ptrn = hdrSht.get_Range((string)rw.Range[Decl.DOC_PATTERN].Text); } catch { doc.ptrn = null; }
- //                   try { doc.SummaryPtrn = hdrSht.get_Range((string)rw.Range[Decl.DOC_SUMMARY_PATTERN].Text); } catch { doc.SummaryPtrn = null; }
- //                   doc.Loader = rw.Range[Decl.DOC_LOADER].Text;
+ //                   try { docAcc.creationDate = Lib.MatchLib.getDateTime(Double.Parse(rw.Range[Decl.DOC_CREATED].Text)); }
+ //                   catch { docAcc.creationDate = new DateTime(0); }
+ //                   try { docAcc.ptrn = hdrSht.get_Range((string)rw.Range[Decl.DOC_PATTERN].Text); } catch { docAcc.ptrn = null; }
+ //                   try { docAcc.SummaryPtrn = hdrSht.get_Range((string)rw.Range[Decl.DOC_SUMMARY_PATTERN].Text); } catch { docAcc.SummaryPtrn = null; }
+ //                   docAcc.Loader = rw.Range[Decl.DOC_LOADER].Text;
  //                   // флаг, разрешающий частичное обновление Документа пока прописан хардкодом
  //                   switch (docName)
  //                   {
  //                       case "Платежи":
- //                       case "Договоры": doc.isPartialLoadAllowed = true;
+ //                       case "Договоры": docAcc.isPartialLoadAllowed = true;
  //                           break;
- //                       default: doc.isPartialLoadAllowed = false;
+ //                       default: docAcc.isPartialLoadAllowed = false;
  //                           break;
  //                   }
  //               }
  //           }
 
-            //-----------------------------------------------------------------
-            // из коллекции Documents переносим произошедшие изменения в файл
-            //            if (doc.Body.Range["A" + TOC_DIRDBS_COL].Value2 != Decl.dirDBs)
-            {
-                //    Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
-                //    // переустановка match -- будем делать потом
-                doc.isChanged = true;
-            }
-//            doc.EOLinTOC = iEOL;
-//PK            doc.Body.Range["C4"].Value2 = iEOL.ToString();
-            doc.isChanged = true;   // TOCmatch сохраняем всегда. Возможно, это времянка
-//            doc.isOpen = true;
-            doc.saveDoc();
+////////////            //-----------------------------------------------------------------
+////////////            // из коллекции Documents переносим произошедшие изменения в файл
+////////////            //            if (docAcc.Body.Range["A" + TOC_DIRDBS_COL].Value2 != Decl.dirDBs)
+////////////            {
+////////////                //    Box.Show("Файл '" + F_MATCH + "' загружен из необычного места!");
+////////////                //    // переустановка match -- будем делать потом
+////////////                docAcc.isChanged = true;
+////////////            }
+//////////////            docAcc.EOLinTOC = iEOL;
+//////////////PK            docAcc.Body.Range["C4"].Value2 = iEOL.ToString();
+////////////            docAcc.isChanged = true;   // TOCmatch сохраняем всегда. Возможно, это времянка
+//////////////            docAcc.isOpen = true;
+////////////            docAcc.saveDoc();
             Log.exit();
         }
 
@@ -187,12 +188,13 @@ namespace match.Document
         {
             Log.set("loadDoc(" + name + ", " + wb.Name + ")");
             Document doc = getDoc(name);
-            if (doc.isPartialLoadAllowed)
+/*            if (docAcc.isPartialLoadAllowed)
             {
                 // Дальше распознавание частичное или полное обновление прежнего Документа.
                 // Здесь только если частичное, то есть потом будет выполняться Merge
                 // это еще не написано!!
             }
+ */
             doc.LastUpdateFromFile = wb.Name;
             string oldRepName = "Old_" + doc.SheetN;
             try
@@ -218,9 +220,9 @@ namespace match.Document
             doc.FetchInit();
 
             ////// если есть --> запускаем Handler
-            ////if (doc.Loader != null) Proc.Reset(doc.Loader);
+            ////if (docAcc.Loader != null) Proc.Reset(docAcc.Loader);
             ////// если нужно --> делаем Merge name с oldRepName
-            ////if (FileOp.sheetExists(doc.Wb, oldRepName))
+            ////if (FileOp.sheetExists(docAcc.Wb, oldRepName))
             ////{
             ////    // еще не написано!!
             ////    // NB: в таблице Процессов есть Шаг MergeReps
@@ -235,7 +237,7 @@ namespace match.Document
         /// <returns>Document</returns>
         /// <journal> 25.12.2013 отлажено
         /// 25.12.2013 - чтение из файла, формирование Range Body
-        /// 28.12.13 - теперь doc.Sheet и doc.Wb храним в структуре Документа
+        /// 28.12.13 - теперь docAcc.Sheet и docAcc.Wb храним в структуре Документа
         /// 5.1.14  - обработка шаблонов Документа
         /// 7.1.14  - отделяем пятку и помещаем в Body и Summary
         /// 5.4.14  - инициализируем docDic, то есть подготавливаем набор данных для Fetch
@@ -273,7 +275,6 @@ namespace match.Document
                 return null;    // нужно только при обработке Event File Open для неизвестного файла
             }
         }
-
         /// <summary>
         /// NewSheet(name)  - созданние нового листа с заголовком для Документа name
         /// </summary>
@@ -281,7 +282,7 @@ namespace match.Document
         /// <returns>вновь созданный Документ name</returns>
         /// <journal>6.4.2014
         /// 25.12.14 дописано
-        /// 13.01.15 bug fix: присваиваем новый doc.Sheet
+        /// 13.01.15 bug fix: присваиваем новый docAcc.Sheet
         /// </journal>
         public static Document NewSheet(string name)
         {
@@ -304,7 +305,6 @@ namespace match.Document
                 object[,] hh = new object[1, doc.ptrn.iEOC()];
                 for (int i = 1; i <= doc.ptrn.iEOC(); i++) { hh[0,i-1] = doc.ptrn.String(1,i);}
                 doc.Body = new Mtr(hh);
- //!!               doc.dt = doc.Body.DaTab();
                 //-- записываем в таблицу Documents данные по новому Документу name
                 doc.isChanged = true;
                 doc.creationDate = DateTime.Now;
@@ -315,9 +315,8 @@ namespace match.Document
             finally { Log.exit(); }
             return doc;
         }
-
         /// <summary>
-        /// отделение основной части Документа (doc.Body) от пятки (doc.Summary)
+        /// отделение основной части Документа (docAcc.Body) от пятки (docAcc.Summary) и их чтение из Excel
         /// </summary>
         private void splitBodySummary()
         {      
@@ -333,7 +332,6 @@ namespace match.Document
             int iEOC = Lib.MatchLib.EOC(Sheet);
 
             Body = FileOp.getRngValue(Sheet, 1, 1, iEOL, iEOC);
-//!!            dt = Body.DaTab();
             if (_resLns > 0) Summary = FileOp.getRngValue(Sheet, iEOL + 1, 1, fullEOL, iEOC);
         }
         /// <summary>
@@ -343,6 +341,7 @@ namespace match.Document
         /// <returns></returns>
         /// <juornal> 10.12.2013
         /// 30.12.13 - проверка, что Документ не только существует, но изменился
+        /// 17.01.15 - проверка не изменилась ли контрольной сумма this?
         /// </juornal> 
         public bool isDocChanged(string name)
         {
@@ -353,81 +352,21 @@ namespace match.Document
                 return false;
             }
             Document doc = Documents[name];
+            double newChkSum = Lib.CS.CheckSum(doc);
+            if (newChkSum != doc.chkSum) { doc.chkSum = newChkSum; doc.isChanged = true; }
             return doc.isOpen && doc.isChanged;
         }
-        /// <summary>
-        /// "сброс" Документа приводит к тому, что его содержимое выбрасывается,
-        /// остаются только заголовки колонок.
-        /// </summary>
-        /// <journal>9.1.2014</journal>
-        public void Reset()
-        {
-            Log.set("Reset");
-/* PK            try
-            {
-                Body.Rows["2:" + Body.Rows.Count].Delete();
-//                Body.Range["A2", Body.Cells[Body.Rows.Count, 1]].Delete();
-/////                saveDoc();
-            }
-            catch { Log.FATAL("Ошибка при удалении строк Body Документа \"" + name + "\""); }
-            finally { Log.exit(); }
- PK */
-        }
- /* PK       /// <summary>
-        /// добавляет строку к Body Документа
-        /// </summary>
-        /// <journal>9.1.2014</journal>
-        public Excel.Range AddRow()
-        {
-            Log.set("AddRow");
-            try
-            {
-                Body.Range["A" + (int)(Body.Rows.Count + 1)].EntireRow.Insert();
-//                Body.Rows[Body.Rows.Count].Insert(Excel.XlInsertShiftDirection.xlShiftDown);
-//                return Body.Rows[Body.Rows.Count];
-                return Body;
-            }
-            catch
-            { 
-                Log.FATAL("Ошибка при добавлении строки Документа \"" + name + "\"");
-                return null;
-            }
-            finally { Log.exit(); }
-        }
- PK */
-        /// <summary>
-        /// подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body 
-        /// </summary>
-        /// <returns></returns>
-        /// <journal>17.1.2014 PKh</journal>
-        public long CheckSum()
-        {
-            DateTime t0 = DateTime.Now;
-            long checkSum = 0;
 
-            int maxRow = Body.iEOL();
-            int maxCol = Body.iEOC();
-            for (int i=1; i <= maxRow; i++)
-                for (int j=1; j <= maxCol; j++)
-                {
-                    string str = Body.String(i, j);
-                    if (str.Length == 0) continue;
-                    byte[] bt = Encoding.ASCII.GetBytes(str);
-                    foreach (var h in bt) checkSum += h;
-                }
-
-            DateTime t1 = DateTime.Now;
-            new Log("-> " + (t1 - t0) + "\tChechSum=" + checkSum);
-
-            return checkSum;
-        }
         /// <summary>
-        /// сохраняет Документ, если он изменялся
+        /// saveDoc() - сохраняет Документ, если он изменялся
         /// </summary>
-        /// <journal>14.1.2015 PKh</journal>
+        /// <journal>14.1.2015 PKh
+        /// 17.01.2015 - проверяем контрольную сумму Документа перед сохранением
+        /// </journal>
         /// <param name="name"></param>
         public void saveDoc()
         {
+            Log.set("saveDoc(" + name + ")");
             if (isDocChanged(this.name))
             {        
                 int rows = Body.iEOL();
@@ -445,9 +384,8 @@ namespace match.Document
                         data[row - 1, column - 1] = Body.get(row - 1, column - 1);
                     }
                 }
-// ---- и перекладываем в Excel    writeRange.set_Value(Type.Missing, data);
-  //!!              writeRange.Value = dt;
                 writeRange.Value2 = data;
+                if (name == TOC || name == Decl.PROCESS) data[1, 1] = DateTime.Now;
 // --- устанавливаем ширину колонки листа по значениям в строке Шаблона Width
                 for (int col = 1; col <= cols; col++)
                 {
@@ -458,26 +396,19 @@ namespace match.Document
                         + wdth + "\" при обработке Документа " + this.name);
                     writeRange.Columns[col].ColumnWidth = W;
                 }
-// -!!- еще надо записать doc.Summary, но это реализуем позже
+// -!!- еще надо записать docAcc.Summary, но это реализуем позже
+
                 FileOp.fileSave(this.Wb);
 // -??- надо убедиться, что в TOCmatch правильно записывается изменение состояния Документа
-                FileOp.fileSave(Documents[Decl.F_MATCH].Wb);
-             }
+                if (isDocChanged(TOC)) Documents[TOC].saveDoc(); //рекурсия!!
+            }
+            Log.exit();
         }
         private static void colCpy(Mtr mtr, int rwMtr, Excel.Range rng, int rwRng)
         {
             int cols = mtr.iEOC();
             for (int col = 1; col <= cols; col++) rng.Cells[rwRng, col] = mtr.get(rwMtr, col);
         }
-        /// <summary>
-        /// recognizeDoc(wb)        - распознавание Документа в Листе[1] wb
-        /// </summary>
-        /// <param name="wb"></param>
-        /// <returns>имя распознанного документа или null, если Документ не распознан</returns>
-        /// <journal> 14.12.2013
-        /// 16.12.13 (ПХ) переписано распознавание с учетом if( is_wbSF(wb) )
-        /// 18.01.14 (ПХ) с использование Matrix
-        /// </journal>
         public static string recognizeDoc(Excel.Workbook wb)
         {
             Log.set("recognizeDoc(wb)");
@@ -548,7 +479,6 @@ namespace match.Document
                 DateTime t0 = DateTime.Now;
                 for (int i = 1; i <= doc.Body.iEOL(); i++)
                 {
-
                     string s1 = doc.Body.String(i, key);
                     if (s1 != "")try { keyDic.Add(s1, doc.Body.String(i, val)); }
                         catch
@@ -619,7 +549,7 @@ namespace match.Document
             /// 
             /// Штамп.Check(Mtr) - проверяем, что данные в Mtr содержат сигнатуры Штампа на нужных местах
             /// </summary>
-            /// <param name="doc">проверяемый Документ</param>
+            /// <param name="docAcc">проверяемый Документ</param>
             /// <returns>true, если результат проверки положительный, иначе false</returns>
             /// <journal> 12.12.13
             /// 16.12.13 (ПХ) перенес в класс Stamp и переписал
@@ -636,7 +566,7 @@ namespace match.Document
             /// Trace(Stamp)    - вывод в Log-файл данных по Штампам Документа
             /// </summary>
             /// <param name="st"></param>
-            /// <journal> 26.12.13 -- не дописано -- нужно rnd не только doc.Body, но для SF doc.Summary
+            /// <journal> 26.12.13 -- не дописано -- нужно rnd не только docAcc.Body, но для SF docAcc.Summary
             /// 18.1.14 (ПХ) отладка с Matrix
             /// </journal>
             public string Trace(Document doc)
@@ -735,4 +665,45 @@ namespace match.Document
             }
         }   // конец класса OneStamp
     }    // конец класса Document
+
+    /// <summary>
+    /// формирование списков строк List<string> по Организациям, Контактам, Проектам и т.п. 
+    /// </summary>
+    /// <journal>22.1.2015</journal>
+    public class Lst
+    {
+        public static List<string> Accounts = new List<string>();  //коллекция Организаций в SF
+        public static List<string> Acc1Cs = new List<string>();    //коллекция Организаций в 1С
+        public static List<string> Contacts = new List<string>();  //коллекция Контактов
+        public static List<string> Opps = new List<string>();      //коллекция Проектов
+        public static List<string> Pays = new List<string>();      //коллекция Платежей
+        public static List<string> Contracts = new List<string>(); //коллекция Договоров  
+
+        public enum Entity { Accounts, Acc1Cs, Contacts, Opps, Pays, Contracts };
+        static Lst() {} //конструктор не нужен -- листы статические
+
+        public static void Init(Entity ent)
+        {
+            switch (ent)
+            {
+                case Entity.Accounts:   Accounts =  docToList("SFacc", 0); break;
+                case Entity.Acc1Cs:     Acc1Cs =    docToList("Список клиентов 1C", 3); break;
+                case Entity.Contacts:   Contacts =  docToList("SFcont", 4); break;
+                case Entity.Opps:       Accounts =  docToList("SFopp", 1); break;
+                case Entity.Pays:       Pays     =  docToList("Платежи", 5); break;
+                case Entity.Contracts:  Contracts = docToList("Договоры", 10); break;
+            }
+        }
+        private static List<string> docToList(string name, int ind)
+        {
+            List<string> _Lst = new List<string>();
+            Document doc = Document.getDoc(name);
+            doc.dt = doc.Body.DaTab();
+            foreach (DataRow Rw in doc.dt.Rows)
+                _Lst.Add(Rw.Field<string>(ind));
+            return _Lst;
+        }
+
+
+    }    // конец класса Lst
 }

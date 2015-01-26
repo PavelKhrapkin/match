@@ -12,33 +12,18 @@ namespace match.Declaration
     /// <journal> 20.12.2013
     /// 7.1.2014    - добавлена секция констант Шаблонов
     /// 23.1.14     - переход к DataTable
+    /// 17.01.15    - переформатирован XML <summary> названия файлов и Документов
+    /// 24.01.15    - номера колонок Документа SFcont
     /// </journal>
     class Declaration
     {
-        /// <summary>
-        /// F_MATCH = "match.xlsm" - имя файла таблиц приложения match
-        /// </summary>
-        public const string F_MATCH = "match.xlsm";
-        /// <summary>
-        /// F_1C = "1C.xlsx"    - файл отчетов 1C: Платежей, Договоров, Списка клиентов
-        /// </summary>
-        public const string F_1C = "1C.xlsx";
-        /// <summary>
-        /// F_SFDC = "SFDC.xlsx"    - файл отчетов Salesforce.com
-        /// </summary>
-        public const string F_SFDC = "SFDC.xlsx";
-        /// <summary>
-        /// F_ADSK = "ADSK.xlsm"    - файл отчетов Autodesk
-        /// </summary>
-        public const string F_ADSK = "ADSK.xlsm";
-        /// <summary>
-        /// F_STOCK = "Stock.xlsx"  - файл отчетов по Складу и Провозка Заказов
-        /// </summary>
-        public const string F_STOCK = "Stock.xlsx";
-        /// <summary>
-        /// временный файл для промежуточных результатов
-        /// </summary>
-        public const string F_TMP = "W_TMP.xlsm";
+        // ************ Declaration - названия файлов в базах DBs ***********
+        public const string F_MATCH = "match.xlsm";     // имя файла таблиц приложения match
+        public const string F_1C    = "1C.xlsx";        // файл отчетов 1C: Платежей, Договоров, Списка клиентов
+        public const string F_SFDC  = "SFDC.xlsx";      // файл отчетов Salesforce.com
+        public const string F_ADSK  = "ADSK.xlsm";      // файл отчетов Autodesk
+        public const string F_STOCK = "Stock.xlsx";     // файл отчетов по Складу и Провозка Заказов
+        public const string F_TMP   = "W_TMP.xlsm";     // временный файл для промежуточных результатов, рабочий файл WP
 
         public const string DIR_DBS = "ENV_DIR_DBS";
 
@@ -67,7 +52,7 @@ namespace match.Declaration
         public const int DOC_SUMMARY_PATTERN = 17; // шаблон пятки
         public const int DOC_LOADER      = 20; // Loader Документа
 
-        public const int SFresLines = 6;    // число строк пятки Документа SFDC 
+        public const int SFresLines = 6;    // число строк пятки Документа Lst 
 
         //-----------константы таблицы Процессов -----------------
         public const string PROCESS = "Process";
@@ -90,5 +75,13 @@ namespace match.Declaration
         public const int PTRN_FETCH = 6;    // Fetch запрос
 
         public const string PTRN_COPYHDR = "CopyHdr"; // указание копировать заголовок из Шаблона
+
+        //-----------константы Контактов SFcont  -----------------
+        public const int SFCONT_ACCID   = 1;    //Колонка "Код организации" - Id в SFDC
+        public const int SFCONT_ACCNAME = 2;    //Колонка "Имя организации"
+        public const int SFCONT_CONTID  = 3;    //Колонка "Код контакта" - Id в SFDC
+        public const int SFCONT_FAMILY  = 4;    //Колонка "Фамилия"
+        public const int SFCONT_GIVNAME = 5;    //Колонка "Имя"
+        public const int SFCONT_POST    = 6;    //Колонка "Должность"
     }
 }

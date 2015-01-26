@@ -1,6 +1,15 @@
-//#define Test
-
+/*-----------------------------------------------------------------------
+ * FileOpenEvent - работа с файловой системой проекта match 3.1
+ * 
+ *  24.01.2015  П.Храпкин, А.Пасс
+ *  
+ * -------------------------------------------
+ * WrCSV(name)          - записывает CSV файл его для дальнейшего ввод в SalesForce
+ * WrReport(name,dt)    - записывает текстовый файл name в каталог Отчетов
+ */
 using System;
+using System.IO;
+using System.Data;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,25 +25,68 @@ namespace match.MyFile
     public class FileOpenEvent
     {
         public static string dirDBs = null;
-
         private static Excel.Application _app = null;
-        /*
-                /// <summary>
-                /// Open Workbook Event Handler
-                /// </summary>
-                /// <param name="Wb"></param>
-                /// <journal>   15.12.2013
-                /// </journal>
-                public void newFile(Excel.Workbook Wb)
-                {
-                    _app = Wb.Application;
-                    string name = Document.recognizeDoc(Wb);
-                    if (name == null) return;
-                    Document doc = Document.loadDoc(name, Wb);
 
-                    Box.Show("Файл '" + Wb.Name + "' распознан как " + name);   //почему-то вылетает!
+        /// <summary>
+        /// WrCSV(name) - записывает CSV файл его для дальнейшего ввод в SalesForce
+        /// </summary>
+        /// <param name="name">string name  - имя файла для вывода</param>
+        /// <journal>23/1/2015</journal>
+        public static void WrCSV(string name, DataTable dt)
+        {
+            string pathCSV = @"C:/SFconstr/";    // каталог, куда выводятся CSV файлы
+            FileInfo file = new FileInfo(pathCSV + name + @".csv");
+            StreamWriter fs = file.CreateText();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                string str = "";
+                foreach (DataColumn x in dt.Columns)
+                {
+                    if (str != "") str += ',';
+                    str += '"';
+                    str += row[x].ToString();
+                    str += '"';
                 }
-        */
+                fs.WriteLine(str); 
+            }
+            fs.Close();
+        }
+        /// <summary>
+        /// WrReport(name,dt)   - записывает текстовый файл name в каталог Отчетов
+        /// </summary>
+        /// <param name="name">string name - имя файла - отчета *.txt</param>
+        /// <param name="dt">DataTable dt - таблица с данными для отчета</param>
+        /// <journal>23.01.2015</journal>
+        public static void WrReport(string name, DataTable dt)
+        {
+            setDirDBs();
+            string fileName = dirDBs + @"\Reports\" + name + @".txt";
+            using (StreamWriter fs = new StreamWriter( fileName, true, System.Text.Encoding.Default))
+            {
+                fs.WriteLine("--- " + DateTime.Now.ToLongTimeString() + " " + name + " ------------------");
+                foreach (DataRow row in dt.Rows)
+                {
+                    string str = "";
+                    foreach (DataColumn x in dt.Columns)
+                    {
+                        if (str != "") str += '\t';
+                        str += row[x].ToString();
+                    }
+                    fs.WriteLine(str);
+                }
+                fs.Close();
+            }
+        }
+        private static void setDirDBs()
+        {
+            if (dirDBs == null) dirDBs = Environment.GetEnvironmentVariable(Decl.DIR_DBS);
+            if (dirDBs == null)
+                Console.WriteLine("Не задана переменная среды " + Decl.DIR_DBS +
+                    ",\n\t\t\t   показывающая PATH DBs. Для ее определения:" +
+                    "\n\n\tКомпьютер-Свойства-Дополонительные параметры системы-Переменные среды");
+        }
+
         /// <summary>
         /// открываем файл Excel по имени name
         /// </summary>
@@ -43,20 +95,13 @@ namespace match.MyFile
         /// <journal>11.12.2013
         /// 7.1.14  - единая точка выхода из метода с finally
         /// 22.12.14 - сообщение о задании Переменной среды
+        /// 24.01.15 - setDirDBs выделено в отдельную подпрограмму
         /// </journal>
         public static Excel.Workbook fileOpen(string name)
         {
             Log.set("fileOpen");
             try {
-                if (dirDBs == null)
-                {
-                    dirDBs = Environment.GetEnvironmentVariable(Decl.DIR_DBS);
-                    //if (dirDBs == null) dirDBs = "C:\\DirDbs";  // по умолчанию                                      
-                    if (dirDBs == null)
-                         Log.FATAL("Не задана переменная среды " + Decl.DIR_DBS +
-                             ",\n\t\t\t   показывающая PATH DBs. Для ее определения:" +
-                             "\n\n\tКомпьютер-Свойства-Дополонительные параметры системы-Переменные среды");
-                }
+                setDirDBs();
                 if (_app == null) _app = new Excel.Application();
                 _app.Visible = true;
                 foreach (Excel.Workbook W in _app.Workbooks) if (W.Name == name) return W;

@@ -1,7 +1,7 @@
 ﻿/*-----------------------------------------------------------------------
- * MatchLib -- библиотека общих подпрограмм проекта match 3.0
+ * MatchLib -- библиотека общих подпрограмм проекта match 3.1
  * 
- *  23.01.14 П.Храпкин, А.Пасс
+ *  18.01.15 П.Храпкин, А.Пасс
  *  
  * - 20.11.13 переписано с VBA на С#
  * - 1.12.13 добавлен метод ToIntList
@@ -10,6 +10,8 @@
  *            добавлен метод getDateTime(dynamic inp)
  * - 11.01.14 EOC - определение числа колонок листа -- ПХ
  * - 23.01.14 ToStrList - используем ADO.Net
+ * - 17.01.15 отказ от ADO.Net
+ * - 18.01.15 контрольная сумма MD5
  * -------------------------------------------
  * EOL(Sh)                  - возвращает число непустых строк в листе Sh
  * ToIntList(s, separator)  - возвращает List<int>, разбирая строку s с разделителями separator
@@ -24,10 +26,12 @@ using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
 using Excel = Microsoft.Office.Interop.Excel;
 using FileOp = match.MyFile.FileOpenEvent;
 using Decl = match.Declaration.Declaration;
 using Mtr = match.Matrix.Matr;
+using Docs = match.Document.Document;
 
 namespace match.Lib
 {
@@ -36,7 +40,6 @@ namespace match.Lib
     /// </summary>
     public static class MatchLib
     {
-
 #if binarySearchEOL
         /// <summary>
         ///  EOL(Worksheet Sh)   - возвращает число непустых строк листа Sh
@@ -186,6 +189,12 @@ namespace match.Lib
             foreach (int i in indx) strs.Add(rw[i] as string);
             return strs;
         }
+        public static List<string> ToStrList(object[] rw, int[] indx)
+        {
+            List<string> strs = new List<string>();
+            foreach (int i in indx) strs.Add(rw[i] as string);
+            return strs;
+        }
         /// <summary>
         /// overloaded ToStrList(string, [separator = ','])
         /// </summary>
@@ -257,7 +266,7 @@ namespace match.Lib
             var value = sh.UsedRange.Cells[row, col].Value2;
             return (value == null || value.ToString().Trim() == "");
         }
-
+ 
 #if TimeTest
         public static int TestTime()
         {
@@ -343,6 +352,44 @@ namespace match.Lib
     }   // конец класса MatchLib
 
     /// <summary>
+    /// CS  - класс, использующий System.Security.Cryptography;
+    /// </summary>
+    public class CS
+    {
+        /// <summary>
+        /// CheckSum() - подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body 
+        /// </summary>
+        /// <returns></returns>
+        /// <journal>18.1.2014 PKh</journal>
+        public static double CheckSum(Docs doc)
+        {
+            DateTime t0 = DateTime.Now;
+            MD5 md5Hasher = MD5.Create();
+
+            double checkSum = 0;
+            int minRow = doc.Body.LBound(0);
+            int minCol = doc.Body.LBound(1);
+            int maxRow = doc.Body.UBound(0);
+            int maxCol = doc.Body.UBound(1);
+            for (int i = minRow; i <= maxRow; i++)
+                for (int j = minCol; j < maxCol; j++)
+                {
+                    var x = doc.Body.get(i, j);
+                    if (x == null) continue;
+                    string str = x.ToString();
+                    if (str.Length == 0) continue;
+                    byte[] data = md5Hasher.ComputeHash(Encoding.Default.GetBytes(str));
+                    foreach (var h in data) checkSum += h;
+                    //////byte[] bt = Encoding.ASCII.GetBytes(str);
+                    //////foreach (var h in bt) checkSum += h;
+                }
+            DateTime t1 = DateTime.Now;
+            new Log("-> " + (t1 - t0) + "\tChechSum=" + checkSum);
+            return checkSum;
+        }
+    } // конец класса CS
+
+    /// <summary>
     /// Log & Dump System
     /// </summary>
     /// <journal> 30.12.2013 P.Khrapkin
@@ -378,7 +425,7 @@ namespace match.Lib
         public Log(string msg)
         {
             _context = "";
-            foreach (string name in _nameStack) _context = name + ">" + _context;
+            foreach (string name in _nameStack) _context = name + "\n\t->" + _context;
             Console.WriteLine(DateTime.Now.ToLongTimeString() + " " + _context + " " + msg);
             msgs.Add(new msgLog(msg));
         }
@@ -393,7 +440,6 @@ namespace match.Lib
         public static void Warning(string msg) { new Log("[warning] " + msg); }
         public static void START(string msg)
         {
-//            Console.WriteLine(DateTime.Now.ToShortDateString() + " ---------< " + msg + " >---------"); 
             new Log("---------< " + msg + " >---------");
         }
         public static void Save()
