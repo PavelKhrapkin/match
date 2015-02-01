@@ -1,11 +1,18 @@
 /*-----------------------------------------------------------------------
  * FileOpenEvent - работа с файловой системой проекта match 3.1
  * 
- *  24.01.2015  П.Храпкин, А.Пасс
+ *  1.02.2015  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * WrCSV(name)          - записывает CSV файл его для дальнейшего ввод в SalesForce
  * WrReport(name,dt)    - записывает текстовый файл name в каталог Отчетов
+ * fileOpen(name)       - открываем файл Excel по имени name
+ * Quit()               - закрывает Excel - в основном для UnitTest
+ * shhetExist(Wb, name) - возвращает true, если Worksheet name есть в книге Wb
+ * getRngValue(Sheet,r0c0, r1c1, msg)   - возвращает Mtr из листа Sheet из диапазона [r0c0r1c1]
+ * getSheetValue(Sheet,msg)             - возвращает Mtr из листа Sheet UsedRange или Log.FATAL(msg)
+ * -------- private методы ----------------
+ * setDirDBs()          - проверяет Windows Environment и устанавливает каталог dirDBs
  */
 using System;
 using System.IO;
@@ -86,9 +93,8 @@ namespace match.MyFile
                     ",\n\t\t\t   показывающая PATH DBs. Для ее определения:" +
                     "\n\n\tКомпьютер-Свойства-Дополонительные параметры системы-Переменные среды");
         }
-
         /// <summary>
-        /// открываем файл Excel по имени name
+        /// fileOpen(name) - открываем файл Excel по имени name
         /// </summary>
         /// <param name="name"></param>
         /// <returns>Excel.Workbook</returns>
@@ -96,6 +102,7 @@ namespace match.MyFile
         /// 7.1.14  - единая точка выхода из метода с finally
         /// 22.12.14 - сообщение о задании Переменной среды
         /// 24.01.15 - setDirDBs выделено в отдельную подпрограмму
+        ///  1.02.15 - добавлен метод Quit()
         /// </journal>
         public static Excel.Workbook fileOpen(string name)
         {
@@ -113,6 +120,7 @@ namespace match.MyFile
             }
             finally { Log.exit(); }
         }
+        public static void Quit() { _app.Quit(); }
         public static void DisplayAlert(bool val) { _app.DisplayAlerts = val; }
         public static void fileSave(Excel.Workbook Wb) { Wb.Save(); }
 
@@ -125,15 +133,6 @@ namespace match.MyFile
         ////    int iEOL = Sh.UsedRange.Rows.Count;
         ////    rng.Copy(Sh.Cells[iEOL + 1, 1]);
         ////}
-
-#if Test
-        public static void TestSheetExists()
-        {
-            Excel.Workbook Wb = fileOpen(Decl.F_1C);
-            Console.WriteLine(" Платежи = ", Convert.ToString(sheetExists(Wb, "Платежи")));
-            Console.WriteLine(" Платежи25 = ", Convert.ToString(sheetExists(Wb, "Платежи25")));
-        }
-#endif
         public static bool sheetExists(Excel.Workbook Wb, string name)
         {
             try { Excel.Worksheet Sh =  Wb.Worksheets[name]; return true; }

@@ -1,11 +1,20 @@
 ﻿/*-----------------------------------------------------------------------
  * UnitTest -- Unit тесты проекты match 3.1
  * 
- *  25.01.2015  П.Храпкин, А.Пасс
+ *  1.02.2015  П.Храпкин, А.Пасс
  * ------------------------------------------- 
- * 18/01/15 test_get_set_Matr() - проверка работы Matrix Matr, get и set
- * 18/01/15 test_AddRow()       - проверка AddRow - добавления 1 строки
+ * 18.01.15 test_get_set_Matr() - проверка работы Matrix Matr, get и set
+ * 25.01.15 test_WrCSV_WrReport() - проверка WrCRV и WrReport
+ *    2014  test_ToStrList()    - проверка MatchLib.TpStrList
+ * 19.01.15 test_CheckSum()     - проверка вычисления контрольной суммы
+ *  1.02.15 test_FileOp()       - проверка FileOP
+ * 31.01.15 test_getDoc(name)   - проверка загрузки Документа name 
+ * 22.01.15 test LstInit()      - проверка создания List Accounts по SFacc
+ * 18.01.15 test_AddRow()       - проверка AddRow - добавления 1 строки
  * test_ToStrList()
+
+ *  1.02.15 test_Fetch()        - проверка Fetch - извлечение данных по запросу вида SFacc/2:3/0
+ !    2014  testxml()           - заткнут
  */
 using System;
 using System.Data;
@@ -25,6 +34,8 @@ using Log = match.Lib.Log;
 using Docs = match.Document.Document;
 using Lst = match.Document.Lst;
 using FileOp = match.MyFile.FileOpenEvent;
+using Decl = match.Declaration.Declaration;
+//using Handl = match.Handler.Handler;
 
 namespace TestMatch
 {
@@ -112,6 +123,24 @@ namespace TestMatch
     public class UnitTest
     {
         [TestMethod]
+        // 1/02/2015
+        public void test_FileOp()
+        {
+            Excel.Workbook Wb = FileOp.fileOpen(Decl.F_1C);
+            bool isSheet = FileOp.sheetExists(Wb, "Платежи");
+            Assert.AreEqual(isSheet, true);
+            isSheet = FileOp.sheetExists(Wb, "Платеж");
+            Assert.AreEqual(isSheet, false);
+            isSheet = FileOp.sheetExists(Wb, "Договоры");
+            Assert.AreEqual(isSheet, true);
+            var doc = Docs.getDoc("Договоры");
+            var doc1 = Docs.getDoc("Платежи");
+            var doc2 = Docs.getDoc("SFacc");
+            var doc3 = Docs.getDoc("SF");
+            FileOp.Quit();
+        }
+        [TestMethod]
+        // 31/1/2015
         public void test_getDoc ()
         {
             var doc = Docs.getDoc("Платежи");
@@ -119,6 +148,11 @@ namespace TestMatch
             Assert.AreEqual(doc.name, "Платежи");
             doc = Docs.getDoc("ABCD");
             Assert.AreEqual(doc, null); // этот Документ не должен быть найден
+            doc = Docs.getDoc("SFacc");
+            Assert.AreEqual(doc.name, "SFacc");
+            var doc1 = Docs.getDoc("SF");       // последовательно открываем SFacc и SF
+            Assert.AreEqual(doc1.name, "SF");   //..тут были ошибки, связанные с отсутствием SF
+            FileOp.Quit();
         }
         [TestMethod]
         //22.01.20
@@ -130,6 +164,7 @@ namespace TestMatch
             Assert.AreEqual(Lst.Contracts.Count, 0);
             Assert.AreEqual(Lst.Opps.Count, 0);
             Assert.AreEqual(Lst.Pays.Count, 0);
+            FileOp.Quit();
         }
         [TestMethod]
         public void test_load_recognize_Doc()
@@ -141,6 +176,19 @@ namespace TestMatch
             new Log("Входной файл распознан как Документ \"" + newDocName + "\"");
             Docs doc = Docs.loadDoc(newDocName, Wb);
             Assert.AreNotEqual(null, doc);
+        }
+        [TestMethod]
+        // 1/02/2015 -- не идет, отлаживаю!
+        public void test_AddLine()
+        {
+            Docs pays = Docs.getDoc("Платежи");
+            Docs newPays = Docs.getDoc("NewPayment");
+            newPays.FetchInit();
+            pays.dt = pays.Body.DaTab();
+            DataRow pmnt = pays.dt.Rows[2];
+            object ext = "ddd";
+            pays.AddLine(pmnt, newPays, ext);
+            FileOp.Quit();
         }
         [TestMethod]
         // 19/01/2015
@@ -162,13 +210,20 @@ namespace TestMatch
 
         }
         [TestMethod]
+        // 1/02/2015
         public void test_Fetch()
         {
             var doc = Docs.getDoc("Платежи");
-            Assert.AreEqual("Платежи", doc.name, false);
+            Assert.AreEqual("Платежи", doc.name);
+            // string x = doc.Fetch(null, null);   //Fetch(null,null) --> Log.FATAL("параметр null");
+            string x = doc.Fetch("", "пример1");
+            Assert.AreEqual(x, "пример1");
+            x = doc.Fetch("    ", "пример2"); 
+            Assert.AreEqual(x, "пример2");
             doc.FetchInit();
             string id = doc.Fetch("SFacc/2:3/0", "ООО «ОРБИТА СПб»");
-            Assert.AreEqual("001D000000m35wn", id, false);
+            Assert.AreEqual("001D000000m35wn", id);
+            FileOp.Quit();
         }
         public void test_dt_Mtr()
         {
@@ -214,12 +269,14 @@ namespace TestMatch
         //    Sh.get_Range("A1", Sh.Cells[iEOL, iEOC]).Value = doc1.Body;
         //}
         [TestMethod]
+        // 2014 - заткнут!
         public void testxml()
         {
             var doc = Docs.getDoc("Платежи");
             Assert.AreNotEqual(null, doc);
             //var ser = new System.Xml.Serialization.XmlSerializer(typeof(Docs));
             //ser.Serialize(new StreamWriter("test.xml"), docAcc);
+            FileOp.Quit();
         }
     }
 }

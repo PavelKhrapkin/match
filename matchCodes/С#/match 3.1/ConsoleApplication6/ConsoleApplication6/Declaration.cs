@@ -15,7 +15,7 @@ namespace match.Declaration
     /// 17.01.15    - переформатирован XML <summary> названия файлов и Документов
     /// 24.01.15    - номера колонок Документа SFcont
     /// </journal>
-    class Declaration
+    public class Declaration
     {
         // ************ Declaration - названия файлов в базах DBs ***********
         public const string F_MATCH = "match.xlsm";     // имя файла таблиц приложения match

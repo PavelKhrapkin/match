@@ -16,6 +16,7 @@
  * EOL(Sh)                  - возвращает число непустых строк в листе Sh
  * ToIntList(s, separator)  - возвращает List<int>, разбирая строку s с разделителями separator
  * ToStrList(s,[separator]) - возвращает List<string> из Range или из строки s с разделителем
+ * CheckSum()               - подсчет контрольной суммы Документа
  */
 
 #define binarySearchEOL
@@ -414,11 +415,11 @@ namespace match.Lib
         static List <msgLog> msgs= new List<msgLog>();
 
 //        private static bool _initialized = false;   // чтобы избежать зацикливания в fileOpen
-        static Excel.Worksheet _logSheet;
+//        static Excel.Worksheet _logSheet;
         // статический конструктор класса Log открывает лист
         static Log()
         {      // открываем Sheet Log
-            _logSheet = FileOp.fileOpen(Decl.F_MATCH).Worksheets[Decl.LOG];
+//            _logSheet = FileOp.fileOpen(Decl.F_MATCH).Worksheets[Decl.LOG];
 //            _initialized = true;
         }
 
@@ -447,5 +448,7 @@ namespace match.Lib
             object s = msgs.ToArray();
 //            Excel.Range rng = s;
         }
+//        public static void Close() {_logSheet.
+
     }
 }

@@ -1,7 +1,7 @@
 ﻿/*-----------------------------------------------------------------------
  * Document -- класс Документов проекта match 3.1
  * 
- *  20.01.2015  П.Храпкин, А.Пасс
+ *  31.01.2015  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Document(name)       - КОНСТРУКТОР возвращает объект Документ с именем name
@@ -9,7 +9,6 @@
  * getDoc(name)         - возвращает Документ с именем name; при необходимости - открывает его
  * NewSheet(name)       - созданние нового листа с заголовком для Документа name
  * isDocChanged(name)   - проверяет, что Документ name открыт и изменился позле загрузки
- * CheckSum()           - подсчет контрольной суммы Документа, как суммы ASCII кодов всех знаков во всех ячейках Body
  * saveDoc()            - сохраняет Документ, если он изменялся
  * recognizeDoc(wb)     - распознает первый лист файла wb по таблице Штампов
  * 
@@ -234,19 +233,21 @@ namespace match.Document
         /// getDoc(name)            - извлечение Документа name. Если еще не прочтен - из файла
         /// </summary>
         /// <param name="name">имя извлекаемого документа</param>
-        /// <returns>Document</returns>
+        /// <returns>Document или null? если Документ не найден</returns>
         /// <journal> 25.12.2013 отлажено
         /// 25.12.2013 - чтение из файла, формирование Range Body
         /// 28.12.13 - теперь docAcc.Sheet и docAcc.Wb храним в структуре Документа
         /// 5.1.14  - обработка шаблонов Документа
         /// 7.1.14  - отделяем пятку и помещаем в Body и Summary
         /// 5.4.14  - инициализируем docDic, то есть подготавливаем набор данных для Fetch
+        /// 31.1.15 - вначале проверка, есть ли Документ name 
         /// </journal>
         public static Document getDoc(string name)
         {
             Log.set("getDoc(" + name + ")");
             try
             {
+                if (!Documents.ContainsKey(name)) return null;  //специально для UniTest
                 Document doc = Documents[name];
                 if (!doc.isOpen)
                 {
@@ -434,6 +435,34 @@ namespace match.Document
             finally { Log.exit(); }                  
         }
         /// <summary>
+        /// ! не дописано!
+        /// AddLine(dbLine, NewItemsDoc, ext) - добавляет в NewItemsDoc запись, обрабатывая строку dbLine
+        /// </summary>
+        /// <param name="dbLine">object dbLine - обрабатываемая строка Документа</param>
+        /// <param name="NewItemsDoc">Docs NewItemsDoc - Документ для переноса в SF</param>
+        /// <param name="ext">ext - опциональный "внешний" параметр или массив параметров</param>
+        /// <journal> 31.01.2015</journal>
+        public void AddLine(DataRow dbLine, Document NewItemsDoc, object Ext)
+        {
+            object[] rw = new object[100];
+            DataTable ptrn = NewItemsDoc.ptrn.DaTab();
+            int i = 1;
+            DataRow pColmn = ptrn.Rows[3];
+            DataRow pAdapt = ptrn.Rows[4];
+            DataRow pFetch = ptrn.Rows[5];
+            foreach (DataColumn col in ptrn.Columns)
+            {
+                var x = dbLine[ Convert.ToInt16(pColmn[col]) ].ToString();
+                string ftchRqst = pFetch[col].ToString();
+                if (!String.IsNullOrEmpty(ftchRqst) ) x = Fetch(ftchRqst, x);
+                string adpt = pAdapt[col].ToString();
+                if (String.IsNullOrEmpty(adpt)) rw[i] = x;
+   //             else rw[i] = AdaptEngine()
+                i++;
+            }
+            NewItemsDoc.dt.Rows.Add(rw);
+        }
+        /// <summary>
         /// инициирует Fetch-структуру Документа для Запроса fetch_rqst.
         /// Если fetch_rqst не указан - для всех Запросов Документа.
         /// </summary>
@@ -451,6 +480,12 @@ namespace match.Document
                     string[] ar = ftch.Split('/');
                     if (ar.Length <= 2) continue;
                     Document doc = getDoc(ar[0]);
+
+
+                    string[] br = ftch.Split((char)'/');
+
+
+
                     doc.FetchInit(ftch);
                 }
             }
@@ -502,17 +537,25 @@ namespace match.Document
         /// <param name="fetch_rqst"></param>
         /// <param name="x"></param>
         /// <returns></returns>
-        /// <journal>5.4.2014</journal>
-        public string Fetch(string fetch_rqst, string x)
+        /// <journal>5.4.2014
+        /// 31/01/2015 - object fetch_reqst, x; if(fetch_reqst == "" || x =="") return x;
+        /// </journal>
+        public string Fetch(object fetch_rqst, object x)
         {
             Log.set("Fetch");
             string result = null;
             try
             {
-                string[] ar_rqst = fetch_rqst.Split('/');
-                Document doc = getDoc(ar_rqst[0]);
-                Dictionary<string, string> Dic = doc.docDic[ar_rqst[0] + "/" + ar_rqst[1]];
-                result = Dic[x];
+                string sfr = fetch_rqst.ToString().Trim(), sx = x.ToString().Trim();
+                if (sfr == null || sx == null) Log.FATAL("параметр null"); 
+                result = sx;
+                if ( sfr != "" )
+                {
+                    string[] ar_rqst = sfr.Split('/');
+                    Document doc = getDoc(ar_rqst[0]);
+                    Dictionary<string, string> Dic = doc.docDic[ar_rqst[0] + "/" + ar_rqst[1]];
+                    result = Dic[sx];
+                }
             }
             catch { Log.FATAL("ошибка Fetch( \"" + fetch_rqst + "\", \"" + x + "\")" ); }
             finally { Log.exit(); }

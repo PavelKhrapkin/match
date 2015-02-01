@@ -1,7 +1,7 @@
 ﻿/*-----------------------------------------------------------------------
  * Handler -- класс прорамм, участвующих в обработке доукментов проекта match 3.1
  * 
- *  26.01.2015  П.Храпкин, А.Пасс
+ *  30.01.2015  П.Храпкин, А.Пасс
  *  
  * -------------------------------------------
  * Handler(List<string> parameters, List<string> docNames)   - КОНСТРУКТОР заполняет каталог хендлеров
@@ -9,9 +9,8 @@
  * Шаг AccDeDup()   - Отчет о наличии Организаций - дубликатов в SFacc
  * Шаг ContDeDup()  - Отчет о наличии Контактов- дубликатов или однофамильцев в одной и той же Организации
  * 
- * !не отлажено!  NonDialogPass() - неинтерактивный процесс поиска новых Платежей для занесения в SF
- !не написано! <List>SeekDupContactsInAcc(AccName) - проверка наличия контактов-дубликатов в Организации AccName
- */
+ * !не отлажено! Шаг  NonDialogPass() - неинтерактивный процесс поиска новых Платежей для занесения в SF
+  */
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -98,17 +97,20 @@ namespace match.Handler
         //--- получаем список пар номеров строк - дубликатов в sdt
             List<int> indx = new List<int>();
             string xAcc = null, xFamily = null;
+            char xGivName = '.';  // первая буква имени в предыдущей строке
             for (int i = 0; i < sdt.Rows.Count; i++)
             {
                 DataRow rw = sdt.Rows[i];
-                string id = rw[AccId].ToString(), fam = rw[Family].ToString();
-                if ((id == xAcc) && (fam == xFamily)) { indx.Add(i-1); indx.Add(i); }
-                if ( id != xAcc ) xAcc = id;
-                if ( fam != xFamily) xFamily = fam;
+                string id = rw[AccId].ToString(), fam = rw[Family].ToString(), givName = rw[GivName].ToString();
+                char nam; 
+                if (givName == "") nam = '?'; else nam = givName.First();
+                if ((id == xAcc) && (fam == xFamily) && (nam == xGivName)) { indx.Add(i-1); indx.Add(i); }
+                if (  id != xAcc    ) xAcc = id;
+                if ( fam != xFamily ) xFamily = fam;
+                if ( nam != xGivName) xGivName = nam;
             }
         //--- формируем отчет в dtRep
             DataTable dtRep = new DataTable();
-//            dtRep.Columns.Add(AccId); dtRep.Columns.Add(Acc); dtRep.Columns.Add(Family);
             foreach (var v in sdt.Columns) dtRep.Columns.Add();
             dtRep.Rows.Add("Ниже список пар/групп контактов - дубликатов");
             int iPrev = -1, grp = 0;
@@ -134,31 +136,23 @@ namespace match.Handler
         }
         /// <summary>
         /// !не дописано!
-        /// SeekDupContactsInAcc(AccName) - проверка наличия контактов-дубликатов в Организации AccName
-        /// </summary>
-        /// <param name="AccName">string AccName - имя Организации, в которой проводится проверка Контактов</param>
-        /// <returns>List имен контактов - дубликатов</returns>
-        public List<string> SeekDupContactInAcc(string AccName)
-        {
-            List<string> dupContacts = new List<string>();
-            Docs SFacc = Docs.getDoc("SFacc");
-
-            return dupContacts;
-        }
-        /// <summary>
-        /// !не дописано!
-        /// NonDialogPass() - неинтерактивный процесс поиска новых Платежей для занесения в SF
-        ///                   обрабатывает отчеты по Платежам 1С и Документы из Lst
+        /// Шаг NonDialogPass() - неинтерактивный процесс поиска новых Платежей для занесения в SF
+        ///                       обрабатывает отчеты по Платежам 1С и Документы из Lst
+        /// прототипы в VB:
+        ///     - PaidAnalitics: NonDialogPass()
+        ///     - AdaptEngine:   WrNewSheet - запись рекорда в лист CSV
         /// </summary>
         /// <returns>int nPayment - количентво найденных новых Платежей</returns>
-        /// <journal>17.1.2015 PKh</journal>
+        /// <journal>17.1.2015 PKh
+        /// 31.01.2015 - FetchInit - раскоментировал, разбираюсь, что делать с неоднозначностью ключей
+        /// </journal>
         public int NonDialogPass()
         {
             Log.set("NonDialogPass");
             int nPayment = 0;
             // отладка -- потом убрать в UnitTest
             Docs docPay = Docs.getDoc("Платежи");
-//!!!!????            docPay.FetchInit();
+            docPay.FetchInit();
 
             Docs newPay = Docs.NewSheet("NewPayment");
 
@@ -172,6 +166,7 @@ namespace match.Handler
             Log.exit();
             return nPayment;
         }
+
         /// <summary>
         /// вставляет колонки в Документ 
         /// </summary>
@@ -255,7 +250,7 @@ namespace match.Handler
                     // цикл по синонимам - порождаем по строке на синоним
                     foreach (string str in syn)
                     {
-//                        Excel.Range rw = docAcc.AddRow();
+//                        Excel.Range rw = docAcc.AddLine();
                         docAcc.Body.Range["A" + rowNum].Value = str.Trim();
                         docAcc.Body.Range["B" + rowNum].Value = row.Range[SYN_VALUE_COL].Text;
                         rowNum++;
@@ -357,9 +352,6 @@ namespace match.Handler
         {
         }
         public void Paid1C()
-        {
-        }
-        public void WrCSV()
         {
         }
         string Adapter(string rqst, string fetch_rqst)
